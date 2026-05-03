@@ -1,0 +1,84 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-4a5b-bc6d-e7f8g9h0i1j2",
+		"name": "Aminah Jaya Integration API",
+		"description": "WhatsApp Cloud API Integration for Aminah Jaya Store",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Webhook",
+			"item": [
+				{
+					"name": "Verify Webhook",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/webhook?hub.mode=subscribe&hub.verify_token={{verify_token}}&hub.challenge=123456",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"webhook"
+							],
+							"query": [
+								{
+									"key": "hub.mode",
+									"value": "subscribe"
+								},
+								{
+									"key": "hub.verify_token",
+									"value": "{{verify_token}}"
+								},
+								{
+									"key": "hub.challenge",
+									"value": "123456"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Handle Webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"object\": \"whatsapp_business_account\",\n    \"entry\": [\n        {\n            \"id\": \"123456789\",\n            \"changes\": [\n                {\n                    \"value\": {\n                        \"messaging_product\": \"whatsapp\",\n                        \"metadata\": {\n                            \"display_phone_number\": \"123456789\",\n                            \"phone_number_id\": \"123456789\"\n                        },\n                        \"contacts\": [\n                            {\n                                \"profile\": {\n                                    \"name\": \"Customer Name\"\n                                },\n                                \"wa_id\": \"628123456789\"\n                            }\n                        ],\n                        \"messages\": [\n                            {\n                                \"from\": \"628123456789\",\n                                \"id\": \"msg-123\",\n                                \"timestamp\": \"1625000000\",\n                                \"text\": {\n                                    \"body\": \"Halo Aminah Jaya\"\n                                },\n                                \"type\": \"text\"\n                            }\n                        ]\n                    },\n                    \"field\": \"messages\"\n                }\n            ]\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/webhook",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"webhook"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "verify_token",
+			"value": "7X8AP2DM73ovv6qOb9wZ5so6MF2ipHtK3XjsxWgs5K84c5XDbv0qBfhz95I0qI0t",
+			"type": "string"
+		}
+	]
+}

@@ -1,0 +1,14 @@
+services:
+  lp-aminah-jaya:
+    image: lp-aminah-jaya:latest
+    container_name: lp-aminah-jaya
+    restart: always
+    ports:
+      - "${HOST_PORT:-8080}:${HOST_PORT:-8080}"
+    environment:
+      - NODE_ENV=production
+      - ORIGIN=http://${VPS_IP:-103.103.20.58}:${HOST_PORT:-8080}
+      - NITRO_URL=http://${VPS_IP:-103.103.20.58}:${HOST_PORT:-8080}
+      - PROTOCOL=http
+      - HOST=0.0.0.0
+      - PORT=${HOST_PORT:-8080}
