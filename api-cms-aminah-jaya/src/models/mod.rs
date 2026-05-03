@@ -13,6 +13,32 @@ pub struct ApiResponse<T> {
     pub errors: Option<Value>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct PaginationQuery {
+    pub page: Option<i64>,
+    pub limit: Option<i64>,
+}
+
+impl PaginationQuery {
+    pub fn offset(&self) -> i64 {
+        let page = self.page.unwrap_or(1).max(1);
+        let limit = self.limit.unwrap_or(10).max(1);
+        (page - 1) * limit
+    }
+
+    pub fn limit(&self) -> i64 {
+        self.limit.unwrap_or(10).max(1)
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct PaginationMeta {
+    pub current_page: i64,
+    pub total_pages: i64,
+    pub total_items: i64,
+    pub items_per_page: i64,
+}
+
 impl<T> ApiResponse<T> {
     pub fn success(data: T) -> Self {
         Self {
@@ -20,6 +46,16 @@ impl<T> ApiResponse<T> {
             message: "OK".to_string(),
             data,
             meta: serde_json::json!({}),
+            errors: None,
+        }
+    }
+
+    pub fn paginated(data: T, meta: PaginationMeta) -> Self {
+        Self {
+            success: true,
+            message: "OK".to_string(),
+            data,
+            meta: serde_json::to_value(meta).unwrap_or(serde_json::json!({})),
             errors: None,
         }
     }
@@ -80,14 +116,28 @@ pub struct RecentOrder {
 // ── Products ───────────────────────────────────────────────────────────────
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct ProductImage {
+    pub id: Uuid,
+    pub product_id: Uuid,
+    pub url: String,
+    pub alt_text: Option<String>,
+    pub sort_order: i32,
+    pub is_primary: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Product {
     pub id: Uuid,
     pub name: String,
+    pub category_id: Option<Uuid>,
     pub category_name: String,   // joined from categories
     pub price: f64,
     pub stock: i32,
     pub status: String,          // computed: In Stock / Low Stock / Out of Stock
     pub sku: Option<String>,
+    pub thumbnail_url: Option<String>, // First image from product_images
+    #[sqlx(skip)]
+    pub images: Vec<ProductImage>,     // Full gallery
 }
 
 #[derive(Debug, Deserialize)]
@@ -97,6 +147,7 @@ pub struct CreateProductPayload {
     pub price: f64,
     pub stock: i32,
     pub sku: Option<String>,
+    pub image_urls: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -105,6 +156,7 @@ pub struct UpdateProductPayload {
     pub category_id: Option<Uuid>,
     pub price: Option<f64>,
     pub stock: Option<i32>,
+    pub image_urls: Option<Vec<String>>,
 }
 
 // ── Orders ─────────────────────────────────────────────────────────────────
@@ -145,4 +197,12 @@ pub struct CustomerStats {
     pub total_customers: i64,
     pub active_customers: i64,
     pub total_revenue: f64,
+}
+
+// ── Categories ─────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Category {
+    pub id: Uuid,
+    pub name: String,
 }

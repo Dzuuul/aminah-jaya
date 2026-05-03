@@ -65,10 +65,7 @@ export default function Hero() {
           {/* Visual */}
           <div class="hero-visual">
             <div class="hero-img-main">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-              <p>Ilustrasi Toko</p>
+              <img src="/hero.png" alt="Aminah Jaya" style={{ "object-fit": "cover", "width": "100%", "height": "100%" }} />
             </div>
             <div class="hero-card-float top-left">
               <div class="float-label">Status Toko</div>

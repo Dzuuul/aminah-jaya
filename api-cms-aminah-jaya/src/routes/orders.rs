@@ -1,15 +1,27 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, State, Query},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
-use sqlx::PgPool;
 use uuid::Uuid;
-use crate::models::{Order, UpdateOrderStatusPayload, ApiResponse};
+use crate::models::{Order, UpdateOrderStatusPayload, ApiResponse, PaginationQuery, PaginationMeta};
+use crate::state::AppState;
 
 /// GET /api/orders
-pub async fn list_orders(State(pool): State<PgPool>) -> impl IntoResponse {
+pub async fn list_orders(
+    State(state): State<AppState>,
+    Query(pagination): Query<PaginationQuery>,
+) -> impl IntoResponse {
+    let pool = &state.pool;
+    let limit = pagination.limit();
+    let offset = pagination.offset();
+
+    let total_items: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM orders")
+        .fetch_one(pool)
+        .await
+        .unwrap_or(0);
+
     let orders: Vec<Order> = sqlx::query_as(
         r#"
         SELECT
@@ -27,20 +39,31 @@ pub async fn list_orders(State(pool): State<PgPool>) -> impl IntoResponse {
         FROM orders o
         JOIN contacts c ON c.id = o.contact_id
         ORDER BY o.ordered_at DESC
+        LIMIT $1 OFFSET $2
         "#
     )
-    .fetch_all(&pool)
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(pool)
     .await
     .unwrap_or_default();
 
-    Json(ApiResponse::success(orders))
+    let meta = PaginationMeta {
+        current_page: pagination.page.unwrap_or(1),
+        total_pages: (total_items as f64 / limit as f64).ceil() as i64,
+        total_items,
+        items_per_page: limit,
+    };
+
+    Json(ApiResponse::paginated(orders, meta))
 }
 
 /// GET /api/orders/:id
 pub async fn get_order(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
+    let pool = &state.pool;
     let order: Option<Order> = sqlx::query_as(
         r#"
         SELECT
@@ -61,7 +84,7 @@ pub async fn get_order(
         "#
     )
     .bind(id)
-    .fetch_optional(&pool)
+    .fetch_optional(pool)
     .await
     .unwrap_or(None);
 
@@ -73,10 +96,11 @@ pub async fn get_order(
 
 /// PATCH /api/orders/:id/status
 pub async fn update_order_status(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
     Json(payload): Json<UpdateOrderStatusPayload>,
 ) -> impl IntoResponse {
+    let pool = &state.pool;
     let valid_statuses = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "refunded"];
     if !valid_statuses.contains(&payload.status.to_lowercase().as_str()) {
         return (StatusCode::BAD_REQUEST, "Invalid status value").into_response();
@@ -85,7 +109,7 @@ pub async fn update_order_status(
     let result = sqlx::query("UPDATE orders SET status = $1::order_status WHERE id = $2")
         .bind(&payload.status.to_lowercase())
         .bind(id)
-        .execute(&pool)
+        .execute(pool)
         .await;
 
     match result {

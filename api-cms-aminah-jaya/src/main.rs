@@ -9,9 +9,11 @@ use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-mod auth;
-mod models;
-mod routes;
+pub mod auth;
+pub mod models;
+pub mod routes;
+pub mod state;
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -29,6 +31,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await
         .expect("Failed to connect to the database");
 
+    // S3 / R2 Configuration
+    let r2_account_id = std::env::var("R2_ACCOUNT_ID").expect("R2_ACCOUNT_ID must be set");
+    let r2_access_key = std::env::var("R2_ACCESS_KEY").expect("R2_ACCESS_KEY must be set");
+    let r2_secret_key = std::env::var("R2_SECRET_KEY").expect("R2_SECRET_KEY must be set");
+    let r2_bucket = std::env::var("R2_BUCKET").expect("R2_BUCKET must be set");
+    let r2_public_url = std::env::var("R2_PUBLIC_URL").expect("R2_PUBLIC_URL must be set");
+
+    let s3_config = aws_config::defaults(aws_config::BehaviorVersion::latest())
+        .credentials_provider(aws_credential_types::Credentials::new(
+            r2_access_key,
+            r2_secret_key,
+            None,
+            None,
+            "static",
+        ))
+        .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", r2_account_id))
+        .region(aws_config::Region::new("auto"))
+        .load()
+        .await;
+
+    let s3_client = aws_sdk_s3::Client::new(&s3_config);
+
+    let state = state::AppState {
+        pool,
+        s3_client,
+        r2_bucket,
+        r2_public_url,
+    };
+
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
@@ -44,23 +75,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Products
         .route("/api/products",     get(routes::products::list_products).post(routes::products::create_product))
-        .route("/api/products/{id}", get(routes::products::get_product)
+        .route("/api/products/:id", get(routes::products::get_product)
                                     .patch(routes::products::update_product)
                                     .delete(routes::products::delete_product))
+        .route("/api/categories",   get(routes::products::list_categories))
+
+        // Upload
+        .route("/api/upload", post(routes::upload::upload_file))
 
         // Orders
         .route("/api/orders",      get(routes::orders::list_orders))
-        .route("/api/orders/{id}", get(routes::orders::get_order))
-        .route("/api/orders/{id}/status", patch(routes::orders::update_order_status))
+        .route("/api/orders/:id", get(routes::orders::get_order))
+        .route("/api/orders/:id/status", patch(routes::orders::update_order_status))
 
         // Customers
         .route("/api/customers/stats", get(routes::customers::get_customer_stats))
         .route("/api/customers",       get(routes::customers::list_customers))
-        .route("/api/customers/{id}",  get(routes::customers::get_customer))
+        .route("/api/customers/:id",  get(routes::customers::get_customer))
 
         .layer(TraceLayer::new_for_http())
         .layer(cors)
-        .with_state(pool);
+        .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))
+        .with_state(state);
 
     let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
     let addr = SocketAddr::from(([0, 0, 0, 0], port.parse()?));

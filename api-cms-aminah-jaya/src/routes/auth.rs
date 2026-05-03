@@ -6,12 +6,12 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 pub struct LoginPayload {
     pub email: String,
-    pub _password: String,
+    pub password: String,
 }
 
 pub async fn login(Json(payload): Json<LoginPayload>) -> impl IntoResponse {
     // In a real app, verify against database here
-    if payload.email == "admin@aminahjaya.com" {
+    if payload.email == "admin@aminahjaya.com" && payload.password == "password123" {
         let user_id = "user-123";
         match create_jwt(user_id) {
             Ok(token) => {

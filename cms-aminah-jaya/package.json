@@ -2,7 +2,7 @@
   "name": "cms-aminah-jaya",
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev",
+    "dev": "vinxi dev --port 3001",
     "build": "vinxi build",
     "start": "vinxi start",
     "preview": "vinxi start"

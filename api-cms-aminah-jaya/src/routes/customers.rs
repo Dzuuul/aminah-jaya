@@ -1,15 +1,27 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, State, Query},
     http::StatusCode,
     response::IntoResponse,
     Json,
 };
-use sqlx::PgPool;
 use uuid::Uuid;
-use crate::models::{Customer, CustomerStats, ApiResponse};
+use crate::models::{Customer, CustomerStats, ApiResponse, PaginationQuery, PaginationMeta};
+use crate::state::AppState;
 
 /// GET /api/customers
-pub async fn list_customers(State(pool): State<PgPool>) -> impl IntoResponse {
+pub async fn list_customers(
+    State(state): State<AppState>,
+    Query(pagination): Query<PaginationQuery>,
+) -> impl IntoResponse {
+    let pool = &state.pool;
+    let limit = pagination.limit();
+    let offset = pagination.offset();
+
+    let total_items: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM contacts")
+        .fetch_one(pool)
+        .await
+        .unwrap_or(0);
+
     let customers: Vec<Customer> = sqlx::query_as(
         r#"
         SELECT
@@ -25,20 +37,31 @@ pub async fn list_customers(State(pool): State<PgPool>) -> impl IntoResponse {
         LEFT JOIN orders o ON o.contact_id = c.id
         GROUP BY c.id, c.display_name, c.wa_name, c.wa_phone, c.city, c.is_blocked, c.first_seen_at
         ORDER BY c.first_seen_at DESC
+        LIMIT $1 OFFSET $2
         "#
     )
-    .fetch_all(&pool)
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(pool)
     .await
     .unwrap_or_default();
 
-    Json(ApiResponse::success(customers))
+    let meta = PaginationMeta {
+        current_page: pagination.page.unwrap_or(1),
+        total_pages: (total_items as f64 / limit as f64).ceil() as i64,
+        total_items,
+        items_per_page: limit,
+    };
+
+    Json(ApiResponse::paginated(customers, meta))
 }
 
 /// GET /api/customers/:id
 pub async fn get_customer(
-    State(pool): State<PgPool>,
+    State(state): State<AppState>,
     Path(id): Path<Uuid>,
 ) -> impl IntoResponse {
+    let pool = &state.pool;
     let customer: Option<Customer> = sqlx::query_as(
         r#"
         SELECT
@@ -57,7 +80,7 @@ pub async fn get_customer(
         "#
     )
     .bind(id)
-    .fetch_optional(&pool)
+    .fetch_optional(pool)
     .await
     .unwrap_or(None);
 
@@ -68,23 +91,24 @@ pub async fn get_customer(
 }
 
 /// GET /api/customers/stats
-pub async fn get_customer_stats(State(pool): State<PgPool>) -> impl IntoResponse {
+pub async fn get_customer_stats(State(state): State<AppState>) -> impl IntoResponse {
+    let pool = &state.pool;
     let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM contacts")
-        .fetch_one(&pool)
+        .fetch_one(pool)
         .await
         .unwrap_or((0,));
 
     let active: (i64,) = sqlx::query_as(
         "SELECT COUNT(*) FROM contacts WHERE last_seen_at >= NOW() - INTERVAL '30 days' AND is_blocked = FALSE"
     )
-    .fetch_one(&pool)
+    .fetch_one(pool)
     .await
     .unwrap_or((0,));
 
     let revenue: (Option<f64>,) = sqlx::query_as(
         "SELECT COALESCE(SUM(grand_total), 0) FROM orders WHERE payment_status = 'paid'"
     )
-    .fetch_one(&pool)
+    .fetch_one(pool)
     .await
     .unwrap_or((Some(0.0),));
 

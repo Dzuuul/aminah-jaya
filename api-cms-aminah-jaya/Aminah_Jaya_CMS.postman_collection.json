@@ -99,7 +99,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/dashboard/recent-orders",
+							"raw": "{{base_url}}/api/dashboard/recent-orders?page=1&limit=10",
 							"host": [
 								"{{base_url}}"
 							],
@@ -107,6 +107,16 @@
 								"api",
 								"dashboard",
 								"recent-orders"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
 							]
 						}
 					}
@@ -132,13 +142,23 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/products",
+							"raw": "{{base_url}}/api/products?page=1&limit=10",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"products"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
 							]
 						}
 					}
@@ -311,13 +331,23 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/orders",
+							"raw": "{{base_url}}/api/orders?page=1&limit=10",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"orders"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
 							]
 						}
 					}
@@ -449,13 +479,23 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/customers",
+							"raw": "{{base_url}}/api/customers?page=1&limit=10",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"api",
 								"customers"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
 							]
 						}
 					}

@@ -7,7 +7,8 @@ import {
   LogOut,
   X
 } from "lucide-solid";
-import { useLocation } from "@solidjs/router";
+import { useLocation, useNavigate } from "@solidjs/router";
+import { createMemo } from "solid-js";
 
 function SidebarLink(props: { icon: any, label: string, href: string, active?: boolean }) {
   return (
@@ -28,6 +29,25 @@ function SidebarLink(props: { icon: any, label: string, href: string, active?: b
 
 export default function Sidebar(props: { isOpen: boolean, onClose: () => void }) {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const user = createMemo(() => {
+    if (typeof window !== 'undefined') {
+      const storedUser = localStorage.getItem("user");
+      return storedUser ? JSON.parse(storedUser) : null;
+    }
+    return null;
+  });
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login", { replace: true });
+  };
   
   return (
     <aside 
@@ -56,16 +76,19 @@ export default function Sidebar(props: { isOpen: boolean, onClose: () => void })
           <div class="bg-cream rounded-2xl p-4 mb-6">
             <p class="text-xs font-bold text-muted uppercase tracking-wider mb-2">Logged in as</p>
             <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold">
-                AD
+              <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-xs">
+                {user()?.name ? getInitials(user().name) : 'AD'}
               </div>
-              <div>
-                <p class="text-sm font-bold text-ink leading-tight">Admin Aminah</p>
-                <p class="text-xs text-muted">Super Admin</p>
+              <div class="overflow-hidden">
+                <p class="text-sm font-bold text-ink leading-tight truncate">{user()?.name || 'Admin Aminah'}</p>
+                <p class="text-xs text-muted truncate">{user()?.email || 'Super Admin'}</p>
               </div>
             </div>
           </div>
-          <button class="flex items-center gap-3 w-full px-4 py-3 text-red-500 font-semibold hover:bg-red-50 rounded-xl transition-colors">
+          <button 
+            onClick={handleLogout}
+            class="flex items-center gap-3 w-full px-4 py-3 text-red-500 font-semibold hover:bg-red-50 rounded-xl transition-colors"
+          >
             <LogOut size={18} />
             <span>Logout</span>
           </button>

@@ -1,24 +1,25 @@
-use axum::{extract::State, Json, response::IntoResponse};
-use sqlx::PgPool;
-use crate::models::{DashboardStats, RecentOrder, ApiResponse};
+use axum::{extract::{State, Query}, Json, response::IntoResponse};
+use crate::models::{DashboardStats, RecentOrder, ApiResponse, PaginationQuery, PaginationMeta};
+use crate::state::AppState;
 
 /// GET /api/dashboard/stats
-pub async fn get_stats(State(pool): State<PgPool>) -> impl IntoResponse {
+pub async fn get_stats(State(state): State<AppState>) -> impl IntoResponse {
+    let pool = &state.pool;
     let revenue: (Option<f64>,) = sqlx::query_as(
         "SELECT COALESCE(SUM(grand_total), 0) FROM orders WHERE payment_status = 'paid'"
     )
-    .fetch_one(&pool).await.unwrap_or((Some(0.0),));
+    .fetch_one(pool).await.unwrap_or((Some(0.0),));
 
     let orders: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM orders")
-        .fetch_one(&pool).await.unwrap_or((0,));
+        .fetch_one(pool).await.unwrap_or((0,));
 
     let new_customers: (i64,) = sqlx::query_as(
         "SELECT COUNT(*) FROM contacts WHERE DATE_TRUNC('month', first_seen_at) = DATE_TRUNC('month', NOW())"
     )
-    .fetch_one(&pool).await.unwrap_or((0,));
+    .fetch_one(pool).await.unwrap_or((0,));
 
     let stock: (Option<i64>,) = sqlx::query_as("SELECT COALESCE(SUM(stock), 0) FROM products")
-        .fetch_one(&pool).await.unwrap_or((Some(0),));
+        .fetch_one(pool).await.unwrap_or((Some(0),));
 
     Json(ApiResponse::success(DashboardStats {
         total_revenue: revenue.0.unwrap_or(0.0),
@@ -33,7 +34,19 @@ pub async fn get_stats(State(pool): State<PgPool>) -> impl IntoResponse {
 }
 
 /// GET /api/dashboard/recent-orders
-pub async fn get_recent_orders(State(pool): State<PgPool>) -> impl IntoResponse {
+pub async fn get_recent_orders(
+    State(state): State<AppState>,
+    Query(pagination): Query<PaginationQuery>,
+) -> impl IntoResponse {
+    let pool = &state.pool;
+    let limit = pagination.limit.unwrap_or(10).max(1);
+    let offset = pagination.offset();
+
+    let total_items: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM orders")
+        .fetch_one(pool)
+        .await
+        .unwrap_or(0);
+
     let orders: Vec<RecentOrder> = sqlx::query_as(
         r#"
         SELECT
@@ -50,10 +63,19 @@ pub async fn get_recent_orders(State(pool): State<PgPool>) -> impl IntoResponse 
         FROM orders o
         JOIN contacts c ON c.id = o.contact_id
         ORDER BY o.ordered_at DESC
-        LIMIT 10
+        LIMIT $1 OFFSET $2
         "#
     )
-    .fetch_all(&pool).await.unwrap_or_default();
+    .bind(limit)
+    .bind(offset)
+    .fetch_all(pool).await.unwrap_or_default();
 
-    Json(ApiResponse::success(orders))
+    let meta = PaginationMeta {
+        current_page: pagination.page.unwrap_or(1),
+        total_pages: (total_items as f64 / limit as f64).ceil() as i64,
+        total_items,
+        items_per_page: limit,
+    };
+
+    Json(ApiResponse::paginated(orders, meta))
 }

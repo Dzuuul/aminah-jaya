@@ -1,5 +1,5 @@
-// Base API URL, ideally from environment variables
-const API_BASE = "http://localhost:8080/api";
+// Base API URL from environment variables
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8001/api";
 
 // Format currency
 export const formatCurrency = (amount: number) => {
@@ -12,9 +12,9 @@ export const formatCurrency = (amount: number) => {
 };
 
 // Generic fetch function with basic error handling
-async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
+export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
-  
+
   const headers = new Headers({
     "Content-Type": "application/json",
     ...options?.headers,
@@ -30,7 +30,14 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
   });
 
   if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    // Attempt to parse error message from JSON
+    try {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `API Error: ${response.status} ${response.statusText}`);
+    } catch (e: any) {
+      if (e.message && e.message.startsWith("API Error")) throw e;
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
   }
 
   if (response.status === 204) {
@@ -44,6 +51,25 @@ async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> 
 
   return json.data as T;
 }
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: UserProfile;
+}
+
+export const login = (email: string, password: string) => 
+  fetchApi<LoginResponse>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password })
+  });
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
 
@@ -73,17 +99,84 @@ export const getRecentOrders = () => fetchApi<RecentOrder[]>("/dashboard/recent-
 
 // ── Products ───────────────────────────────────────────────────────────────
 
+export interface ProductImage {
+  id: string;
+  url: string;
+  is_primary: boolean;
+  sort_order: number;
+}
+
 export interface Product {
   id: string;
   name: string;
+  category_id: string | null;
   category_name: string;
   price: number;
   stock: number;
   status: string;
   sku: string | null;
+  thumbnail_url: string | null;
+  images: ProductImage[];
+}
+
+export interface CreateProductPayload {
+  name: string;
+  category_id?: string | null;
+  price: number;
+  stock: number;
+  sku?: string | null;
+  image_urls: string[];
+}
+
+export interface Category {
+  id: string;
+  name: string;
 }
 
 export const getProducts = () => fetchApi<Product[]>("/products");
+
+export const getCategories = () => fetchApi<Category[]>("/categories");
+
+export const uploadFile = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE}/upload`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${localStorage.getItem("token") || ""}`
+    },
+    body: formData
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to upload file");
+  }
+
+  const json = await response.json();
+  if (!json.success) {
+    throw new Error(json.message || "Upload failed");
+  }
+
+  return json.data.url;
+};
+
+export const createProduct = (payload: CreateProductPayload) => 
+  fetchApi<{ slug: string }>("/products", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+export const updateProduct = (id: string, payload: Partial<CreateProductPayload>) => 
+  fetchApi<void>(`/products/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+
+export const deleteProduct = (id: string) => 
+  fetchApi<void>(`/products/${id}`, {
+    method: "DELETE"
+  });
 
 // ── Orders ─────────────────────────────────────────────────────────────────
 
