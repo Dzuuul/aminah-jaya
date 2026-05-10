@@ -39,6 +39,8 @@ cms-aminah-jaya/
 │       ├── index.tsx            # Dashboard (/)
 │       ├── login.tsx            # Halaman login (/login)
 │       ├── products.tsx         # Produk (/products)
+│       ├── flash-sales.tsx      # Promo Terbatas (/flash-sales)
+│       ├── blogs.tsx            # Artikel & Edukasi (/blogs)
 │       ├── orders.tsx           # Pesanan (/orders)
 │       ├── customers.tsx        # Pelanggan (/customers)
 │       ├── profile.tsx          # Profil admin (/profile)
@@ -60,6 +62,16 @@ cms-aminah-jaya/
 - Filter checklist **Kategori** (Clothing, Health, Food) dan **Status** (In Stock, Low Stock, Out of Stock)
 - Search bar global yang memfilter semua kolom
 - Tombol aksi Edit dan Delete per baris
+
+### ⚡ Flash Sales (`/flash-sales`)
+- Manajemen event promo terbatas dengan pengaturan waktu mulai & berakhir.
+- Penambahan produk ke event dengan harga khusus (*sale price*) dan kuota stok.
+- Status otomatis: *Ongoing*, *Upcoming*, atau *Ended*.
+
+### 📝 Blogs (`/blogs`)
+- Pengelolaan konten edukasi dan tips gaya hidup.
+- Fitur **CTA Product** — menautkan artikel ke produk spesifik untuk meningkatkan konversi.
+- Status publikasi (Published/Draft) dan preview gambar artikel.
 
 ### 📋 Orders (`/orders`)
 - Tabel pesanan: Order ID, Tanggal, Pelanggan, Produk, Jumlah, Status, Aksi

@@ -6,6 +6,8 @@ import About from "~/components/About";
 import WhyUs from "~/components/WhyUs";
 import Contact from "~/components/Contact";
 import Footer from "~/components/Footer";
+import FlashSale from "~/components/FlashSale";
+import BlogSection from "~/components/BlogSection";
 
 export default function Home() {
   return (
@@ -14,7 +16,9 @@ export default function Home() {
       <main>
         <Hero />
         <Categories />
+        <FlashSale />
         <Products />
+        <BlogSection />
         <About />
         <WhyUs />
         <Contact />

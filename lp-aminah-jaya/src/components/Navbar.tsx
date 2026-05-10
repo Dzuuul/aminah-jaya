@@ -1,13 +1,7 @@
-import { createSignal, onMount } from "solid-js";
+import { createSignal } from "solid-js";
 
 export default function Navbar() {
-  const [scrolled, setScrolled] = createSignal(false);
-
-  onMount(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  });
+  const [isOpen, setIsOpen] = createSignal(false);
 
   const handleAnchorClick = (e: MouseEvent, href: string) => {
     e.preventDefault();
@@ -15,66 +9,128 @@ export default function Navbar() {
     if (target) {
       target.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+    setIsOpen(false);
   };
 
   return (
-    <nav
-      class="navbar"
-      style={{ "box-shadow": scrolled() ? "0 4px 20px rgba(0,0,0,0.08)" : "none" }}
-    >
-      <div class="container">
-        <a href="#beranda" class="nav-logo" onClick={(e) => handleAnchorClick(e, "#beranda")}>
-          <div class="nav-logo-icon">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+    <nav class="navbar-wrapper" style={{ position: "sticky", top: 0, "z-index": 100 }}>
+      {/* Main Bar */}
+      <div class="navbar-main">
+        <div class="container">
+          <div class="nav-left">
+            <button class="hamburger-new" onClick={() => setIsOpen(!isOpen())}>
+              <span class={isOpen() ? "open" : ""}></span>
+              <span class={isOpen() ? "open" : ""}></span>
+              <span class={isOpen() ? "open" : ""}></span>
+            </button>
+          </div>
+
+          <a href="#beranda" class="nav-logo" onClick={(e) => handleAnchorClick(e, "#beranda")}>
+            <img src="/logo_inverted.png" alt="Logo" style={{ "width": "45px", "height": "auto" }} />
+          </a>
+
+          <ul class={`nav-links ${isOpen() ? "mobile-open" : ""}`}>
+            {/* Fashion Muslim */}
+            <li class="has-mega">
+              <a href="#produk">Fashion Muslim</a>
+              <div class="mega-menu">
+                <div class="container">
+                  <div class="mega-menu-inner">
+                    <div class="mega-menu-content">
+                      <div class="mega-col">
+                        <h4>Kategori Fashion</h4>
+                        <ul>
+                          <li><a href="#">Koko</a></li>
+                          <li><a href="#">Dress</a></li>
+                          <li><a href="#">Sarung</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+
+            {/* Perlengkapan Ibadah */}
+            <li class="has-mega">
+              <a href="#produk">Perlengkapan Ibadah</a>
+              <div class="mega-menu">
+                <div class="container">
+                  <div class="mega-menu-inner">
+                    <div class="mega-menu-content">
+                      <div class="mega-col">
+                        <h4>Perlengkapan</h4>
+                        <ul>
+                          <li><a href="#">Mukena</a></li>
+                          <li><a href="#">Sarung</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+
+            {/* Health & Wellness */}
+            <li class="has-mega">
+              <a href="#produk">Health & Wellness</a>
+              <div class="mega-menu">
+                <div class="container">
+                  <div class="mega-menu-inner">
+                    <div class="mega-menu-content">
+                      <div class="mega-col">
+                        <h4>Suplemen</h4>
+                        <ul>
+                          <li><a href="#">Waiteu</a></li>
+                          <li><a href="#">Susu Kambing</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+
+            {/* Beauty & Skincare */}
+            <li class="has-mega">
+              <a href="#produk">Beauty & Skincare</a>
+              <div class="mega-menu">
+                <div class="container">
+                  <div class="mega-menu-inner">
+                    <div class="mega-menu-content">
+                      <div class="mega-col">
+                        <h4>Skincare</h4>
+                        <ul>
+                          <li><a href="#">Skin Care</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </li>
+          </ul>
+
+          <div class="nav-icons">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </div>
-          <span class="nav-logo-text">
-            Aminah<span>Jaya</span>
-          </span>
-        </a>
-
-        <ul class="nav-links">
-          <li>
-            <a href="#kategori" onClick={(e) => handleAnchorClick(e, "#kategori")}>
-              Kategori
-            </a>
-          </li>
-          <li>
-            <a href="#produk" onClick={(e) => handleAnchorClick(e, "#produk")}>
-              Produk
-            </a>
-          </li>
-          <li>
-            <a href="#tentang" onClick={(e) => handleAnchorClick(e, "#tentang")}>
-              Tentang
-            </a>
-          </li>
-          <li>
-            <a href="#kontak" onClick={(e) => handleAnchorClick(e, "#kontak")}>
-              Kontak
-            </a>
-          </li>
-        </ul>
-
-        <a
-          href="https://wa.me/6281234567890"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="btn btn-wa nav-cta btn-sm"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.112.55 4.093 1.513 5.815L.057 23.028a.75.75 0 00.915.915l5.213-1.456A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.95 9.95 0 01-5.087-1.386l-.362-.214-3.757 1.05 1.05-3.757-.214-.362A9.95 9.95 0 012 12C2 6.478 6.478 2 12 2s10 4.478 10 10-4.478 10-10 10z" />
-          </svg>
-          WhatsApp
-        </a>
-
-        <button class="hamburger" aria-label="Menu">
-          <span />
-          <span />
-          <span />
-        </button>
+        </div>
       </div>
     </nav>
   );

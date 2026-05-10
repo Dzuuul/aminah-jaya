@@ -131,6 +131,17 @@ export interface CreateProductPayload {
 export interface Category {
   id: string;
   name: string;
+  slug: string;
+  image_url: string | null;
+  description: string | null;
+  sort_order: number;
+}
+
+export interface CreateCategoryPayload {
+  name: string;
+  image_url?: string | null;
+  description?: string | null;
+  sort_order?: number;
 }
 
 export const getProducts = () => fetchApi<Product[]>("/products");
@@ -178,6 +189,23 @@ export const deleteProduct = (id: string) =>
     method: "DELETE"
   });
 
+export const createCategory = (payload: CreateCategoryPayload) => 
+  fetchApi<{ slug: string }>("/categories", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+
+export const updateCategory = (id: string, payload: Partial<CreateCategoryPayload>) => 
+  fetchApi<void>(`/categories/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+
+export const deleteCategory = (id: string) => 
+  fetchApi<void>(`/categories/${id}`, {
+    method: "DELETE"
+  });
+
 // ── Orders ─────────────────────────────────────────────────────────────────
 
 export interface Order {
@@ -214,3 +242,124 @@ export interface CustomerStats {
 
 export const getCustomers = () => fetchApi<Customer[]>("/customers");
 export const getCustomerStats = () => fetchApi<CustomerStats>("/customers/stats");
+
+// ── Flash Sales ────────────────────────────────────────────────────────────
+
+export interface FlashSale {
+  id: string;
+  name: string;
+  description: string | null;
+  start_at: string;
+  end_at: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface FlashSaleItem {
+  id: string;
+  flash_sale_id: string;
+  product_id: string;
+  sale_price: number;
+  stock_limit: number;
+  sold_count: number;
+  product_name: string;
+  product_thumbnail: string | null;
+  original_price: number;
+}
+
+export interface Blog {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  image_url?: string;
+  cta_product_id?: string;
+  is_published: boolean;
+  published_at?: string;
+  created_at: string;
+  updated_at: string;
+  cta_product_name?: string;
+}
+
+export interface CreateBlogPayload {
+  title: string;
+  excerpt?: string;
+  content: string;
+  image_url?: string;
+  cta_product_id?: string | null;
+  is_published: boolean;
+}
+
+export interface CreateFlashSalePayload {
+  name: string;
+  description?: string | null;
+  start_at: string;
+  end_at: string;
+  items: {
+    product_id: string;
+    sale_price: number;
+    stock_limit: number;
+  }[];
+}
+
+export const getFlashSales = () => fetchApi<FlashSale[]>("/flash-sales");
+export const createFlashSale = (payload: CreateFlashSalePayload) => 
+  fetchApi<FlashSale>("/flash-sales", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+export const deleteFlashSale = (id: string) => 
+  fetchApi<void>(`/flash-sales/${id}`, {
+    method: "DELETE"
+  });
+export const getFlashSaleDetails = (id: string) => 
+  fetchApi<{ sale: FlashSale, items: FlashSaleItem[] }>(`/flash-sales/${id}`);
+
+// Blogs
+export const getBlogs = () => fetchApi<Blog[]>("/blogs");
+export const createBlog = (payload: CreateBlogPayload) =>
+  fetchApi<Blog>("/blogs", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+export const deleteBlog = (id: string) =>
+  fetchApi<void>(`/blogs/${id}`, {
+    method: "DELETE"
+  });
+
+// Banners
+export interface Banner {
+  id: string;
+  image_url: string;
+  link_url?: string | null;
+  sort_order: number;
+  is_active: boolean;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  created_at: string;
+}
+
+export interface CreateBannerPayload {
+  image_url: string;
+  link_url?: string | null;
+  sort_order?: number;
+  starts_at?: string | null;
+  ends_at?: string | null;
+}
+
+export const getBanners = (all = false) => fetchApi<Banner[]>(all ? "/banners/all" : "/banners");
+export const createBanner = (payload: CreateBannerPayload) =>
+  fetchApi<{ id: string }>("/banners", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+export const updateBanner = (id: string, payload: Partial<CreateBannerPayload> & { is_active?: boolean }) =>
+  fetchApi<void>(`/banners/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+export const deleteBanner = (id: string) =>
+  fetchApi<void>(`/banners/${id}`, {
+    method: "DELETE"
+  });

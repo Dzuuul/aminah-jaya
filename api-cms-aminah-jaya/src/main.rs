@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, post, patch},
+    routing::{get, patch, post},
     Router,
 };
 use dotenvy::dotenv;
@@ -14,13 +14,14 @@ pub mod models;
 pub mod routes;
 pub mod state;
 
-
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenv().ok();
 
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
+        )
         .with(tracing_subscriber::fmt::layer())
         .init();
 
@@ -46,7 +47,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None,
             "static",
         ))
-        .endpoint_url(format!("https://{}.r2.cloudflarestorage.com", r2_account_id))
+        .endpoint_url(format!(
+            "https://{}.r2.cloudflarestorage.com",
+            r2_account_id
+        ))
         .region(aws_config::Region::new("auto"))
         .load()
         .await;
@@ -68,31 +72,80 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         // Auth
         .route("/api/auth/login", post(routes::auth::login))
-
         // Dashboard
-        .route("/api/dashboard/stats",         get(routes::dashboard::get_stats))
-        .route("/api/dashboard/recent-orders", get(routes::dashboard::get_recent_orders))
-
+        .route("/api/dashboard/stats", get(routes::dashboard::get_stats))
+        .route(
+            "/api/dashboard/recent-orders",
+            get(routes::dashboard::get_recent_orders),
+        )
         // Products
-        .route("/api/products",     get(routes::products::list_products).post(routes::products::create_product))
-        .route("/api/products/:id", get(routes::products::get_product)
-                                    .patch(routes::products::update_product)
-                                    .delete(routes::products::delete_product))
-        .route("/api/categories",   get(routes::products::list_categories))
-
+        .route(
+            "/api/products",
+            get(routes::products::list_products).post(routes::products::create_product),
+        )
+        .route(
+            "/api/products/:id",
+            get(routes::products::get_product)
+                .patch(routes::products::update_product)
+                .delete(routes::products::delete_product),
+        )
+        .route(
+            "/api/categories",
+            get(routes::products::list_categories).post(routes::products::create_category),
+        )
+        .route(
+            "/api/categories/:id",
+            patch(routes::products::update_category).delete(routes::products::delete_category),
+        )
         // Upload
         .route("/api/upload", post(routes::upload::upload_file))
-
         // Orders
-        .route("/api/orders",      get(routes::orders::list_orders))
+        .route("/api/orders", get(routes::orders::list_orders))
         .route("/api/orders/:id", get(routes::orders::get_order))
-        .route("/api/orders/:id/status", patch(routes::orders::update_order_status))
-
+        .route(
+            "/api/orders/:id/status",
+            patch(routes::orders::update_order_status),
+        )
+        // Flash Sales
+        .route(
+            "/api/flash-sales",
+            get(routes::flash_sales::list_flash_sales).post(routes::flash_sales::create_flash_sale),
+        )
+        .route(
+            "/api/flash-sales/active",
+            get(routes::flash_sales::get_active_flash_sale),
+        )
+        .route(
+            "/api/flash-sales/:id",
+            get(routes::flash_sales::get_flash_sale).delete(routes::flash_sales::delete_flash_sale),
+        )
+        // Blogs
+        .route(
+            "/api/blogs",
+            get(routes::blogs::list_blogs).post(routes::blogs::create_blog),
+        )
+        .route("/api/blogs/latest", get(routes::blogs::get_latest_blogs))
+        .route(
+            "/api/blogs/:id",
+            get(routes::blogs::get_blog).delete(routes::blogs::delete_blog),
+        )
+        // Banners
+        .route(
+            "/api/banners",
+            get(routes::banners::list_banners).post(routes::banners::create_banner),
+        )
+        .route("/api/banners/all", get(routes::banners::list_all_banners))
+        .route(
+            "/api/banners/:id",
+            patch(routes::banners::update_banner).delete(routes::banners::delete_banner),
+        )
         // Customers
-        .route("/api/customers/stats", get(routes::customers::get_customer_stats))
-        .route("/api/customers",       get(routes::customers::list_customers))
-        .route("/api/customers/:id",  get(routes::customers::get_customer))
-
+        .route(
+            "/api/customers/stats",
+            get(routes::customers::get_customer_stats),
+        )
+        .route("/api/customers", get(routes::customers::list_customers))
+        .route("/api/customers/:id", get(routes::customers::get_customer))
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))

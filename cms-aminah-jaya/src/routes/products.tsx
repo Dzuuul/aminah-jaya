@@ -2,7 +2,9 @@ import { createResource, createSignal, Show, For } from "solid-js";
 import { Plus, Edit, Trash2, Loader2, Image as ImageIcon } from "lucide-solid";
 import Layout from "../components/Layout";
 import Modal from "../components/Modal";
+import ConfirmModal from "../components/ConfirmModal";
 import DataTable, { Column, FilterDef } from "../components/DataTable";
+import { toast } from "../lib/toast";
 import { getProducts, Product, formatCurrency, createProduct, getCategories, uploadFile, fetchApi, ProductImage } from "../lib/api";
 
 export default function Products() {
@@ -14,6 +16,8 @@ export default function Products() {
   const [isSaving, setIsSaving] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
   const [editingProduct, setEditingProduct] = createSignal<Product | null>(null);
+  const [isConfirmOpen, setIsConfirmOpen] = createSignal(false);
+  const [productToDelete, setProductToDelete] = createSignal<string | null>(null);
 
   // Form states
   const [formData, setFormData] = createSignal({
@@ -52,18 +56,26 @@ export default function Products() {
       setIsModalOpen(true);
     } catch (err: any) {
       console.error("❌ Failed to fetch product details:", err);
-      alert(err.message || "Failed to fetch product details");
+      toast.error(err.message || "Failed to fetch product details");
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+  const handleDelete = (id: string) => {
+    setProductToDelete(id);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    const id = productToDelete();
+    if (!id) return;
 
     try {
-      await import("../lib/api").then(api => api.deleteProduct(id));
+      const { deleteProduct } = await import("../lib/api");
+      await deleteProduct(id);
+      toast.success("Product deleted successfully");
       refetch();
     } catch (err: any) {
-      alert(err.message || "Failed to delete product");
+      toast.error(err.message || "Failed to delete product");
     }
   };
 
@@ -215,6 +227,7 @@ export default function Products() {
       }
 
       handleCloseModal();
+      toast.success(productToEdit ? "Product updated successfully" : "Product created successfully");
       refetch();
     } catch (err: any) {
       setError(err.message || "Failed to save product");
@@ -402,6 +415,16 @@ export default function Products() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={isConfirmOpen()}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        confirmText="Delete"
+        isDanger={true}
+      />
     </Layout>
   );
 }

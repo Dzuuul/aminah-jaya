@@ -5,7 +5,11 @@ import {
   Settings, 
   Package,
   LogOut,
-  X
+  X,
+  Zap,
+  FileText,
+  LayoutGrid,
+  Image
 } from "lucide-solid";
 import { useLocation, useNavigate } from "@solidjs/router";
 import { createMemo } from "solid-js";
@@ -67,6 +71,10 @@ export default function Sidebar(props: { isOpen: boolean, onClose: () => void })
         <nav class="flex-1 space-y-2">
           <SidebarLink href="/" icon={LayoutDashboard} label="Dashboard" active={location.pathname === '/'} />
           <SidebarLink href="/products" icon={ShoppingBag} label="Products" active={location.pathname.startsWith('/products')} />
+          <SidebarLink href="/categories" icon={LayoutGrid} label="Categories" active={location.pathname.startsWith('/categories')} />
+          <SidebarLink href="/flash-sales" icon={Zap} label="Flash Sales" active={location.pathname.startsWith('/flash-sales')} />
+          <SidebarLink href="/blogs" icon={FileText} label="Blogs" active={location.pathname.startsWith('/blogs')} />
+          <SidebarLink href="/banners" icon={Image} label="Banners" active={location.pathname.startsWith('/banners')} />
           <SidebarLink href="/orders" icon={Package} label="Orders" active={location.pathname.startsWith('/orders')} />
           <SidebarLink href="/customers" icon={Users} label="Customers" active={location.pathname.startsWith('/customers')} />
           <SidebarLink href="/settings" icon={Settings} label="Settings" active={location.pathname.startsWith('/settings')} />

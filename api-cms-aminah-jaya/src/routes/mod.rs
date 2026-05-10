@@ -4,3 +4,6 @@ pub mod products;
 pub mod orders;
 pub mod customers;
 pub mod upload;
+pub mod flash_sales;
+pub mod blogs;
+pub mod banners;

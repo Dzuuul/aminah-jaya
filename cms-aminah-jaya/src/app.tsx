@@ -26,6 +26,8 @@ function AuthGuard(props: { children: any }) {
   );
 }
 
+import ToastContainer from "./components/ToastContainer";
+
 export default function App() {
   return (
     <Router
@@ -33,6 +35,7 @@ export default function App() {
         <Suspense>
           <AuthGuard>
             {props.children}
+            <ToastContainer />
           </AuthGuard>
         </Suspense>
       )}

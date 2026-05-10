@@ -205,4 +205,138 @@ pub struct CustomerStats {
 pub struct Category {
     pub id: Uuid,
     pub name: String,
+    pub slug: String,
+    pub image_url: Option<String>,
+    pub description: Option<String>,
+    pub sort_order: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateCategoryPayload {
+    pub name: String,
+    pub image_url: Option<String>,
+    pub description: Option<String>,
+    pub sort_order: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCategoryPayload {
+    pub name: Option<String>,
+    pub image_url: Option<String>,
+    pub description: Option<String>,
+    pub sort_order: Option<i32>,
+}
+
+// ── Flash Sale ─────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct FlashSale {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub start_at: DateTime<Utc>,
+    pub end_at: DateTime<Utc>,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct FlashSaleItem {
+    pub id: Uuid,
+    pub flash_sale_id: Uuid,
+    pub product_id: Uuid,
+    pub sale_price: f64,
+    pub stock_limit: i32,
+    pub sold_count: i32,
+    pub sort_order: i32,
+    // Joined fields
+    pub product_name: String,
+    pub product_thumbnail: Option<String>,
+    pub original_price: f64,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateFlashSalePayload {
+    pub name: String,
+    pub description: Option<String>,
+    pub start_at: DateTime<Utc>,
+    pub end_at: DateTime<Utc>,
+    pub items: Vec<CreateFlashSaleItemPayload>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateFlashSaleItemPayload {
+    pub product_id: Uuid,
+    pub sale_price: f64,
+    pub stock_limit: i32,
+}
+
+// ── Blogs ──────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Blog {
+    pub id: Uuid,
+    pub title: String,
+    pub slug: String,
+    pub excerpt: Option<String>,
+    pub content: String,
+    pub image_url: Option<String>,
+    pub cta_product_id: Option<Uuid>,
+    pub author_id: Option<Uuid>,
+    pub is_published: bool,
+    pub published_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    // Joined fields
+    #[sqlx(default)]
+    pub cta_product_name: Option<String>,
+    #[sqlx(default)]
+    pub cta_product_price: Option<f64>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateBlogPayload {
+    pub title: String,
+    pub excerpt: Option<String>,
+    pub content: String,
+    pub image_url: Option<String>,
+    pub cta_product_id: Option<Uuid>,
+    pub is_published: bool,
+}
+
+// ── Banners ────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Banner {
+    pub id: Uuid,
+    pub title: Option<String>,
+    pub subtitle: Option<String>,
+    pub image_url: String,
+    pub link_url: Option<String>,
+    pub cta_text: Option<String>,
+    pub sort_order: i32,
+    pub is_active: bool,
+    pub starts_at: Option<DateTime<Utc>>,
+    pub ends_at: Option<DateTime<Utc>>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateBannerPayload {
+    pub image_url: String,
+    pub link_url: Option<String>,
+    pub sort_order: Option<i32>,
+    pub starts_at: Option<DateTime<Utc>>,
+    pub ends_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateBannerPayload {
+    pub image_url: Option<String>,
+    pub link_url: Option<String>,
+    pub sort_order: Option<i32>,
+    pub is_active: Option<bool>,
+    pub starts_at: Option<DateTime<Utc>>,
+    pub ends_at: Option<DateTime<Utc>>,
 }
