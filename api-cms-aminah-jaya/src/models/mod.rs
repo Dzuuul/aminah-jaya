@@ -102,6 +102,13 @@ pub struct DashboardStats {
     pub stock_change: f64,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PerformanceStats {
+    pub sales_growth: f64,
+    pub top_selling_product: String,
+    pub conversion_rate: f64,
+}
+
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct RecentOrder {
     pub id: Uuid,
@@ -310,11 +317,8 @@ pub struct CreateBlogPayload {
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct Banner {
     pub id: Uuid,
-    pub title: Option<String>,
-    pub subtitle: Option<String>,
     pub image_url: String,
     pub link_url: Option<String>,
-    pub cta_text: Option<String>,
     pub sort_order: i32,
     pub is_active: bool,
     pub starts_at: Option<DateTime<Utc>>,

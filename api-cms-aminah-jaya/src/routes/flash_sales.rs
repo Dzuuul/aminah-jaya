@@ -85,7 +85,8 @@ pub async fn get_flash_sale(
         .map_err(|_| (StatusCode::NOT_FOUND, "Flash sale not found".to_string()))?;
 
     let items = sqlx::query_as::<_, FlashSaleItem>(
-        "SELECT fsi.*, p.name as product_name, p.price as original_price,
+        "SELECT fsi.id, fsi.flash_sale_id, fsi.product_id, fsi.sale_price::FLOAT8, fsi.stock_limit, fsi.sold_count, fsi.sort_order, 
+         p.name as product_name, p.price::FLOAT8 as original_price,
          (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = true LIMIT 1) as product_thumbnail
          FROM flash_sale_items fsi
          JOIN products p ON p.id = fsi.product_id
@@ -133,7 +134,8 @@ pub async fn get_active_flash_sale(
 
     if let Some(sale) = sale {
         let items = sqlx::query_as::<_, FlashSaleItem>(
-            "SELECT fsi.*, p.name as product_name, p.price as original_price,
+            "SELECT fsi.id, fsi.flash_sale_id, fsi.product_id, fsi.sale_price::FLOAT8, fsi.stock_limit, fsi.sold_count, fsi.sort_order,
+             p.name as product_name, p.price::FLOAT8 as original_price,
              (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = true LIMIT 1) as product_thumbnail
              FROM flash_sale_items fsi
              JOIN products p ON p.id = fsi.product_id

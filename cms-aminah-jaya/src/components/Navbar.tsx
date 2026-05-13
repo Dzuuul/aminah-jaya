@@ -1,4 +1,5 @@
 import { createSignal, Show, For } from "solid-js";
+import { A } from "@solidjs/router";
 import { Search, Bell, Menu, ShoppingBag, Package, Users, X, ChevronRight } from "lucide-solid";
 
 // Mock searchable data — in a real app this would come from a global store/API
@@ -107,7 +108,7 @@ export default function Navbar(props: { onOpenSidebar: () => void; title?: strin
                       {(item) => {
                         const Icon = typeIcon[item.type];
                         return (
-                          <a
+                          <A
                             href={item.href}
                             class="flex items-center gap-3 px-4 py-2.5 hover:bg-cream transition-colors group"
                           >
@@ -119,7 +120,7 @@ export default function Navbar(props: { onOpenSidebar: () => void; title?: strin
                               <p class="text-xs text-muted truncate">{item.sub}</p>
                             </div>
                             <ChevronRight size={14} class="text-muted group-hover:text-green-500 transition-colors flex-shrink-0" />
-                          </a>
+                          </A>
                         );
                       }}
                     </For>
@@ -184,13 +185,13 @@ export default function Navbar(props: { onOpenSidebar: () => void; title?: strin
           </div>
 
           {/* Avatar → Profile */}
-          <a
+          <A
             href="/profile"
             class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm hover:bg-green-200 transition-colors flex-shrink-0"
             title="View Profile"
           >
             AD
-          </a>
+          </A>
 
         </div>
       </div>

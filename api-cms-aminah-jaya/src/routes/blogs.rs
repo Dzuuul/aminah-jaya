@@ -16,7 +16,8 @@ pub async fn list_blogs(
 
     let blogs = sqlx::query_as::<_, Blog>(
         r#"
-        SELECT b.*, p.name as cta_product_name, p.price as cta_product_price
+        SELECT b.id, b.title, b.slug, b.excerpt, b.content, b.image_url, b.cta_product_id, b.author_id, b.is_published, b.published_at, b.created_at, b.updated_at,
+               p.name as cta_product_name, p.price::FLOAT8 as cta_product_price
         FROM blogs b
         LEFT JOIN products p ON p.id = b.cta_product_id
         ORDER BY b.created_at DESC LIMIT $1 OFFSET $2
@@ -46,7 +47,8 @@ pub async fn get_latest_blogs(
 ) -> Result<Json<ApiResponse<Vec<Blog>>>, (StatusCode, String)> {
     let blogs = sqlx::query_as::<_, Blog>(
         r#"
-        SELECT b.*, p.name as cta_product_name, p.price as cta_product_price
+        SELECT b.id, b.title, b.slug, b.excerpt, b.content, b.image_url, b.cta_product_id, b.author_id, b.is_published, b.published_at, b.created_at, b.updated_at,
+               p.name as cta_product_name, p.price::FLOAT8 as cta_product_price
         FROM blogs b
         LEFT JOIN products p ON p.id = b.cta_product_id
         WHERE b.is_published = true
@@ -93,7 +95,8 @@ pub async fn get_blog(
 ) -> Result<Json<ApiResponse<Blog>>, (StatusCode, String)> {
     let blog = sqlx::query_as::<_, Blog>(
         r#"
-        SELECT b.*, p.name as cta_product_name, p.price as cta_product_price
+        SELECT b.id, b.title, b.slug, b.excerpt, b.content, b.image_url, b.cta_product_id, b.author_id, b.is_published, b.published_at, b.created_at, b.updated_at,
+               p.name as cta_product_name, p.price::FLOAT8 as cta_product_price
         FROM blogs b
         LEFT JOIN products p ON p.id = b.cta_product_id
         WHERE b.id = $1

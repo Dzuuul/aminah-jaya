@@ -2,6 +2,7 @@ import { For } from "solid-js";
 import { JSX } from "solid-js";
 
 interface Product {
+  id: string;
   badge?: string;
   icon: JSX.Element;
   imgLabel: string;
@@ -14,6 +15,7 @@ interface Product {
 
 const products: Product[] = [
   {
+    id: "whey-protein",
     badge: "Terlaris",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -28,6 +30,7 @@ const products: Product[] = [
     waText: "Halo,%20saya%20mau%20pesan%20Whey%20Protein%20Premium",
   },
   {
+    id: "susu-kesehatan",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
         <path d="M12 3v1m0 16v1M4.22 4.22l.707.707M18.364 18.364l.707.707M1 12h1M21 12h1M4.22 19.778l.707-.707M18.364 5.636l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
@@ -41,6 +44,7 @@ const products: Product[] = [
     waText: "Halo,%20saya%20mau%20pesan%20Susu%20Kesehatan",
   },
   {
+    id: "gamis-muslimah",
     badge: "New",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
@@ -55,6 +59,7 @@ const products: Product[] = [
     waText: "Halo,%20saya%20mau%20pesan%20Gamis%20Syar'i",
   },
   {
+    id: "baju-koko",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
         <path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25V9m-3 0h13.5M6 9v10.25A1.75 1.75 0 007.75 21h8.5A1.75 1.75 0 0018 19.25V9" />
@@ -68,6 +73,7 @@ const products: Product[] = [
     waText: "Halo,%20saya%20mau%20pesan%20Baju%20Koko",
   },
   {
+    id: "vitamin-harian",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
         <path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15M14.25 3.104c.251.023.501.05.75.082M19.8 15l-3.776 3.763A2.25 2.25 0 0114.25 21H9.75a2.25 2.25 0 01-1.774-.863L4.2 15m15.6 0l-4.2-5.5M4.2 15l4.2-5.5" />
@@ -81,6 +87,7 @@ const products: Product[] = [
     waText: "Halo,%20saya%20mau%20pesan%20Vitamin%20C%20%26%20Zinc",
   },
   {
+    id: "kebutuhan-harian",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
         <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
@@ -109,8 +116,8 @@ export default function Products() {
         <div class="products-header-row">
           <div>
             <span class="section-label">Produk Unggulan</span>
-            <h2 class="section-title">Pilihan Terlaris</h2>
-            <p class="section-sub">Produk paling banyak dipesan oleh pelanggan kami.</p>
+            <h2 class="section-title">Rekomendasi Minggu Ini</h2>
+            <p class="section-sub">Koleksi khusus pilihan kami, kurasi terbaik untuk memulai perjalanan Anda</p>
           </div>
           <a
             href="https://wa.me/6281234567890?text=Halo,%20saya%20ingin%20melihat%20katalog%20lengkap"
@@ -126,7 +133,7 @@ export default function Products() {
         <div class="prod-grid">
           <For each={products}>
             {(product) => (
-              <div class="prod-card">
+              <a href={`/product/${product.id}`} class="prod-card" style={{ "text-decoration": "none", "color": "inherit", "display": "block" }}>
                 <div class="prod-img">
                   {product.badge && <span class="prod-badge">{product.badge}</span>}
                   {product.icon}
@@ -138,18 +145,13 @@ export default function Products() {
                   <p class="prod-desc">{product.desc}</p>
                   <div class="prod-footer">
                     <span class="prod-price">{product.price}</span>
-                    <a
-                      href={`https://wa.me/6281234567890?text=${product.waText}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="btn btn-wa btn-sm"
-                    >
+                    <div class="btn btn-wa btn-sm">
                       <WaIcon />
-                      Pesan
-                    </a>
+                      Detail
+                    </div>
                   </div>
                 </div>
-              </div>
+              </a>
             )}
           </For>
         </div>

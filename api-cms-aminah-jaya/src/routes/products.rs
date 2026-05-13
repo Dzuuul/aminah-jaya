@@ -130,25 +130,32 @@ pub async fn create_product(
         }
     };
 
-    for (i, url) in payload.image_urls.iter().enumerate() {
-        if let Err(e) = sqlx::query(
-            "INSERT INTO product_images (product_id, url, sort_order, is_primary) VALUES ($1, $2, $3, $4)"
-        )
-        .bind(product_id)
-        .bind(url)
-        .bind(i as i32)
-        .bind(i == 0)
-        .execute(&mut *tx).await {
-            tracing::error!("❌ Database error adding product image: {:?}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e.to_string(), None))).into_response();
+    // Insert all images in one go if there are any
+    if !payload.image_urls.is_empty() {
+        let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
+            "INSERT INTO product_images (product_id, url, sort_order, is_primary) "
+        );
+
+        query_builder.push_values(payload.image_urls.iter().enumerate(), |mut b, (i, url)| {
+            b.push_bind(product_id)
+             .push_bind(url)
+             .push_bind(i as i32)
+             .push_bind(i == 0);
+        });
+
+        let query = query_builder.build();
+        if let Err(e) = query.execute(&mut *tx).await {
+            tracing::error!("❌ Database error adding product images: {:?}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error("Failed to save product images", None))).into_response();
         }
     }
 
     if let Err(e) = tx.commit().await {
         tracing::error!("❌ Database error committing transaction: {:?}", e);
-        return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e.to_string(), None))).into_response();
+        return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error("Failed to commit transaction", None))).into_response();
     }
 
+    tracing::info!("✅ Product created successfully: {} (ID: {})", payload.name, product_id);
     (StatusCode::CREATED, Json(ApiResponse::success(serde_json::json!({ "id": product_id, "slug": slug })))).into_response()
 }
 
@@ -195,17 +202,22 @@ pub async fn update_product(
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e.to_string(), None))).into_response();
         }
 
-        for (i, url) in image_urls.iter().enumerate() {
-            if let Err(e) = sqlx::query(
-                "INSERT INTO product_images (product_id, url, sort_order, is_primary) VALUES ($1, $2, $3, $4)"
-            )
-            .bind(id)
-            .bind(url)
-            .bind(i as i32)
-            .bind(i == 0)
-            .execute(&mut *tx).await {
-                tracing::error!("❌ Database error updating product image: {:?}", e);
-                return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e.to_string(), None))).into_response();
+        if !image_urls.is_empty() {
+            let mut query_builder: sqlx::QueryBuilder<sqlx::Postgres> = sqlx::QueryBuilder::new(
+                "INSERT INTO product_images (product_id, url, sort_order, is_primary) "
+            );
+
+            query_builder.push_values(image_urls.iter().enumerate(), |mut b, (i, url)| {
+                b.push_bind(id)
+                 .push_bind(url)
+                 .push_bind(i as i32)
+                 .push_bind(i == 0);
+            });
+
+            let query = query_builder.build();
+            if let Err(e) = query.execute(&mut *tx).await {
+                tracing::error!("❌ Database error updating product images: {:?}", e);
+                return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error("Failed to update product images", None))).into_response();
             }
         }
     }

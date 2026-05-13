@@ -27,7 +27,7 @@ pub fn create_jwt(user_id: &str) -> Result<String, jsonwebtoken::errors::Error> 
     )
 }
 
-pub fn _verify_jwt(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
+pub fn verify_jwt(token: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
     let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
     let validation = Validation::default();
     

@@ -1,18 +1,27 @@
 import { createResource, For, Show } from "solid-js";
-import { 
-  ShoppingBag, 
-  Users, 
-  TrendingUp, 
+import {
+  ShoppingBag,
+  Users,
+  TrendingUp,
   ArrowUpRight,
   Package
 } from "lucide-solid";
 import Layout from "../components/Layout";
 import StatCard from "../components/StatCard";
-import { getDashboardStats, getRecentOrders, formatCurrency } from "../lib/api";
+import { getDashboardStats, getRecentOrders, getPerformanceStats, getUserProfile, formatCurrency, authToken } from "../lib/api";
 
 export default function Dashboard() {
-  const [stats] = createResource(getDashboardStats);
-  const [recentOrders] = createResource(getRecentOrders);
+  const [stats] = createResource(authToken, () => getDashboardStats());
+  const [recentOrders] = createResource(authToken, () => getRecentOrders());
+  const [performance] = createResource(authToken, () => getPerformanceStats());
+  const [user] = createResource(authToken, () => getUserProfile());
+
+  // Debug log
+  console.log("User resource state:", { 
+    data: user(), 
+    loading: user.loading, 
+    error: user.error 
+  });
 
   const formatChange = (val?: number) => {
     if (val === undefined) return "+0%";
@@ -23,7 +32,9 @@ export default function Dashboard() {
     <Layout title="Overview">
       {/* Welcome Text */}
       <div>
-        <h1 class="text-2xl lg:text-3xl font-bold text-ink">Welcome back, Aminah! 👋</h1>
+        <h1 class="text-2xl lg:text-3xl font-bold text-ink">
+          Welcome back, <Show when={user()} fallback="Aminah">{user()!.name}</Show>! 👋
+        </h1>
         <p class="text-ink-light mt-1">Here's what's happening with your store today.</p>
       </div>
 
@@ -94,10 +105,9 @@ export default function Dashboard() {
                         <td class="px-6 py-4 text-ink-light truncate max-w-[200px]" title={order.product_name}>{order.product_name}</td>
                         <td class="px-6 py-4 font-bold text-ink">{formatCurrency(order.grand_total)}</td>
                         <td class="px-6 py-4">
-                          <span class={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
-                            order.status === 'paid' ? 'bg-green-100 text-green-700' : 
+                          <span class={`px-3 py-1 rounded-full text-xs font-bold capitalize ${order.status === 'paid' ? 'bg-green-100 text-green-700' :
                             order.status === 'shipped' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'
-                          }`}>
+                            }`}>
                             {order.status}
                           </span>
                         </td>
@@ -114,30 +124,36 @@ export default function Dashboard() {
         <div class="bg-green-900 rounded-3xl p-8 text-white relative overflow-hidden flex flex-col">
           <div class="relative z-10">
             <h3 class="text-xl font-bold mb-2">Performance Boost</h3>
-            <p class="text-green-100/70 text-sm mb-8 leading-relaxed">Your sales are up 15% compared to last month. Keep it up!</p>
-            
-            <div class="mt-auto space-y-6">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                  <TrendingUp size={24} class="text-green-400" />
+            <Show when={performance()} fallback={<p class="text-green-100/70 text-sm mb-8 leading-relaxed">Loading performance...</p>}>
+              <p class="text-green-100/70 text-sm mb-8 leading-relaxed">
+                Your sales are up {performance()!.sales_growth.toFixed(0)}% compared to last month. Keep it up!
+              </p>
+
+              <div class="mt-auto space-y-6">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                    <TrendingUp size={24} class="text-green-400" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-bold">Top Selling</p>
+                    <p class="text-xs text-green-100/50">{performance()!.top_selling_product}</p>
+                  </div>
                 </div>
-                <div>
-                  <p class="text-sm font-bold">Top Selling</p>
-                  <p class="text-xs text-green-100/50">Minyak Zaitun Extra Virgin</p>
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                    <ArrowUpRight size={24} class="text-blue-400" />
+                  </div>
+                  <div>
+                    <p class="text-sm font-bold">Conversion Rate</p>
+                    <p class="text-xs text-green-100/50">
+                      {performance()!.conversion_rate.toFixed(1)}% ({performance()!.conversion_rate > 3 ? 'High' : 'Average'} Average)
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
-                  <ArrowUpRight size={24} class="text-blue-400" />
-                </div>
-                <div>
-                  <p class="text-sm font-bold">Conversion Rate</p>
-                  <p class="text-xs text-green-100/50">4.5% (High Average)</p>
-                </div>
-              </div>
-            </div>
+            </Show>
           </div>
-          
+
           {/* Background accent */}
           <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-green-500 rounded-full blur-3xl opacity-20"></div>
         </div>

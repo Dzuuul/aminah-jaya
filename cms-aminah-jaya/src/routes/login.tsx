@@ -1,4 +1,4 @@
-import { clientOnly } from "@solidjs/start";
+
 import { createSignal, Show, onMount } from "solid-js";
 import { LogIn, Lock, Mail, Eye, EyeOff, Loader2 } from "lucide-solid";
 import { login } from "~/lib/api";
@@ -22,6 +22,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
 
+
+
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
     setError(null);
@@ -29,13 +31,13 @@ export default function LoginPage() {
 
     try {
       const data = await login(email(), password());
-      
+
       // Store token and user info
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      
-      // Redirect to dashboard
-      navigate("/");
+
+      // Use Solid router navigation after a tick to ensure owner context
+      setTimeout(() => navigate("/"), 0);
     } catch (err: any) {
       setError(err.message || "Failed to sign in. Please check your credentials.");
     } finally {
@@ -52,15 +54,15 @@ export default function LoginPage() {
 
         <div class="w-full max-w-md relative z-10">
           <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-500 rounded-2xl shadow-xl shadow-green-500/20 mb-4">
-              <LogIn class="text-white" size={32} />
+            <div class="inline-flex items-center justify-center mb-4">
+              <img src="/logo.png" alt="Logo" class="w-16" />
             </div>
-            <h1 class="text-3xl font-bold text-ink mb-2">Welcome Back</h1>
-            <p class="text-ink-light">Manage your store with ease</p>
+            <h1 class="text-3xl font-bold text-ink mb-2">Assalamu'alaikum</h1>
+            <p class="text-ink-light">Masuk ke akun anda untuk melanjutkan</p>
           </div>
 
           <div class="bg-white p-8 rounded-3xl shadow-xl border border-border/40">
-            <form class="space-y-6" onsubmit={handleSubmit}>
+            <form class="space-y-6" onSubmit={handleSubmit}>
               <Show when={error()}>
                 <div class="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-2xl animate-in fade-in slide-in-from-top-1">
                   {error()}
@@ -68,7 +70,7 @@ export default function LoginPage() {
               </Show>
 
               <div class="space-y-2">
-                <label class="text-sm font-semibold text-ink-light ml-1">Email Address</label>
+                <label class="text-sm font-semibold text-ink-light ml-1 block">Email</label>
                 <div class="relative group">
                   <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted transition-colors group-focus-within:text-green-500">
                     <Mail size={18} />
@@ -88,7 +90,7 @@ export default function LoginPage() {
               <div class="space-y-2">
                 <div class="flex justify-between items-center ml-1">
                   <label class="text-sm font-semibold text-ink-light">Password</label>
-                  <a href="#" class="text-xs font-bold text-green-500 hover:text-green-700 transition-colors">Forgot?</a>
+                  <a href="#" class="text-xs font-bold text-green-500 hover:text-green-700 transition-colors">Lupa?</a>
                 </div>
                 <div class="relative group">
                   <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted transition-colors group-focus-within:text-green-500">
@@ -116,7 +118,7 @@ export default function LoginPage() {
 
               <div class="flex items-center gap-2 ml-1">
                 <input type="checkbox" id="remember" class="w-4 h-4 accent-green-500 rounded border-border" disabled={isLoading()} />
-                <label for="remember" class="text-sm text-ink-light cursor-pointer">Remember me</label>
+                <label for="remember" class="text-sm text-ink-light cursor-pointer">Ingat saya</label>
               </div>
 
               <button
@@ -133,7 +135,7 @@ export default function LoginPage() {
           </div>
 
           <p class="text-center mt-8 text-sm text-ink-light">
-            &copy; 2026 Aminah Jaya Store. All rights reserved.
+            &copy; 2026 Aminah Jaya. Hak Cipta Dilindungi.
           </p>
         </div>
       </div>

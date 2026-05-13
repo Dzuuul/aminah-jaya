@@ -1,5 +1,21 @@
+import { createSignal } from "solid-js";
+
 // Base API URL from environment variables
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8001/api";
+
+// Reactive token state
+export const [authToken, setAuthToken] = createSignal<string | null>(
+  typeof window !== 'undefined' ? localStorage.getItem("token") : null
+);
+
+// Helper to update token both in reactive state and localStorage
+export const updateToken = (token: string | null) => {
+  if (typeof window !== 'undefined') {
+    if (token) localStorage.setItem("token", token);
+    else localStorage.removeItem("token");
+  }
+  setAuthToken(token);
+};
 
 // Format currency
 export const formatCurrency = (amount: number) => {
@@ -13,7 +29,7 @@ export const formatCurrency = (amount: number) => {
 
 // Generic fetch function with basic error handling
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
+  const token = authToken();
 
   const headers = new Headers({
     "Content-Type": "application/json",
@@ -30,6 +46,11 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   });
 
   if (!response.ok) {
+    // If unauthorized, clear token to trigger logout/redirect
+    if (response.status === 401) {
+      updateToken(null);
+    }
+
     // Attempt to parse error message from JSON
     try {
       const errorData = await response.json();
@@ -65,11 +86,20 @@ export interface LoginResponse {
   user: UserProfile;
 }
 
-export const login = (email: string, password: string) => 
-  fetchApi<LoginResponse>("/auth/login", {
+export const login = async (email: string, password: string) => {
+  const result = await fetchApi<LoginResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password })
   });
+  
+  if (result.token) {
+    updateToken(result.token);
+  }
+  
+  return result;
+};
+
+export const getUserProfile = () => fetchApi<UserProfile>("/auth/me");
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
 
@@ -94,8 +124,15 @@ export interface RecentOrder {
   ordered_at: string;
 }
 
+export interface PerformanceStats {
+  sales_growth: number;
+  top_selling_product: string;
+  conversion_rate: number;
+}
+
 export const getDashboardStats = () => fetchApi<DashboardStats>("/dashboard/stats");
 export const getRecentOrders = () => fetchApi<RecentOrder[]>("/dashboard/recent-orders");
+export const getPerformanceStats = () => fetchApi<PerformanceStats>("/dashboard/performance");
 
 // ── Products ───────────────────────────────────────────────────────────────
 
@@ -362,4 +399,25 @@ export const updateBanner = (id: string, payload: Partial<CreateBannerPayload> &
 export const deleteBanner = (id: string) =>
   fetchApi<void>(`/banners/${id}`, {
     method: "DELETE"
+  });
+
+// Settings
+export interface Settings {
+  store_name: string;
+  store_email: string;
+  phone_number: string;
+  store_description: string | null;
+  currency: string;
+  language: string;
+  email_notifications: boolean;
+  order_notifications: boolean;
+  low_stock_notifications: boolean;
+  appearance_mode: string;
+}
+
+export const getSettings = () => fetchApi<Settings>("/settings");
+export const updateSettings = (payload: Partial<Settings>) =>
+  fetchApi<void>("/settings", {
+    method: "PATCH",
+    body: JSON.stringify(payload),
   });

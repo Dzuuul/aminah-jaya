@@ -8,6 +8,8 @@ use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use std::process::Stdio;
+use tokio::time::{sleep, Duration};
 
 pub mod auth;
 pub mod models;
@@ -25,12 +27,77 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let mut database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+
+    // SSH Tunnel Configuration
+    let _tunnel_child = if std::env::var("USE_SSH_TUNNEL").unwrap_or_default() == "true" {
+        let ssh_host = std::env::var("SSH_HOST").expect("SSH_HOST must be set");
+        let ssh_user = std::env::var("SSH_USER").expect("SSH_USER must be set");
+        let ssh_key = std::env::var("SSH_KEY_PATH").expect("SSH_KEY_PATH must be set");
+        let local_port = std::env::var("DB_LOCAL_PORT").unwrap_or_else(|_| "5433".into());
+        let remote_host = std::env::var("DB_REMOTE_HOST").unwrap_or_else(|_| "127.0.0.1".into());
+        let remote_port = std::env::var("DB_REMOTE_PORT").unwrap_or_else(|_| "5432".into());
+
+        tracing::info!("🔗 Starting SSH tunnel: localhost:{} -> {}:{} via {}@{}", 
+            local_port, remote_host, remote_port, ssh_user, ssh_host);
+
+        let child = tokio::process::Command::new("ssh")
+            .args([
+                "-L",
+                &format!("{}:{}:{}", local_port, remote_host, remote_port),
+                &format!("{}@{}", ssh_user, ssh_host),
+                "-i",
+                &ssh_key,
+                "-N",
+                "-o",
+                "ExitOnForwardFailure=yes",
+                "-o",
+                "StrictHostKeyChecking=no",
+                "-o",
+                "ServerAliveInterval=60",
+                "-o",
+                "ServerAliveCountMax=3",
+                "-o",
+                "TCPKeepAlive=yes",
+            ])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .kill_on_drop(true)
+            .spawn()?;
+
+        // Wait a moment for the tunnel to be established
+        sleep(Duration::from_secs(2)).await;
+
+        // Update database_url to use the local port (replaces any host with localhost:local_port)
+        if let Some(at_idx) = database_url.find('@') {
+            if let Some(slash_idx) = database_url[at_idx..].find('/') {
+                let actual_slash_idx = at_idx + slash_idx;
+                database_url.replace_range(at_idx + 1..actual_slash_idx, &format!("localhost:{}", local_port));
+            }
+        }
+        
+        Some(child)
+    } else {
+        None
+    };
+
     let pool = PgPoolOptions::new()
-        .max_connections(10)
+        .max_connections(50)
+        .min_connections(5)
+        .acquire_timeout(Duration::from_secs(10))
+        .idle_timeout(Duration::from_secs(600))
+        .max_lifetime(Duration::from_secs(1800))
         .connect(&database_url)
         .await
         .expect("Failed to connect to the database");
+
+    // Run database migrations automatically
+    tracing::info!("⚙️ Running database migrations...");
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run database migrations");
+    tracing::info!("✅ Migrations completed successfully");
 
     // S3 / R2 Configuration
     let r2_account_id = std::env::var("R2_ACCOUNT_ID").expect("R2_ACCOUNT_ID must be set");
@@ -72,8 +139,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         // Auth
         .route("/api/auth/login", post(routes::auth::login))
+        .route("/api/auth/me", get(routes::auth::get_me))
         // Dashboard
         .route("/api/dashboard/stats", get(routes::dashboard::get_stats))
+        .route(
+            "/api/dashboard/performance",
+            get(routes::dashboard::get_performance),
+        )
         .route(
             "/api/dashboard/recent-orders",
             get(routes::dashboard::get_recent_orders),
@@ -146,6 +218,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         )
         .route("/api/customers", get(routes::customers::list_customers))
         .route("/api/customers/:id", get(routes::customers::get_customer))
+        // Settings
+        .route(
+            "/api/settings",
+            get(routes::settings::get_settings).patch(routes::settings::update_settings),
+        )
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))

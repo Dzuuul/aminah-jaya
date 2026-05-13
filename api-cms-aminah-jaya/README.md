@@ -16,35 +16,41 @@ Backend API for Aminah Jaya Store CMS, built with Rust, Axum, and SQLx.
    ```
 
 2. **Configuration**:
-   Copy `.env.example` to `.env` and fill in the required variables (Database URL, R2/S3 credentials, etc.).
+   Copy `.env.example.local` or `.env.example.production` to `.env` and fill in the required variables.
+   
+   If the database is in a private network, set `USE_SSH_TUNNEL=true` and provide the SSH credentials. The application will automatically open a tunnel on startup.
 
 3. **Run Application**:
    ```bash
    cargo run
    ```
+   *Note: On startup, the app will automatically open an SSH tunnel (if enabled) and run pending database migrations.*
 
 ## Database Migrations
 
-This project uses `sqlx-cli` for database migrations.
+Database migrations are managed by `sqlx`.
+
+### Automatic Migrations (Recommended)
+Migrations will run automatically every time you start the application with `cargo run`. You don't need to do anything manually.
+
+### Manual Migrations (CLI)
+If you need to use the `sqlx-cli`, follow these steps:
 
 1. **Install SQLx CLI**:
    ```bash
    cargo install sqlx-cli --no-default-features --features postgres
    ```
 
-2. **Run Migrations**:
+2. **Open SSH Tunnel (if required)**:
+   If connecting to a remote DB, open a tunnel in a separate terminal:
    ```bash
-   sqlx migrate run
+   ssh -L 5433:127.0.0.1:5432 <ssh_user>@<ssh_host> -i <key_path> -N
    ```
 
-3. **Revert Last Migration**:
+3. **Run CLI Commands**:
+   Override the `DATABASE_URL` to point to your local tunnel port:
    ```bash
-   sqlx migrate revert
-   ```
-
-4. **Create New Migration**:
-   ```bash
-   sqlx migrate add <migration_name>
+   DATABASE_URL="postgres://user:pass@localhost:5433/db" sqlx migrate run
    ```
 
 ## API Endpoints
