@@ -11,29 +11,29 @@ export default function Customers() {
 
   const columns: Column<Customer>[] = [
     {
-      header: "Name",
+      header: "Nama",
       accessor: "name",
       render: (item) => (
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm flex-shrink-0">
+        <div style={{ display: "flex", "align-items": "center", gap: "0.75rem" }}>
+          <div style={{ width: "2.25rem", height: "2.25rem", "border-radius": "50%", "background-color": "#dcfce7", color: "#15803d", "font-weight": "700", "font-size": "0.875rem", display: "flex", "align-items": "center", "justify-content": "center", "flex-shrink": 0 }}>
             {item.name.split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase() || "?"}
           </div>
-          <span class="font-semibold text-ink">{item.name}</span>
+          <span style={{ "font-weight": "600", color: "var(--color-ink)" }}>{item.name}</span>
         </div>
       )
     },
     {
-      header: "Contact",
+      header: "Kontak",
       accessor: "phone",
       render: (item) => (
-        <div class="space-y-0.5">
-          <div class="flex items-center gap-1.5 text-ink-light text-sm">
-            <Phone size={13} class="text-muted flex-shrink-0" />
+        <div style={{ display: "flex", "flex-direction": "column", gap: "0.125rem" }}>
+          <div style={{ display: "flex", "align-items": "center", gap: "0.375rem", color: "var(--color-ink-light)", "font-size": "0.875rem" }}>
+            <Phone size={13} style={{ color: "var(--color-muted)", "flex-shrink": 0 }} />
             <span>{item.phone}</span>
           </div>
           <Show when={item.city}>
-            <div class="flex items-center gap-1.5 text-ink-light text-sm">
-              <MapPin size={13} class="text-muted flex-shrink-0" />
+            <div style={{ display: "flex", "align-items": "center", gap: "0.375rem", color: "var(--color-ink-light)", "font-size": "0.875rem" }}>
+              <MapPin size={13} style={{ color: "var(--color-muted)", "flex-shrink": 0 }} />
               <span>{item.city}</span>
             </div>
           </Show>
@@ -41,14 +41,14 @@ export default function Customers() {
       )
     },
     {
-      header: "Orders",
+      header: "Pesanan",
       accessor: "total_orders",
-      render: (item) => <span class="font-bold text-ink">{item.total_orders}</span>
+      render: (item) => <span style={{ "font-weight": "700", color: "var(--color-ink)" }}>{item.total_orders}</span>
     },
     {
-      header: "Total Spent",
+      header: "Total Belanja",
       accessor: "total_spent",
-      render: (item) => <span class="font-bold text-green-600">{formatCurrency(item.total_spent)}</span>
+      render: (item) => <span style={{ "font-weight": "700", color: "#16a34a" }}>{formatCurrency(item.total_spent)}</span>
     },
     {
       header: "Status",
@@ -56,19 +56,17 @@ export default function Customers() {
       render: (item) => {
         const isBlocked = item.is_blocked;
         return (
-          <span class={`px-3 py-1 rounded-full text-xs font-bold ${
-            !isBlocked ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-          }`}>
-            {!isBlocked ? "Active" : "Blocked"}
+          <span class={`badge ${!isBlocked ? "badge-green" : "badge-red"}`}>
+            {!isBlocked ? "Aktif" : "Diblokir"}
           </span>
         );
       }
     },
     {
-      header: "Actions",
+      header: "Aksi",
       accessor: "id",
       render: () => (
-        <button class="p-2 text-ink-light hover:text-green-500 hover:bg-green-50 rounded-lg transition-colors">
+        <button class="action-btn" style={{ color: "var(--color-ink-light)" }}>
           <Eye size={18} />
         </button>
       )
@@ -80,32 +78,34 @@ export default function Customers() {
       key: "is_blocked",
       label: "Status",
       options: [
-        { label: "Active", value: "false" },
-        { label: "Blocked", value: "true" },
+        { label: "Aktif", value: "false" },
+        { label: "Diblokir", value: "true" },
       ]
     }
   ];
 
   return (
-    <Layout title="Customers">
-      <div class="mb-6">
-        <h1 class="text-2xl lg:text-3xl font-bold text-ink">Customers</h1>
-        <p class="text-ink-light mt-1">View and manage your customer base.</p>
+    <Layout title="Pelanggan">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Pelanggan</h1>
+          <p class="page-subtitle">Lihat dan kelola basis pelanggan Anda.</p>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 mb-6">
-        <Show when={stats()} fallback={<div class="col-span-3 p-4 text-center text-muted">Loading stats...</div>}>
-          <StatCard label="Total Contacts" value={stats()!.total_customers.toString()} icon={Users} color="text-purple-500" bg="bg-purple-50" />
-          <StatCard label="Active (30 Days)" value={stats()!.active_customers.toString()} icon={ShoppingBag} color="text-green-500" bg="bg-green-50" />
-          <StatCard label="Total Revenue" value={formatCurrency(stats()!.total_revenue)} icon={TrendingUp} color="text-blue-500" bg="bg-blue-50" />
+      <div style={{ display: "grid", "grid-template-columns": "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem", "margin-bottom": "1.5rem" }}>
+        <Show when={stats()} fallback={<div style={{ "grid-column": "1 / -1", padding: "1rem", "text-align": "center", color: "var(--color-muted)" }}>Memuat statistik...</div>}>
+          <StatCard label="Total Kontak" value={stats()!.total_customers.toString()} icon={Users} color="#a855f7" bg="#faf5ff" />
+          <StatCard label="Aktif (30 Hari)" value={stats()!.active_customers.toString()} icon={ShoppingBag} color="#22c55e" bg="#f0fdf4" />
+          <StatCard label="Total Pendapatan" value={formatCurrency(stats()!.total_revenue)} icon={TrendingUp} color="#3b82f6" bg="#eff6ff" />
         </Show>
       </div>
 
-      <Show when={customers()} fallback={<div class="p-8 text-center text-muted">Loading customers...</div>}>
+      <Show when={customers()} fallback={<div style={{ padding: "2rem", "text-align": "center", color: "var(--color-muted)" }}>Memuat pelanggan...</div>}>
         <DataTable
           columns={columns}
           data={customers()!}
-          searchPlaceholder="Search customers..."
+          searchPlaceholder="Cari pelanggan..."
           filters={filters}
         />
       </Show>

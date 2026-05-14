@@ -6,18 +6,13 @@ export default function Footer() {
       <div class="container">
         <div class="footer-top">
           {/* Brand */}
-          <div class="footer-brand">
+          <div>
             <div class="footer-logo">
-              <div class="footer-logo-icon">
-                <svg viewBox="0 0 24 24" fill="white">
-                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-                </svg>
-              </div>
-              <span class="footer-logo-text">Aminah Jaya Store</span>
+              <img src="/logo_new.png" alt="Logo" />
+              <span>Aminah Jaya</span>
             </div>
             <p>
-              Toko online terpercaya untuk kebutuhan kesehatan, fashion muslim, dan
-              kebutuhan harian Anda. Belanja mudah, langsung via WhatsApp.
+              Destinasi belanja produk original untuk kebutuhan kesehatan dan fashion muslim. Transaksi aman, layanan ramah, dan kirim ke seluruh Indonesia.
             </p>
           </div>
 

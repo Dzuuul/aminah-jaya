@@ -6,18 +6,19 @@ export default function Layout(props: { children: JSX.Element, title?: string })
   const [isSidebarOpen, setIsSidebarOpen] = createSignal(false);
 
   return (
-    <div class="min-h-screen bg-[#fdfcfa] flex font-sans">
+    <div class="app-container">
       {/* Mobile Sidebar Overlay */}
       <div 
-        class={`fixed inset-0 bg-ink/20 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${isSidebarOpen() ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        class={`fixed inset-0 z-40 lg:hidden transition-opacity duration-300 ${isSidebarOpen() ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        style={{ "background-color": "rgba(26, 26, 26, 0.2)", "backdrop-filter": "blur(4px)", "-webkit-backdrop-filter": "blur(4px)" }}
         onClick={() => setIsSidebarOpen(false)}
       ></div>
 
       <Sidebar isOpen={isSidebarOpen()} onClose={() => setIsSidebarOpen(false)} />
 
-      <main class="flex-1 min-w-0 flex flex-col">
+      <main class="main-content">
         <Navbar onOpenSidebar={() => setIsSidebarOpen(true)} title={props.title} />
-        <div class="p-4 lg:p-8 space-y-8 overflow-x-hidden">
+        <div class="content-area">
           {props.children}
         </div>
       </main>

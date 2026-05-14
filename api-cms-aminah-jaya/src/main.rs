@@ -211,6 +211,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/banners/:id",
             patch(routes::banners::update_banner).delete(routes::banners::delete_banner),
         )
+        // Coupons
+        .route(
+            "/api/coupons",
+            get(routes::coupons::list_coupons).post(routes::coupons::create_coupon),
+        )
+        .route("/api/coupons/validate/:code", get(routes::coupons::validate_coupon))
+        .route(
+            "/api/coupons/:id",
+            get(routes::coupons::get_coupon)
+                .patch(routes::coupons::update_coupon)
+                .delete(routes::coupons::delete_coupon),
+        )
         // Customers
         .route(
             "/api/customers/stats",

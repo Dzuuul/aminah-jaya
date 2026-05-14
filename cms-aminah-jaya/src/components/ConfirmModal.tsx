@@ -35,34 +35,65 @@ export default function ConfirmModal(props: ConfirmModalProps) {
       title={props.title}
       maxWidth="max-w-md"
     >
-      <div class="p-6">
-        <div class="flex items-center gap-4 mb-6">
-          <div class={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${
-            props.isDanger ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-500'
-          }`}>
+      <div style={{ padding: "1.5rem" }}>
+        <div style={{ display: "flex", "align-items": "center", gap: "1rem", "margin-bottom": "1.5rem" }}>
+          <div style={{ 
+            width: "3rem", 
+            height: "3rem", 
+            "border-radius": "1rem", 
+            display: "flex", 
+            "align-items": "center", 
+            "justify-content": "center", 
+            "flex-shrink": 0,
+            "background-color": props.isDanger ? "#fef2f2" : "#eff6ff",
+            color: props.isDanger ? "#ef4444" : "#3b82f6"
+          }}>
             <AlertTriangle size={24} />
           </div>
-          <p class="text-ink-light leading-relaxed">
+          <p style={{ color: "var(--color-ink-light)", "line-height": 1.625 }}>
             {props.message}
           </p>
         </div>
 
-        <div class="flex gap-3">
+        <div style={{ display: "flex", gap: "0.75rem" }}>
           <button
             onClick={props.onClose}
             disabled={isLoading()}
-            class="flex-1 py-3 px-4 bg-cream text-ink font-bold rounded-2xl hover:bg-border transition-all disabled:opacity-50"
+            style={{ 
+              flex: 1, 
+              padding: "0.75rem 1rem", 
+              "background-color": "var(--color-cream)", 
+              color: "var(--color-ink)", 
+              "font-weight": "700", 
+              "border-radius": "1rem", 
+              border: "none", 
+              cursor: isLoading() ? "not-allowed" : "pointer", 
+              transition: "all 0.2s",
+              opacity: isLoading() ? 0.5 : 1
+            }}
           >
             {props.cancelText || "Cancel"}
           </button>
           <button
             onClick={handleConfirm}
             disabled={isLoading()}
-            class={`flex-1 py-3 px-4 text-white font-bold rounded-2xl shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
-              props.isDanger 
-                ? 'bg-red-500 shadow-red-500/20 hover:bg-red-600' 
-                : 'bg-green-500 shadow-green-500/20 hover:bg-green-600'
-            }`}
+            style={{ 
+              flex: 1, 
+              padding: "0.75rem 1rem", 
+              color: "white", 
+              "font-weight": "700", 
+              "border-radius": "1rem", 
+              border: "none", 
+              cursor: isLoading() ? "not-allowed" : "pointer", 
+              transition: "all 0.2s",
+              display: "flex",
+              "align-items": "center",
+              "justify-content": "center",
+              gap: "0.5rem",
+              "background-color": props.isDanger ? "#ef4444" : "var(--color-green-500)",
+              "box-shadow": props.isDanger ? "0 10px 15px -3px rgba(239, 68, 68, 0.2)" : "0 10px 15px -3px rgba(42, 138, 96, 0.2)",
+              opacity: isLoading() ? 0.5 : 1
+            }}
           >
             <Show when={isLoading()}>
               <Loader2 size={18} class="animate-spin" />

@@ -13,99 +13,97 @@ export default function Profile() {
   const [email, setEmail]     = createSignal("admin@aminahjaya.com");
   const [phone, setPhone]     = createSignal("0812-3456-7890");
   const [address, setAddress] = createSignal("Jl. Raya Bogor No. 42, Jakarta Timur");
-  const [bio, setBio]         = createSignal("Store administrator for Aminah Jaya — managing products, orders, and customers with care.");
+  const [bio, setBio]         = createSignal("Administrator toko Aminah Jaya — mengelola produk, pesanan, dan pelanggan dengan penuh dedikasi.");
 
   const stats = [
-    { label: "Products",  value: "48",  Icon: ShoppingBag, bg: "#eff6ff", color: "#2563eb" },
-    { label: "Orders",    value: "156", Icon: Package,     bg: "#fff7ed", color: "#ea580c" },
-    { label: "Rating",    value: "4.9", Icon: Star,        bg: "#fefce8", color: "#ca8a04" },
+    { label: "Produk",  value: "48",  Icon: ShoppingBag, bg: "#eff6ff", color: "#2563eb" },
+    { label: "Pesanan", value: "156", Icon: Package,     bg: "#fff7ed", color: "#ea580c" },
+    { label: "Rating",  value: "4.9", Icon: Star,        bg: "#fefce8", color: "#ca8a04" },
   ];
 
   const activity = [
-    { action: "Processed order",       detail: "#ORD-7238 – Rudi Hermawan",    time: "2 min ago"   },
-    { action: "Added product",         detail: "Sajadah Premium 120×70cm",      time: "1 hour ago"  },
-    { action: "Updated stock",         detail: "Minyak Zaitun 250ml → 45 pcs",  time: "3 hours ago" },
-    { action: "Responded to customer", detail: "Dewi Lestari – order inquiry",   time: "5 hours ago" },
-    { action: "Processed order",       detail: "#ORD-7234 – Ahmad Fauzi",       time: "Yesterday"   },
+    { action: "Memproses pesanan",     detail: "#ORD-7238 – Rudi Hermawan",    time: "2 menit lalu"   },
+    { action: "Menambahkan produk",   detail: "Sajadah Premium 120×70cm",      time: "1 jam lalu"  },
+    { action: "Memperbarui stok",     detail: "Minyak Zaitun 250ml → 45 pcs",  time: "3 jam lalu" },
+    { action: "Menanggapi pelanggan", detail: "Dewi Lestari – pertanyaan pesanan",   time: "5 jam lalu" },
+    { action: "Memproses pesanan",     detail: "#ORD-7234 – Ahmad Fauzi",       time: "Kemarin"   },
   ];
 
   return (
-    <Layout title="Profile">
+    <Layout title="Profil">
 
       {/* ── Hero ──────────────────────────────────────────────── */}
-      <div class="bg-white rounded-3xl border border-border/50 shadow-sm overflow-hidden mb-6">
+      <div style={{ "background-color": "white", "border-radius": "1.5rem", border: "1px solid rgba(var(--color-border-rgb), 0.5)", "box-shadow": "0 1px 2px 0 rgba(0, 0, 0, 0.05)", overflow: "hidden", "margin-bottom": "1.5rem" }}>
 
         {/* Cover */}
         <div
-          style="height: 120px; background: linear-gradient(135deg, #0f3d2e 0%, #2a8a60 55%, #3aac78 100%); position: relative;"
+          style={{ height: "120px", background: "linear-gradient(135deg, #0f3d2e 0%, #2a8a60 55%, #3aac78 100%)", position: "relative" }}
         >
           <div
-            class="absolute inset-0 opacity-[0.07]"
-            style="background-image: radial-gradient(circle, white 1.5px, transparent 1.5px); background-size: 24px 24px;"
+            style={{ position: "absolute", inset: 0, opacity: 0.07, "background-image": "radial-gradient(circle, white 1.5px, transparent 1.5px)", "background-size": "24px 24px" }}
           />
         </div>
 
         {/* Content below cover — avatar floats up via absolute */}
-        <div class="relative px-6 sm:px-8 pb-8" style="padding-top: 56px;">
+        <div style={{ position: "relative", padding: "3.5rem 1.5rem 2rem 1.5rem" }}>
           {/* Avatar — absolutely positioned to overlap cover */}
-          <div class="absolute" style="top: -44px; left: 32px;">
+          <div style={{ position: "absolute", top: "-44px", left: "2rem" }}>
             <div
-              class="w-[88px] h-[88px] rounded-2xl border-4 border-white shadow-xl bg-green-100 flex items-center justify-center text-green-700 font-bold text-3xl select-none"
+              style={{ width: "88px", height: "88px", "border-radius": "1rem", border: "4px solid white", "box-shadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", "background-color": "#dcfce7", display: "flex", "align-items": "center", "justify-content": "center", color: "#15803d", "font-weight": "700", "font-size": "1.875rem", "user-select": "none" }}
             >
               AD
             </div>
             <button
-              class="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 hover:bg-green-700 rounded-lg flex items-center justify-center text-white shadow-md transition-colors"
+              style={{ position: "absolute", bottom: "-0.25rem", right: "-0.25rem", width: "1.75rem", height: "1.75rem", "background-color": "var(--color-green-500)", "border-radius": "0.5rem", display: "flex", "align-items": "center", "justify-content": "center", color: "white", "box-shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)", transition: "background-color 0.2s", border: "none", cursor: "pointer" }}
             >
               <Camera size={13} />
             </button>
           </div>
 
           {/* Name + actions row */}
-          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div style={{ display: "flex", "flex-wrap": "wrap", "align-items": "flex-start", "justify-content": "space-between", gap: "0.75rem" }}>
             <div>
-              <div class="flex items-center gap-2 flex-wrap">
-                <h2 class="text-xl font-bold text-ink">{name()}</h2>
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-100 text-green-700">Active</span>
+              <div style={{ display: "flex", "align-items": "center", gap: "0.5rem", "flex-wrap": "wrap" }}>
+                <h2 style={{ "font-size": "1.25rem", "font-weight": "700", color: "var(--color-ink)" }}>{name()}</h2>
+                <span class="badge badge-green">Aktif</span>
               </div>
-              <p class="text-sm text-muted mt-0.5">Super Admin</p>
+              <p style={{ "font-size": "0.875rem", color: "var(--color-muted)", "margin-top": "0.125rem" }}>Admin Super</p>
             </div>
 
             {/* Actions */}
-            <div class="flex items-center gap-2 flex-shrink-0">
+            <div style={{ display: "flex", "align-items": "center", gap: "0.5rem", "flex-shrink": 0 }}>
               <Show
                 when={editing()}
                 fallback={
                   <button onClick={() => setEditing(true)}
-                    class="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-sand text-ink text-sm font-semibold hover:bg-cream transition-colors">
-                    <Edit size={15} /> Edit Profile
+                    style={{ display: "flex", "align-items": "center", gap: "0.5rem", padding: "0.5rem 1rem", "border-radius": "0.75rem", border: "1px solid var(--color-border)", "background-color": "var(--color-sand)", color: "var(--color-ink)", "font-size": "0.875rem", "font-weight": "600", transition: "background-color 0.2s", cursor: "pointer" }}>
+                    <Edit size={15} /> Edit Profil
                   </button>
                 }
               >
                 <button onClick={() => setEditing(false)}
-                  class="flex items-center gap-2 px-4 py-2 rounded-xl border border-border bg-sand text-ink-light text-sm font-semibold hover:bg-cream transition-colors">
-                  <X size={15} /> Cancel
+                  style={{ display: "flex", "align-items": "center", gap: "0.5rem", padding: "0.5rem 1rem", "border-radius": "0.75rem", border: "1px solid var(--color-border)", "background-color": "var(--color-sand)", color: "var(--color-ink-light)", "font-size": "0.875rem", "font-weight": "600", transition: "background-color 0.2s", cursor: "pointer" }}>
+                  <X size={15} /> Batal
                 </button>
                 <button onClick={() => setEditing(false)}
-                  class="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-700 text-white text-sm font-semibold shadow-lg shadow-green-500/20 transition-all">
-                  <Save size={15} /> Save
+                  style={{ display: "flex", "align-items": "center", gap: "0.5rem", padding: "0.5rem 1rem", "border-radius": "0.75rem", "background-color": "var(--color-green-500)", color: "white", "font-size": "0.875rem", "font-weight": "600", "box-shadow": "0 10px 15px -3px rgba(var(--color-green-500-rgb), 0.2), 0 4px 6px -2px rgba(var(--color-green-500-rgb), 0.1)", transition: "all 0.2s", border: "none", cursor: "pointer" }}>
+                  <Save size={15} /> Simpan
                 </button>
               </Show>
             </div>
           </div>
 
           {/* Bio */}
-          <p class="text-sm text-ink-light leading-relaxed mt-3 max-w-2xl">{bio()}</p>
+          <p style={{ "font-size": "0.875rem", color: "var(--color-ink-light)", "line-height": 1.625, "margin-top": "0.75rem", "max-width": "42rem" }}>{bio()}</p>
 
           {/* Stat chips */}
-          <div class="flex flex-wrap gap-2 mt-4">
+          <div style={{ display: "flex", "flex-wrap": "wrap", gap: "0.5rem", "margin-top": "1rem" }}>
             {stats.map((s) => (
               <div
-                class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold"
-                style={`background: ${s.bg}; color: ${s.color};`}
+                style={{ display: "flex", "align-items": "center", gap: "0.5rem", padding: "0.5rem 0.75rem", "border-radius": "0.75rem", "font-size": "0.75rem", "font-weight": "700", background: s.bg, color: s.color }}
               >
                 <s.Icon size={14} />
-                <span style="color: #6b7280; font-weight: 500;">{s.label}</span>
+                <span style={{ color: "#6b7280", "font-weight": 500 }}>{s.label}</span>
                 <span>{s.value}</span>
               </div>
             ))}
@@ -114,37 +112,37 @@ export default function Profile() {
       </div>
 
       {/* ── Two-column content ───────────────────────────────── */}
-      <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div style={{ display: "grid", "grid-template-columns": "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.5rem" }}>
 
         {/* Left 2/5 */}
-        <div class="lg:col-span-2 space-y-6">
-          <PageCard title="Contact Details">
+        <div style={{ display: "flex", "flex-direction": "column", gap: "1.5rem", "grid-column": "span 2" }}>
+          <PageCard title="Detail Kontak">
             <InfoRow label="Email"   value={email()}   icon={Mail}     editing={editing()} onInput={setEmail}   type="email" />
-            <InfoRow label="Phone"   value={phone()}   icon={Phone}    editing={editing()} onInput={setPhone}   type="tel"   />
-            <InfoRow label="Address" value={address()}  icon={MapPin}   editing={editing()} onInput={setAddress} />
-            <InfoRow label="Joined"  value="January 2023" icon={Calendar} />
+            <InfoRow label="Telepon" value={phone()}   icon={Phone}    editing={editing()} onInput={setPhone}   type="tel"   />
+            <InfoRow label="Alamat"  value={address()}  icon={MapPin}   editing={editing()} onInput={setAddress} />
+            <InfoRow label="Bergabung" value="Januari 2023" icon={Calendar} />
           </PageCard>
 
-          <PageCard title="About Me">
+          <PageCard title="Tentang Saya">
             <Show
               when={editing()}
-              fallback={<p class="text-sm text-ink-light leading-relaxed">{bio()}</p>}
+              fallback={<p style={{ "font-size": "0.875rem", color: "var(--color-ink-light)", "line-height": 1.625 }}>{bio()}</p>}
             >
-              <textarea rows={5} value={bio()} onInput={(e) => setBio(e.currentTarget.value)} class="filter-input resize-none" />
+              <textarea rows={5} value={bio()} onInput={(e) => setBio(e.currentTarget.value)} class="login-input" style={{ resize: "none" }} />
             </Show>
           </PageCard>
         </div>
 
         {/* Right 3/5 */}
-        <div class="lg:col-span-3 space-y-6">
-          <PageCard title="Personal Information" subtitle="Details used across the CMS">
-            <InfoRow label="Full Name"     value={name()}    editing={editing()} onInput={setName}    />
-            <InfoRow label="Email Address" value={email()}   editing={editing()} onInput={setEmail}   type="email" />
-            <InfoRow label="Phone Number"  value={phone()}   editing={editing()} onInput={setPhone}   type="tel"   />
-            <InfoRow label="Address"       value={address()}  editing={editing()} onInput={setAddress} />
+        <div style={{ display: "flex", "flex-direction": "column", gap: "1.5rem", "grid-column": "span 3" }}>
+          <PageCard title="Informasi Pribadi" subtitle="Detail yang digunakan di seluruh CMS">
+            <InfoRow label="Nama Lengkap"     value={name()}    editing={editing()} onInput={setName}    />
+            <InfoRow label="Alamat Email"     value={email()}   editing={editing()} onInput={setEmail}   type="email" />
+            <InfoRow label="Nomor Telepon"    value={phone()}   editing={editing()} onInput={setPhone}   type="tel"   />
+            <InfoRow label="Alamat Lengkap"   value={address()}  editing={editing()} onInput={setAddress} />
           </PageCard>
 
-          <PageCard title="Recent Activity" subtitle="Your latest actions in the system">
+          <PageCard title="Aktivitas Terbaru" subtitle="Tindakan terbaru Anda di sistem">
             {activity.map((a) => (
               <ActivityItem action={a.action} detail={a.detail} time={a.time} />
             ))}

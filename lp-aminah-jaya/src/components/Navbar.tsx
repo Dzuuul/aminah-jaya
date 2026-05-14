@@ -1,15 +1,43 @@
-import { createSignal } from "solid-js";
+import { createSignal, createResource, For, Show } from "solid-js";
+import { A } from "@solidjs/router";
+
+const fetchProducts = async () => {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products`);
+    const json = await res.json();
+    return json.data || [];
+  } catch (e) {
+    console.error("Failed to fetch products:", e);
+    return [];
+  }
+};
+
+const fetchActiveFlashSale = async () => {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/flash-sales/active`);
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.data || null;
+  } catch (e) {
+    console.error("Failed to fetch flash sale:", e);
+    return null;
+  }
+};
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = createSignal(false);
+  const [products] = createResource(fetchProducts);
+  const [activeFlashSale] = createResource(fetchActiveFlashSale);
 
   const handleAnchorClick = (e: MouseEvent, href: string) => {
-    e.preventDefault();
-    const target = document.querySelector(href);
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      const target = document.querySelector(href);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      setIsOpen(false);
     }
-    setIsOpen(false);
   };
 
   return (
@@ -25,27 +53,63 @@ export default function Navbar() {
             </button>
           </div>
 
-          <a href="/" class="nav-logo">
+          <A href="/" class="nav-logo">
             <img src="/logo_inverted.png" alt="Logo" style={{ "width": "45px", "height": "auto" }} />
-          </a>
+          </A>
 
           <ul class={`nav-links ${isOpen() ? "mobile-open" : ""}`}>
-            {/* Fashion Muslim */}
             <li class="has-mega">
-              <a href="#produk">Fashion Muslim</a>
+              <a href="/">Shop</a>
               <div class="mega-menu">
                 <div class="container">
-                  <div class="mega-menu-inner">
-                    <div class="mega-menu-content">
-                      <div class="mega-col">
-                        <h4>Kategori Fashion</h4>
-                        <ul>
-                          <li><a href="#">Koko</a></li>
-                          <li><a href="#">Dress</a></li>
-                          <li><a href="#">Sarung</a></li>
-                        </ul>
-                      </div>
+                  <div class="mega-menu-content" style={{ display: "grid", "grid-template-columns": "repeat(3, 1fr)", gap: "40px" }}>
+
+                    {/* Kolom 1: Yang Baru (Dynamic Products) */}
+                    <div class="mega-col">
+                      <h4>Yang Baru</h4>
+                      <ul>
+                        <Show when={!products.loading} fallback={<li>Loading...</li>}>
+                          <For each={products()?.slice(0, 8)}>
+                            {(product: any) => (
+                              <li><A href={`/product/${product.id}`}>{product.name}</A></li>
+                            )}
+                          </For>
+                        </Show>
+                      </ul>
                     </div>
+
+                    {/* Kolom 2: Event Penting (Dynamic Flash Sale) */}
+                    <div class="mega-col">
+                      <h4>Event Penting</h4>
+                      <ul>
+                        <Show when={!activeFlashSale.loading} fallback={<li>Loading...</li>}>
+                          <Show
+                            when={activeFlashSale()}
+                            fallback={<li>Belum ada event berlangsung</li>}
+                          >
+                            <li>
+                              <A href="/shop" style={{ color: "var(--red-sale)", "font-weight": "700" }}>
+                                🔥 {activeFlashSale().name}
+                              </A>
+                            </li>
+                          </Show>
+                        </Show>
+                      </ul>
+                    </div>
+
+                    {/* Kolom 3: Fitur Aminah Jaya */}
+                    <div class="mega-col">
+                      <h4>Fitur aminahjaya.com</h4>
+                      <ul>
+                        <li>
+                          <A href="/zona-pengguna-baru">
+                            <span class="sale-badge" style={{ "margin-left": "0", "margin-right": "8px" }}>NEW</span>
+                            Zona Pengguna Baru
+                          </A>
+                        </li>
+                      </ul>
+                    </div>
+
                   </div>
                 </div>
               </div>

@@ -1,10 +1,10 @@
 import { For } from "solid-js";
 
 const checkItems = [
-  "Produk 100% original, dipilih dari supplier terpercaya",
-  "Layanan via WhatsApp Business, respon dalam hitungan menit",
-  "Pengiriman ke seluruh Indonesia dengan jasa ekspedisi terpercaya",
-  "Harga transparan, tanpa biaya tersembunyi",
+  "Koleksi Pilihan: Produk orisinal yang kami kurasi dengan teliti.",
+  "Layanan Personal: Konsultasi produk langsung via WhatsApp untuk kenyamanan Anda.",
+  "Pengiriman Aman: Jangkauan pengiriman luas dengan pengemasan yang terjaga.",
+  "Harga Jujur: Transparansi harga tanpa biaya tambahan yang membingungkan.",
 ];
 
 const CheckIcon = () => (
@@ -25,8 +25,8 @@ export default function About() {
             </svg>
             <p>Ilustrasi Toko</p>
             <div class="about-visual-badge">
-              <div class="num">4.9 ⭐</div>
-              <div class="lbl">Rating Pelanggan</div>
+              <div class="num">100% ✨</div>
+              <div class="lbl">Jaminan Produk Original</div>
             </div>
           </div>
 
@@ -34,17 +34,13 @@ export default function About() {
           <div class="about-content">
             <span class="section-label">Tentang Kami</span>
             <h2 class="section-title">
-              Toko Terpercaya untuk Semua Kebutuhan Anda
+              Solusi Kebutuhan Keluarga dengan Kualitas Terkurasi
             </h2>
             <p class="section-sub">
-              Aminah Jaya Store hadir untuk memudahkan Anda mendapatkan produk kesehatan,
-              fashion muslim, dan kebutuhan sehari-hari dengan kualitas terjamin dan
-              harga yang bersahabat.
+              Aminah Jaya hadir untuk menjawab kebutuhan Anda akan produk kesehatan, fashion muslim, dan perlengkapan harian berkualitas. Kami percaya bahwa setiap pelanggan layak mendapatkan produk terbaik tanpa proses yang rumit.
             </p>
             <p class="section-sub" style={{ "margin-top": "12px" }}>
-              Kami beroperasi secara online dan melayani seluruh wilayah Indonesia
-              melalui WhatsApp Business. Kepuasan pelanggan adalah prioritas utama kami,
-              dengan respon cepat dan proses pemesanan yang mudah.
+              Setiap item yang kami sediakan telah melalui proses pemilihan yang ketat untuk memastikan keaslian dan manfaatnya bagi Anda. Kami tidak hanya sekadar menjual, tapi ingin menjadi bagian dari perjalanan gaya hidup sehat dan nyaman keluarga Anda.
             </p>
 
             <div class="about-list">

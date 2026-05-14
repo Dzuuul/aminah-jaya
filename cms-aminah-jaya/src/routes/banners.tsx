@@ -1,6 +1,7 @@
 import { createResource, createSignal, Show, For } from "solid-js";
 import { Plus, Edit, Trash2, Loader2, Image as ImageIcon, ExternalLink, Calendar } from "lucide-solid";
 import Layout from "../components/Layout";
+import Button from "../components/ui/Button";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
 import DataTable, { Column } from "../components/DataTable";
@@ -53,10 +54,10 @@ export default function Banners() {
 
     try {
       await deleteBanner(id);
-      toast.success("Banner deleted successfully");
+      toast.success("Banner berhasil dihapus");
       refetch();
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete banner");
+      toast.error(err.message || "Gagal menghapus banner");
     }
   };
 
@@ -65,21 +66,21 @@ export default function Banners() {
       header: "Banner",
       accessor: "image_url",
       render: (item) => (
-        <div class="w-32 h-16 rounded-lg bg-cream border border-border overflow-hidden flex items-center justify-center text-muted">
+        <div style={{ width: "8rem", height: "4rem", "border-radius": "0.5rem", "background-color": "var(--color-cream)", border: "1px solid var(--color-border)", overflow: "hidden", display: "flex", "align-items": "center", "justify-content": "center", color: "var(--color-muted)" }}>
           <Show when={item.image_url} fallback={<ImageIcon size={20} />}>
-            <img src={item.image_url!} alt="Banner" class="w-full h-full object-cover" />
+            <img src={item.image_url!} alt="Banner" style={{ width: "100%", height: "100%", "object-fit": "cover" }} />
           </Show>
         </div>
       )
     },
     {
-      header: "Link",
+      header: "Tautan",
       accessor: "link_url",
       render: (item) => (
-        <div class="flex items-center gap-1 text-xs text-ink-light">
+        <div style={{ display: "flex", "align-items": "center", gap: "0.25rem", "font-size": "0.75rem", color: "var(--color-ink-light)" }}>
           <Show when={item.link_url} fallback={<span>-</span>}>
             <ExternalLink size={12} />
-            <span class="truncate max-w-[150px]">{item.link_url}</span>
+            <span style={{ overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap", "max-width": "150px" }}>{item.link_url}</span>
           </Show>
         </div>
       )
@@ -88,30 +89,30 @@ export default function Banners() {
         header: "Status",
         accessor: "is_active",
         render: (item) => (
-          <span class={`px-2 py-0.5 rounded-full text-[10px] font-bold ${item.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {item.is_active ? 'ACTIVE' : 'INACTIVE'}
+          <span class={`badge ${item.is_active ? 'badge-green' : 'badge-red'}`} style={{ "font-size": "0.625rem" }}>
+            {item.is_active ? 'AKTIF' : 'NONAKTIF'}
           </span>
         )
     },
     {
-      header: "Order",
+      header: "Urutan",
       accessor: "sort_order",
-      render: (item) => <span class="font-mono text-ink-light">{item.sort_order}</span>
+      render: (item) => <span style={{ "font-family": "monospace", color: "var(--color-ink-light)" }}>{item.sort_order}</span>
     },
     {
-      header: "Actions",
+      header: "Aksi",
       accessor: "id",
       render: (item) => (
-        <div class="flex items-center gap-2">
+        <div style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}>
           <button
             onClick={() => handleEdit(item)}
-            class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+            class="action-btn action-btn-edit"
           >
             <Edit size={18} />
           </button>
           <button
             onClick={() => handleDelete(item.id)}
-            class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            class="action-btn action-btn-delete"
           >
             <Trash2 size={18} />
           </button>
@@ -141,7 +142,7 @@ export default function Banners() {
       }
 
       if (!imageUrl) {
-          throw new Error("Image is required");
+          throw new Error("Gambar wajib diunggah");
       }
 
       const payload = {
@@ -157,10 +158,10 @@ export default function Banners() {
       }
 
       handleCloseModal();
-      toast.success(bannerToEdit ? "Banner updated successfully" : "Banner created successfully");
+      toast.success(bannerToEdit ? "Banner berhasil diperbarui" : "Banner berhasil ditambahkan");
       refetch();
     } catch (err: any) {
-      setError(err.message || "Failed to save banner");
+      setError(err.message || "Gagal menyimpan banner");
     } finally {
       setIsSaving(false);
     }
@@ -183,26 +184,23 @@ export default function Banners() {
   };
 
   return (
-    <Layout title="Hero Banners">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <Layout title="Banner Utama">
+      <div class="page-header">
         <div>
-          <h1 class="text-2xl lg:text-3xl font-bold text-ink">Hero Banners</h1>
-          <p class="text-ink-light mt-1">Manage the hero slider banners on your landing page.</p>
+          <h1 class="page-title">Banner Utama</h1>
+          <p class="page-subtitle">Kelola banner slider utama pada halaman depan.</p>
         </div>
-        <button
-          onClick={handleAddClick}
-          class="bg-green-500 text-white p-2.5 rounded-xl shadow-lg shadow-green-500/20 hover:bg-green-700 transition-all flex items-center gap-2 px-4"
-        >
+        <Button onClick={handleAddClick}>
           <Plus size={20} />
-          <span class="font-bold">Add Banner</span>
-        </button>
+          <span>Tambah Banner</span>
+        </Button>
       </div>
 
-      <Show when={banners()} fallback={<div class="p-8 text-center text-muted">Loading banners...</div>}>
+      <Show when={banners()} fallback={<div style={{ padding: "2rem", "text-align": "center", color: "var(--color-muted)" }}>Memuat banner...</div>}>
         <DataTable
           columns={columns}
           data={banners()!}
-          searchPlaceholder="Search banners..."
+          searchPlaceholder="Cari banner..."
         />
       </Show>
 
@@ -210,91 +208,93 @@ export default function Banners() {
       <Modal
         isOpen={isModalOpen()}
         onClose={handleCloseModal}
-        title={editingBanner() ? "Edit Banner" : "Add New Banner"}
+        title={editingBanner() ? "Edit Banner" : "Tambah Banner Baru"}
       >
-        <form onSubmit={handleSubmit} class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} style={{ padding: "1.5rem", display: "flex", "flex-direction": "column", gap: "1rem" }}>
           <Show when={error()}>
-            <div class="p-4 bg-red-50 text-red-600 text-sm rounded-2xl border border-red-100">
+            <div style={{ padding: "1rem", "background-color": "#fef2f2", color: "#dc2626", "font-size": "0.875rem", "border-radius": "1rem", border: "1px solid #fee2e2" }}>
               {error()}
             </div>
           </Show>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Banner Image</label>
-            <div class="flex flex-col gap-4">
-              <div class="w-full aspect-[21/9] rounded-2xl bg-cream border border-border overflow-hidden flex items-center justify-center text-muted relative group">
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Gambar Banner</label>
+            <div style={{ display: "flex", "flex-direction": "column", gap: "1rem" }}>
+              <div style={{ width: "100%", "aspect-ratio": "21/9", "border-radius": "1rem", "background-color": "var(--color-cream)", border: "1px solid var(--color-border)", overflow: "hidden", display: "flex", "align-items": "center", "justify-content": "center", color: "var(--color-muted)", position: "relative" }} class="group">
                 <Show when={previewUrl()} fallback={<ImageIcon size={32} />}>
-                  <img src={previewUrl()!} class="w-full h-full object-cover" />
+                  <img src={previewUrl()!} style={{ width: "100%", height: "100%", "object-fit": "cover" }} />
                 </Show>
-                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white pointer-events-none">
+                <div style={{ position: "absolute", inset: 0, "background-color": "rgba(0,0,0,0.4)", opacity: 0, transition: "opacity 0.2s", display: "flex", "align-items": "center", "justify-content": "center", color: "white", "pointer-events": "none" }} class="group-hover:opacity-100">
                   <Edit size={20} />
                 </div>
                 <input
                   type="file"
                   accept="image/*"
-                  class="absolute inset-0 opacity-0 cursor-pointer"
+                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
                   onChange={handleFileChange}
                 />
               </div>
-              <p class="text-xs text-ink-light text-center">Recommended: Wide image (e.g. 1920x800px). PNG or JPG.</p>
+              <p style={{ "font-size": "0.75rem", color: "var(--color-ink-light)", "text-align": "center" }}>Rekomendasi: Gambar lebar (Contoh: 1920x800px). PNG atau JPG.</p>
             </div>
           </div>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Link URL (Optional)</label>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>URL Tautan (Opsional)</label>
             <input
               type="text"
               placeholder="https://..."
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+              class="login-input"
               value={formData().link_url}
               onInput={(e) => setFormData({ ...formData(), link_url: e.currentTarget.value })}
             />
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-                <label class="text-sm font-bold text-ink-light ml-1">Sort Order</label>
+          <div style={{ display: "grid", "grid-template-columns": "repeat(2, minmax(0, 1fr))", gap: "1rem" }}>
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+                <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Urutan</label>
                 <input
                 type="number"
-                class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+                class="login-input"
                 value={formData().sort_order}
                 onInput={(e) => setFormData({ ...formData(), sort_order: parseInt(e.currentTarget.value) })}
                 />
             </div>
-            <div class="space-y-1">
-                <label class="text-sm font-bold text-ink-light ml-1">Active Status</label>
-                <div class="flex items-center h-[50px]">
-                    <label class="relative inline-flex items-center cursor-pointer">
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+                <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Status Aktif</label>
+                <div style={{ display: "flex", "align-items": "center", height: "3rem" }}>
+                    <label style={{ position: "relative", display: "inline-flex", "align-items": "center", cursor: "pointer" }}>
                         <input 
                             type="checkbox" 
                             checked={formData().is_active} 
-                            class="sr-only peer"
+                            style={{ position: "absolute", opacity: 0, width: 0, height: 0 }}
                             onChange={(e) => setFormData({ ...formData(), is_active: e.currentTarget.checked })}
                         />
-                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-                        <span class="ml-3 text-sm font-medium text-ink-light">{formData().is_active ? 'Active' : 'Hidden'}</span>
+                        <div style={{ width: "2.75rem", height: "1.5rem", "background-color": formData().is_active ? "var(--color-green-500)" : "#e5e7eb", "border-radius": "9999px", transition: "all 0.2s", position: "relative" }}>
+                          <div style={{ position: "absolute", top: "0.125rem", left: formData().is_active ? "1.375rem" : "0.125rem", width: "1.25rem", height: "1.25rem", "background-color": "white", "border-radius": "50%", transition: "all 0.2s" }}></div>
+                        </div>
+                        <span style={{ "margin-left": "0.75rem", "font-size": "0.875rem", "font-weight": "500", color: "var(--color-ink-light)" }}>{formData().is_active ? 'Aktif' : 'Disembunyikan'}</span>
                     </label>
                 </div>
             </div>
           </div>
 
-          <div class="pt-4 flex gap-3 sticky bottom-0 bg-white pb-2">
+          <div style={{ "padding-top": "1rem", display: "flex", gap: "0.75rem", position: "sticky", bottom: 0, "background-color": "white", "padding-bottom": "0.5rem" }}>
             <button
               type="button"
               onClick={handleCloseModal}
-              class="flex-1 py-3 px-4 bg-cream text-ink font-bold rounded-2xl hover:bg-border transition-all"
+              style={{ flex: 1, padding: "0.75rem 1rem", "background-color": "var(--color-cream)", color: "var(--color-ink)", "font-weight": "700", "border-radius": "1rem", border: "none", cursor: "pointer" }}
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
               disabled={isSaving()}
-              class="flex-[2] py-3 px-4 bg-green-500 text-white font-bold rounded-2xl shadow-lg shadow-green-500/20 hover:bg-green-700 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+              style={{ flex: 2, padding: "0.75rem 1rem", "background-color": "var(--color-green-500)", color: "white", "font-weight": "700", "border-radius": "1rem", border: "none", cursor: "pointer", display: "flex", "align-items": "center", "justify-content": "center", gap: "0.5rem" }}
             >
               <Show when={isSaving()}>
                 <Loader2 class="animate-spin" size={20} />
               </Show>
-              {isSaving() ? "Saving..." : (editingBanner() ? "Update Banner" : "Save Banner")}
+              {isSaving() ? "Menyimpan..." : (editingBanner() ? "Update Banner" : "Simpan Banner")}
             </button>
           </div>
         </form>
@@ -304,9 +304,9 @@ export default function Banners() {
         isOpen={isConfirmOpen()}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={confirmDelete}
-        title="Delete Banner"
-        message="Are you sure you want to delete this banner? This action cannot be undone."
-        confirmText="Delete"
+        title="Hapus Banner"
+        message="Apakah Anda yakin ingin menghapus banner ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Hapus"
         isDanger={true}
       />
     </Layout>

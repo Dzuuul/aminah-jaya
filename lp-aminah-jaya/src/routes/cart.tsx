@@ -46,13 +46,13 @@ const recommendedProducts = [
 export default function CartPage() {
   const [items, setItems] = createSignal(initialCartItems);
 
-  const subtotal = createMemo(() => 
+  const subtotal = createMemo(() =>
     items()
       .filter(item => item.selected)
       .reduce((acc, item) => acc + item.price * item.quantity, 0)
   );
-  
-  const isAllSelected = createMemo(() => 
+
+  const isAllSelected = createMemo(() =>
     items().length > 0 && items().every(item => item.selected)
   );
 
@@ -71,7 +71,7 @@ export default function CartPage() {
   };
 
   const toggleSelect = (id: number) => {
-    setItems(items().map(item => 
+    setItems(items().map(item =>
       item.id === id ? { ...item, selected: !item.selected } : item
     ));
   };
@@ -122,10 +122,10 @@ export default function CartPage() {
               <div class="cart-card">
                 <div class="cart-header">
                   <div class="cart-header-left">
-                    <input 
-                      type="checkbox" 
-                      class="cart-item-checkbox" 
-                      checked={isAllSelected()} 
+                    <input
+                      type="checkbox"
+                      class="cart-item-checkbox"
+                      checked={isAllSelected()}
                       onChange={toggleSelectAll}
                     />
                     <span>Semua ({items().length})</span>
@@ -137,16 +137,16 @@ export default function CartPage() {
                   <For each={items()} fallback={<div style={{ "padding": "40px", "text-align": "center", "color": "var(--muted)" }}>Keranjang Anda kosong</div>}>
                     {(item) => (
                       <div class="cart-item">
-                        <input 
-                          type="checkbox" 
-                          class="cart-item-checkbox" 
-                          checked={item.selected} 
+                        <input
+                          type="checkbox"
+                          class="cart-item-checkbox"
+                          checked={item.selected}
                           onChange={() => toggleSelect(item.id)}
                         />
                         <div class="cart-item-img">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                             <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                             <line x1="12" y1="18" x2="12" y2="18"></line>
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                            <line x1="12" y1="18" x2="12" y2="18"></line>
                           </svg>
                         </div>
                         <div class="cart-item-info">
@@ -220,7 +220,7 @@ export default function CartPage() {
                   <span>Biaya pengiriman <span style={{ "cursor": "help", "color": "#ccc" }}>ⓘ</span></span>
                   <span style={{ "color": "var(--green-500)", "font-weight": "600" }}>Gratis</span>
                 </div>
-                
+
                 <div class="coupon-box">
                   <span>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--green-500)" stroke-width="2">
@@ -249,7 +249,7 @@ export default function CartPage() {
 
               <div class="benefits-card">
                 <div class="benefits-header">
-                  <h4>Manfaat belanja di mi.com</h4>
+                  <h4>Manfaat belanja di aminahjaya.com</h4>
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M18 15l-6-6-6 6"></path>
                   </svg>
@@ -277,7 +277,7 @@ export default function CartPage() {
                   </div>
                   <div class="benefit-info">
                     <h5>Layanan purnajual</h5>
-                    <p>Penggantian 15 hari untuk masalah manufaktur</p>
+                    <p>Jika ada kendala dengan pengiriman atau ketidaksesuaian pesanan, tim kami akan membantu mencari solusi terbaik bersama Anda</p>
                   </div>
                 </div>
                 <div class="benefit-item">
@@ -290,9 +290,12 @@ export default function CartPage() {
                   <div class="benefit-info">
                     <h5>Metode pembayaran</h5>
                     <p>Check out mudah dan aman. Cepat dan praktis.</p>
-                    <div class="payment-methods">
-                       <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" />
-                       <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" />
+                    <div class="payment-methods flex flex-wrap gap-2 mt-2">
+                      <img src="https://gopay.co.id/media-kit" alt="GoPay" class="h-4 w-auto" />
+                      <img src="https://midtrans.com/assets/img/icons/payment/qris.svg" alt="QRIS" class="h-4 w-auto" />
+                      <img src="https://midtrans.com/assets/img/icons/payment/shopeepay.svg" alt="ShopeePay" class="h-4 w-auto" />
+                      <img src="https://midtrans.com/assets/img/icons/payment/bca.svg" alt="BCA" class="h-4 w-auto" />
+                      <img src="https://midtrans.com/assets/img/icons/payment/mandiri.svg" alt="Mandiri" class="h-4 w-auto" />
                     </div>
                   </div>
                 </div>

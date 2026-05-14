@@ -50,9 +50,9 @@ function AuthGuard(props: { children: any }) {
   return (
     <div class="auth-wrapper">
       <Show when={checking()}>
-        <div class="fixed inset-0 z-50 min-h-screen flex flex-col items-center justify-center bg-[#f7f4ef]">
-          <div class="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p class="text-[#4a4a4a] font-medium font-sans">Verifying session...</p>
+        <div class="loading-overlay">
+          <div class="spinner"></div>
+          <p class="loading-text">Memverifikasi sesi...</p>
         </div>
       </Show>
       {props.children}

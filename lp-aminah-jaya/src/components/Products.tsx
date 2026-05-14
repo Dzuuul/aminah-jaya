@@ -1,5 +1,6 @@
 import { For } from "solid-js";
 import { JSX } from "solid-js";
+import { A } from "@solidjs/router";
 
 interface Product {
   id: string;
@@ -119,15 +120,13 @@ export default function Products() {
             <h2 class="section-title">Rekomendasi Minggu Ini</h2>
             <p class="section-sub">Koleksi khusus pilihan kami, kurasi terbaik untuk memulai perjalanan Anda</p>
           </div>
-          <a
-            href="https://wa.me/6281234567890?text=Halo,%20saya%20ingin%20melihat%20katalog%20lengkap"
-            target="_blank"
-            rel="noopener noreferrer"
+          <A
+            href="/shop"
             class="btn btn-outline btn-sm"
             style={{ "white-space": "nowrap", "flex-shrink": "0" }}
           >
             Katalog Lengkap →
-          </a>
+          </A>
         </div>
 
         <div class="prod-grid">

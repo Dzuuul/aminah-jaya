@@ -1,6 +1,7 @@
 import { createResource, createSignal, Show, For } from "solid-js";
 import { Plus, Edit, Trash2, Loader2, Image as ImageIcon, LayoutGrid } from "lucide-solid";
 import Layout from "../components/Layout";
+import Button from "../components/ui/Button";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
 import DataTable, { Column } from "../components/DataTable";
@@ -53,10 +54,10 @@ export default function Categories() {
 
     try {
       await deleteCategory(id);
-      toast.success("Category deleted successfully");
+      toast.success("Kategori berhasil dihapus");
       refetch();
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete category");
+      toast.error(err.message || "Gagal menghapus kategori");
     }
   };
 
@@ -65,47 +66,47 @@ export default function Categories() {
       header: "Thumbnail",
       accessor: "image_url",
       render: (item) => (
-        <div class="w-12 h-12 rounded-lg bg-cream border border-border overflow-hidden flex items-center justify-center text-muted">
+        <div style={{ width: "3rem", height: "3rem", "border-radius": "0.5rem", "background-color": "var(--color-cream)", border: "1px solid var(--color-border)", overflow: "hidden", display: "flex", "align-items": "center", "justify-content": "center", color: "var(--color-muted)" }}>
           <Show when={item.image_url} fallback={<LayoutGrid size={20} />}>
-            <img src={item.image_url!} alt={item.name} class="w-full h-full object-cover" />
+            <img src={item.image_url!} alt={item.name} style={{ width: "100%", height: "100%", "object-fit": "cover" }} />
           </Show>
         </div>
       )
     },
     {
-      header: "Name",
+      header: "Nama",
       accessor: "name",
       render: (item) => (
         <div>
-          <div class="font-semibold text-ink">{item.name}</div>
-          <div class="text-xs text-ink-light font-mono">{item.slug}</div>
+          <div style={{ "font-weight": "600", color: "var(--color-ink)" }}>{item.name}</div>
+          <div style={{ "font-size": "0.75rem", color: "var(--color-ink-light)", "font-family": "monospace" }}>{item.slug}</div>
         </div>
       )
     },
     {
-      header: "Description",
+      header: "Deskripsi",
       accessor: "description",
-      render: (item) => <span class="text-ink-light truncate max-w-[200px] inline-block">{item.description || "-"}</span>
+      render: (item) => <span style={{ color: "var(--color-ink-light)", "white-space": "nowrap", overflow: "hidden", "text-overflow": "ellipsis", "max-width": "200px", display: "inline-block" }}>{item.description || "-"}</span>
     },
     {
-      header: "Order",
+      header: "Urutan",
       accessor: "sort_order",
-      render: (item) => <span class="font-mono text-ink-light">{item.sort_order}</span>
+      render: (item) => <span style={{ "font-family": "monospace", color: "var(--color-ink-light)" }}>{item.sort_order}</span>
     },
     {
-      header: "Actions",
+      header: "Aksi",
       accessor: "id",
       render: (item) => (
-        <div class="flex items-center gap-2">
+        <div style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}>
           <button
             onClick={() => handleEdit(item)}
-            class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+            class="action-btn action-btn-edit"
           >
             <Edit size={18} />
           </button>
           <button
             onClick={() => handleDelete(item.id)}
-            class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            class="action-btn action-btn-delete"
           >
             <Trash2 size={18} />
           </button>
@@ -147,10 +148,10 @@ export default function Categories() {
       }
 
       handleCloseModal();
-      toast.success(categoryToEdit ? "Category updated successfully" : "Category created successfully");
+      toast.success(categoryToEdit ? "Kategori berhasil diperbarui" : "Kategori berhasil ditambahkan");
       refetch();
     } catch (err: any) {
-      setError(err.message || "Failed to save category");
+      setError(err.message || "Gagal menyimpan kategori");
     } finally {
       setIsSaving(false);
     }
@@ -173,26 +174,23 @@ export default function Categories() {
   };
 
   return (
-    <Layout title="Categories">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <Layout title="Kategori">
+      <div class="page-header">
         <div>
-          <h1 class="text-2xl lg:text-3xl font-bold text-ink">Categories</h1>
-          <p class="text-ink-light mt-1">Manage product categories and thumbnails.</p>
+          <h1 class="page-title">Kategori</h1>
+          <p class="page-subtitle">Kelola kategori produk dan gambar ikonnya.</p>
         </div>
-        <button
-          onClick={handleAddClick}
-          class="bg-green-500 text-white p-2.5 rounded-xl shadow-lg shadow-green-500/20 hover:bg-green-700 transition-all flex items-center gap-2 px-4"
-        >
+        <Button onClick={handleAddClick}>
           <Plus size={20} />
-          <span class="font-bold">Add Category</span>
-        </button>
+          <span>Tambah Kategori</span>
+        </Button>
       </div>
 
-      <Show when={categories()} fallback={<div class="p-8 text-center text-muted">Loading categories...</div>}>
+      <Show when={categories()} fallback={<div style={{ padding: "2rem", "text-align": "center", color: "var(--color-muted)" }}>Memuat kategori...</div>}>
         <DataTable
           columns={columns}
           data={categories()!}
-          searchPlaceholder="Search categories..."
+          searchPlaceholder="Cari kategori..."
         />
       </Show>
 
@@ -200,95 +198,96 @@ export default function Categories() {
       <Modal
         isOpen={isModalOpen()}
         onClose={handleCloseModal}
-        title={editingCategory() ? "Edit Category" : "Add New Category"}
+        title={editingCategory() ? "Edit Kategori" : "Tambah Kategori Baru"}
       >
-        <form onSubmit={handleSubmit} class="p-6 space-y-4">
+        <form onSubmit={handleSubmit} style={{ padding: "1.5rem", display: "flex", "flex-direction": "column", gap: "1rem" }}>
           <Show when={error()}>
-            <div class="p-4 bg-red-50 text-red-600 text-sm rounded-2xl border border-red-100">
+            <div style={{ padding: "1rem", "background-color": "#fef2f2", color: "#dc2626", "font-size": "0.875rem", "border-radius": "1rem", border: "1px solid #fee2e2" }}>
               {error()}
             </div>
           </Show>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Thumbnail</label>
-            <div class="flex items-center gap-4">
-              <div class="w-24 h-24 rounded-2xl bg-cream border border-border overflow-hidden flex items-center justify-center text-muted relative group">
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Thumbnail</label>
+            <div style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
+              <div style={{ width: "6rem", height: "6rem", "border-radius": "1rem", "background-color": "var(--color-cream)", border: "1px solid var(--color-border)", overflow: "hidden", display: "flex", "align-items": "center", "justify-content": "center", color: "var(--color-muted)", position: "relative" }} class="group">
                 <Show when={previewUrl()} fallback={<ImageIcon size={32} />}>
-                  <img src={previewUrl()!} class="w-full h-full object-cover" />
+                  <img src={previewUrl()!} style={{ width: "100%", height: "100%", "object-fit": "cover" }} />
                 </Show>
-                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white pointer-events-none">
+                <div style={{ position: "absolute", inset: 0, "background-color": "rgba(0,0,0,0.4)", opacity: 0, transition: "opacity 0.2s", display: "flex", "align-items": "center", "justify-content": "center", color: "white", "pointer-events": "none" }} class="group-hover:opacity-100">
                   <Edit size={20} />
                 </div>
                 <input
                   type="file"
                   accept="image/*"
-                  class="absolute inset-0 opacity-0 cursor-pointer"
+                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
                   onChange={handleFileChange}
                 />
               </div>
-              <div class="flex-1">
-                <p class="text-xs text-ink-light">Recommended: Square image (512x512px). PNG or JPG.</p>
+              <div style={{ flex: 1 }}>
+                <p style={{ "font-size": "0.75rem", color: "var(--color-ink-light)" }}>Rekomendasi: Gambar persegi (512x512px). PNG atau JPG.</p>
                 <button 
                   type="button"
-                  class="mt-2 text-xs font-bold text-green-600 hover:text-green-700 underline"
+                  style={{ "margin-top": "0.5rem", "font-size": "0.75rem", "font-weight": "700", color: "var(--color-green-500)", "text-decoration": "underline", background: "none", border: "none", cursor: "pointer" }}
                   onClick={() => (document.querySelector('input[type="file"]') as HTMLInputElement)?.click()}
                 >
-                  Upload New Image
+                  Unggah Gambar Baru
                 </button>
               </div>
             </div>
           </div>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Category Name</label>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Nama Kategori</label>
             <input
               type="text"
               required
-              placeholder="e.g. Gamis"
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+              placeholder="Contoh: Gamis"
+              class="login-input"
               value={formData().name}
               onInput={(e) => setFormData({ ...formData(), name: e.currentTarget.value })}
             />
           </div>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Description (Optional)</label>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Deskripsi (Opsional)</label>
             <textarea
-              placeholder="Brief description of this category..."
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all min-h-[100px]"
+              placeholder="Deskripsi singkat kategori ini..."
+              class="login-input"
+              style={{ "min-height": "100px", "font-family": "inherit" }}
               value={formData().description}
               onInput={(e) => setFormData({ ...formData(), description: e.currentTarget.value })}
             />
           </div>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Sort Order</label>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Urutan</label>
             <input
               type="number"
               placeholder="0"
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+              class="login-input"
               value={formData().sort_order}
               onInput={(e) => setFormData({ ...formData(), sort_order: parseInt(e.currentTarget.value) })}
             />
           </div>
 
-          <div class="pt-4 flex gap-3 sticky bottom-0 bg-white pb-2">
+          <div style={{ "padding-top": "1rem", display: "flex", gap: "0.75rem", position: "sticky", bottom: 0, "background-color": "white", "padding-bottom": "0.5rem" }}>
             <button
               type="button"
               onClick={handleCloseModal}
-              class="flex-1 py-3 px-4 bg-cream text-ink font-bold rounded-2xl hover:bg-border transition-all"
+              style={{ flex: 1, padding: "0.75rem 1rem", "background-color": "var(--color-cream)", color: "var(--color-ink)", "font-weight": "700", "border-radius": "1rem", border: "none", cursor: "pointer" }}
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
               disabled={isSaving()}
-              class="flex-[2] py-3 px-4 bg-green-500 text-white font-bold rounded-2xl shadow-lg shadow-green-500/20 hover:bg-green-700 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+              style={{ flex: 2, padding: "0.75rem 1rem", "background-color": "var(--color-green-500)", color: "white", "font-weight": "700", "border-radius": "1rem", border: "none", cursor: "pointer", display: "flex", "align-items": "center", "justify-content": "center", gap: "0.5rem" }}
             >
               <Show when={isSaving()}>
                 <Loader2 class="animate-spin" size={20} />
               </Show>
-              {isSaving() ? "Saving..." : (editingCategory() ? "Update Category" : "Save Category")}
+              {isSaving() ? "Menyimpan..." : (editingCategory() ? "Update Kategori" : "Simpan Kategori")}
             </button>
           </div>
         </form>
@@ -298,9 +297,9 @@ export default function Categories() {
         isOpen={isConfirmOpen()}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={confirmDelete}
-        title="Delete Category"
-        message="Are you sure you want to delete this category? This will not delete the products in it."
-        confirmText="Delete"
+        title="Hapus Kategori"
+        message="Apakah Anda yakin ingin menghapus kategori ini? Ini tidak akan menghapus produk di dalamnya."
+        confirmText="Hapus"
         isDanger={true}
       />
     </Layout>

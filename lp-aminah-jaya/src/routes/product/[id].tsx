@@ -14,149 +14,232 @@ type Expert = {
   name: string;
   role: string;
   quote: string;
+  image: string;
+};
+
+type Review = {
+  name: string;
+  text: string;
 };
 
 type Product = {
   id: string;
   name: string;
   price: string;
+  originalPrice?: string;
   category: "wellness" | "fashion";
-  image: string;
+  images: string[];
   desc: string;
-  purityInfo?: { ingredients: string; certification: string; testing: string };
-  eleganceInfo?: { feel: string; parallaxImg: string };
+  purityInfo?: { 
+    ingredients: string; 
+    certification: string; 
+    testing: string;
+    dosage?: string;
+    benefit?: string;
+    storage?: string;
+    culinary?: string;
+    videoThumb?: string;
+  };
+  eleganceInfo?: { 
+    feel: string; 
+    parallaxImg: string;
+    features: { title: string; desc: string; icon: string }[];
+  };
   technical: TechnicalDetail[];
   expert: Expert;
+  reviews: Review[];
   waText: string;
 };
 
 // --- Mock Data ---
 const products: Product[] = [
   {
-    id: "whey-protein",
-    name: "Whey Protein Premium",
-    price: "Rp 350.000",
-    category: "wellness",
-    image: "/...", // Placeholder
-    desc: "Premium plant-based protein with optimal amino acid profile for muscle recovery and metabolic health.",
-    purityInfo: {
-      ingredients: "Pure Whey Isolate, Stevia Leaf Extract, Natural Cocoa",
-      certification: "ISO 22000, Halal & BPOM Certified",
-      testing: "Third-party Lab Tested for Heavy Metals & Purity",
+    id: "breathable-silk-abaya",
+    name: "Breathable Silk Abaya",
+    price: "Rp 1.450.000",
+    category: "fashion",
+    images: [
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuAhxsVZu2AW9IGXAWkbX1RYO6ZChAeSm8T1vPERcKSk4AQ4bS4wLfJl9jk3pMVu8pV00QIQF7EUvvPB3_eYo459oF_eSpDxGYT5k8Z8sW1nEEP2mvWzNGvoc5oOuFzMNKAeks9sPILpTE1CJKXJ6XmFizXaOJ2z_-zragqeq25NfmJrXJV6yoTnhvNaeZ4VlFTiH1oxCV3zT4UfBYIouy-e64ygozxz8gVn347AlX4AJJrYszNr_UDzZwvLn_xk0_6N75FliIzyCE_E",
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCdonYoYhZhY_c2pUZ_BT17x9J2-6CkZAAWcj5uZxuHy9vsHBjj2qvXVMcAPe7uH1Hg6pcWMO9QA3u6kvkG_8JqynwFn68xUZ9Qb8CSzznzClfWbqD8KpS2FdMf034IYUJNdBZh8LENvJBSjmkfRE-hfnniIaZ5VARbQ1jWWnQcVWYSKc-yleUg9NXCf-ZsW649-ILXG3T8ifv7aGj_hKkLcXe5xOolYj2fJt4yiOlj6goREyqHGf8vRwnZe9920OOQJkCdH6B0JE4L",
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCTGP6NP3GNzS-xS3OtemglDwWcDW3VTzmeFQx_7NnDScXQ8o-jX3phAODN15NOrQouuv-HLmcdeWSXZ_yEXNjk60IEd_YkpAkICveNqiTsAUvuKzhSeOp1Nd21M3uhdE0wPGW_76aLY00QUOWs0gpJNeawoSFnZqyb4ABNvZ4giWL1Uxguu2ypL9R-5Aj-FodNt9ct-bR1CWA4Tt8D8q_T7-cV30FndkI9WmzAOna6d8SRsngUmEK__1PoKxKb4CwWdhErMJ5EAny_"
+    ],
+    desc: "Designed for the modern woman who seeks tranquility in her daily worship. Our signature breathable silk offers a weightless feel with a sophisticated matte finish, ensuring modesty without compromise.",
+    eleganceInfo: {
+      feel: "Breathable Silk for Daily Worship. Experience the intersection of traditional values and modern luxury.",
+      parallaxImg: "https://lh3.googleusercontent.com/aida-public/AB6AXuDQzJ9Nq5v0xcaanyJlmD3n5hnlWMMoIbQ-4kSjuda7xXWltmGAjiIrJcWxahG6VrGsyK_HZHhdizXBbzppY3EjdHUZrUjuveVJYO0rbHrw-gKGkrc225zGiAyM9qnSm9ej-J5hYqVk3qZBzZ29MlnpAmrDL4QWdLvuGMHjMGD3Lr-fbVavWsqXXXA2KMjbZSzjmEk6QvSH_RmPKorU5xEfcRJoeAmMvSyJxo9VLEXgscm0-Wck26sSBOFM-aIRJv_Ozzm08tfT3H6D",
+      features: [
+        { title: "Wudhu-friendly", desc: "Discreet zipper closures on the sleeves for ease and convenience during ablution.", icon: "water_drop" },
+        { title: "Lightweight", desc: "The 14-momme silk provides a weightless experience, ideal for tropical climates.", icon: "air" },
+        { title: "Opaque", desc: "A tight weave ensures full coverage and modesty, even under bright lighting.", icon: "visibility_off" }
+      ]
     },
     technical: [
-      { label: "Dosage", value: "30g Protein / Serving", icon: "⚖️" },
-      { label: "Benefits", value: "Lean Muscle & Recovery", icon: "🌱" },
-      { label: "Storage", value: "Shelf-stable, Cool & Dry", icon: "🛡️" },
+      { label: "Wudhu Friendly", value: "Invisible Elastic Sleeves", icon: "water_drop" },
+      { label: "Material", value: "100% Mulberry Silk", icon: "eco" },
+      { label: "Transparency", value: "Fully Opaque Lining", icon: "visibility_off" },
     ],
     expert: {
-      name: "Dr. Sarah Hanum",
-      role: "Senior Clinical Nutritionist",
-      quote: "This formulation represents the gold standard in bioavailable protein supplementation.",
+      name: "Amina Al-Fayed",
+      role: "Senior Stylist, Modest Fashion Week",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDvZLFUvZEn_v3rrR8IrDKqKTw3QEJ29Lm-rkUFhp8Yvp5kFH-UM8LJ9vqaDM9qZYUoFrrauoHpF2u5-_HgNH8S6bBK-PEAtWByrpEPvL1GEBH0nq92ZJrfZq8EsTIcQhHNUpsmIELDWwGIw-reh6VzEangc02IUu3A2KfVk6zI-jx0TNSG9CX9e9O_jKknPXc7e0JvKwh4jk_6zX4idRMbgygGU1xTuc6lz_uuhojytZ3gEidJhzldHzu50p8WI0nUFnRtAJ1XefKB",
+      quote: "Finding a garment that balances high-fashion aesthetics with the strict requirements of modesty is rare. Nur & Nature has perfected the silhouette for the modern worshipper.",
     },
-    waText: "Hello, I would like to order the Whey Protein Premium.",
+    reviews: [
+      { name: "Sarah K.", text: "The most comfortable abaya I've ever owned. The silk is so soft against the skin." },
+      { name: "Maryam J.", text: "Beautiful drape and very practical for daily wear. Truly modest and elegant." }
+    ],
+    waText: "Hello, I would like to order the Breathable Silk Abaya.",
   },
   {
-    id: "gamis-muslimah",
-    name: "Silk Modesty Abaya",
-    price: "Rp 1.850.000",
-    category: "fashion",
-    image: "/...",
-    desc: "A masterpiece of modest elegance, crafted from premium Mulberry silk for a weightless, divine drape.",
-    eleganceInfo: {
-      feel: "Breathable Silk for Daily Worship",
-      parallaxImg: "/...",
+    id: "pure-yemeni-sidr-honey",
+    name: "Pure Yemeni Sidr Honey",
+    price: "Rp 485.000",
+    originalPrice: "Rp 550.000",
+    category: "wellness",
+    images: ["https://lh3.googleusercontent.com/aida-public/AB6AXuCROwfD-a15c10wpRmJoNsh-qKZMpmMkYWfffQ6JJiJLrjgsMjOd5dEUJcg_1vTkFSkzG51EoyIwkM-ZU24J4zeI3996LNcB4wpWYKo9HnwFmiJiPPqKpiXWvYRJ9YWBFuqfHEIzLKzAYz0sxMAc_Hc6d4l4cSowLj3NLoU0sHgxMDvDY1KqX3pOBrXE9HHwU1r1pBGKs0LjFRuB788bYrbYkvJVuzA7JopZhPWxPEEU-QB8ECiNYYt4sCqsSNlaTR--zOKCgyLYyd1"],
+    desc: "Sourced from the sacred Sidr trees of Yemen, our honey is unfiltered, cold-pressed, and maintains its potent medicinal properties. A rare nectar known for its exceptional healing and immunity-boosting capabilities.",
+    purityInfo: {
+      ingredients: "100% Raw, unheated, and unfiltered honey. No additives, syrups, or preservatives ever added.",
+      certification: "Strictly sourced according to ethical Halal standards, ensuring integrity from hive to home.",
+      testing: "Each batch undergoes rigorous independent lab testing for pollen count and antioxidant levels.",
+      dosage: "1-2 spoons daily, preferably on an empty stomach.",
+      benefit: "Powerful immune system support & natural energy.",
+      storage: "Store in a cool, dry place away from direct sunlight.",
+      culinary: "Best enjoyed raw or mixed into warm (not hot) water.",
+      videoThumb: "https://lh3.googleusercontent.com/aida-public/AB6AXuBmLtX6RRlKonZAipd5FY69vR4R5zKpiHN4jRggzs4q6RfA6t3kWK_1iFBKX3HpikHWQzlHCkpluxvby9sLst7FLeMEAGPpjS2fk5CxgbNXiDUxJwHFcAoxlHvnNqWgJxi7BgT0oIfvbMePpP1Aaj-PVMhxZ0_j7-nLb4RfLBZy0jtQ6077881IHR567IhVb8Jg_thWKMrTA-Ur57FWf-zMKn_ubHZ58N03oLSNqp2B9Jvfi9KwR_ayvggA6c_JWXrFXq8H10nHbySm"
     },
     technical: [
-      { label: "Wudhu Friendly", value: "Invisible Elastic Sleeves", icon: "✨" },
-      { label: "Material", value: "100% Mulberry Silk", icon: "🧵" },
-      { label: "Transparency", value: "Fully Opaque Lining", icon: "👗" },
+      { label: "Dosage", value: "1-2 spoons daily", icon: "medication" },
+      { label: "Benefits", value: "Immune Support", icon: "health_and_safety" },
+      { label: "Storage", value: "Cool & Dry Place", icon: "inventory_2" },
+      { label: "Culinary Use", value: "Best enjoyed raw", icon: "restaurant" },
     ],
     expert: {
-      name: "Aisyah Putri",
-      role: "Lead Modest Stylist",
-      quote: "The way the fabric captures light while maintaining absolute modesty is truly exceptional.",
+      name: "Dr. Sarah Mansour",
+      role: "Clinical Nutritionist",
+      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuD65gplpbd0aKXySZfNIxUNVSkCgjzYXHgwhGQYZAcxBTp4j8pNnZjy65lpLSfPx8glXiKUmq2zzCcuTabKksbSvvgUrmdkV88nt9hSz4VnOg6A6p8gbiIxDRKBiXd06TLUUlMFAku2HzttPO8l2-8T7OA7AefliXLNZKhtczqFnFqzFdnH5LQGcx4S3KiA-7ryCfjDvheHPPPQPELwH93Ly0vd8iQ96GJL54mOiWzn_0aewHUhyo15UcIX6pcJUigdWZxK1aTemHq2",
+      quote: "The purity of this Sidr honey is unparalleled. Its high enzyme content and antimicrobial properties make it a staple recommendation for my patients seeking natural immune support.",
     },
-    waText: "Hello, I would like to order the Silk Modesty Abaya.",
+    reviews: [
+      { name: "Ahmed Rizwan", text: "I have tried many brands, but the taste and texture of Nur & Nature's honey are truly authentic." },
+      { name: "Layla Hasan", text: "Remarkable quality! I use it daily in my morning tea. I've noticed a significant improvement in my digestive health." }
+    ],
+    waText: "Hello, I would like to order the Pure Yemeni Sidr Honey.",
   },
 ];
 
 // ─── Shared Styles ───────────────────────────────────────────────
-const SECTION_STYLE = { padding: "120px 0" };
+const COLORS = {
+  primary: "#4a654f",
+  secondary: "#924b25",
+  onSurface: "#1b1c1c",
+  onSurfaceVariant: "#424842",
+};
 
 // ─── Components ──────────────────────────────────────────────────
 
 const HeroSection = (props: { product: Product; onBuy: () => void }) => (
-  <section 
-    class="border-b border-[var(--border)] relative bg-white"
-    style={SECTION_STYLE}
-  >
-    <div class="container">
-      <div class="grid lg:grid-cols-2 gap-24 items-center">
-
-        {/* Gambar produk */}
-        <div class="relative overflow-hidden rounded-[var(--radius)] bg-[var(--green-50)] aspect-[4/5] flex items-center justify-center border border-[var(--border)]">
-          <Show when={props.product.image !== "/..."} fallback={
-             <div class="text-[var(--green-500)] opacity-20 flex flex-col items-center gap-6">
-                <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                <span class="text-base font-medium tracking-widest uppercase">Aminah Jaya</span>
-             </div>
-          }>
-            <img
-              src={props.product.image}
-              alt={props.product.name}
-              class="absolute inset-0 w-full h-full object-cover"
-            />
-          </Show>
-        </div>
-
-        {/* Info produk */}
-        <div class="flex flex-col" style={{ gap: "60px" }}>
-          <div class="flex flex-col" style={{ gap: "24px" }}>
-            <span class="section-label w-fit">
-              {props.product.category}
-            </span>
-            <h1 class="section-title !text-4xl lg:!text-5xl !leading-tight !mb-0">
-              {props.product.name}
-            </h1>
-            <p class="section-sub !max-w-none text-lg lg:text-xl !leading-relaxed text-[var(--ink-light)]">
-              {props.product.desc}
-            </p>
-          </div>
-
-          <div class="h-px bg-[var(--border)] w-full opacity-30" />
-
-          {/* Harga & CTA Block */}
-          <div class="flex flex-col" style={{ gap: "40px" }}>
-            <div class="flex flex-col" style={{ gap: "8px" }}>
-              <p class="text-xs uppercase tracking-widest text-[var(--muted)] font-bold opacity-60">Investment Value</p>
-              <p class="text-4xl lg:text-5xl font-bold text-[var(--ink)] tracking-tight leading-none">
-                {props.product.price}
-              </p>
+  <section class="bg-white">
+    <div class="container py-12 lg:py-24">
+      <Switch>
+        {/* Fashion Hero Layout */}
+        <Match when={props.product.category === "fashion"}>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24">
+            <div class="grid grid-cols-2 gap-2">
+              <div class="col-span-2 aspect-[4/5] bg-[#f0eded] overflow-hidden rounded-2xl shadow-sm">
+                <img src={props.product.images[0]} alt={props.product.name} class="w-full h-full object-cover" />
+              </div>
+              <For each={props.product.images.slice(1, 3)}>
+                {(img) => (
+                  <div class="aspect-square bg-[#f0eded] overflow-hidden rounded-xl shadow-sm">
+                    <img src={img} alt="Product Detail" class="w-full h-full object-cover" />
+                  </div>
+                )}
+              </For>
             </div>
-            
-            <div class="flex flex-col sm:flex-row gap-6 pt-10 border-t border-[var(--border)]">
-              <button
-                onClick={props.onBuy}
-                class="btn btn-primary flex-1 justify-center py-5 text-lg shadow-xl"
-              >
-                Beli Sekarang
-              </button>
-              <a
-                href={`https://wa.me/6281234567890?text=${encodeURIComponent(props.product.waText)}`}
-                target="_blank"
-                class="btn btn-wa flex-1 justify-center py-5 text-lg shadow-xl"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="white" class="mr-2">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" />
-                  <path d="M12 0C5.373 0 0 5.373 0 12c0 2.112.55 4.093 1.513 5.815L.057 23.028a.75.75 0 00.915.915l5.213-1.456A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22a9.95 9.95 0 01-5.087-1.386l-.362-.214-3.757 1.05 1.05-3.757-.214-.362A9.95 9.95 0 012 12C2 6.478 6.478 2 12 2s10 4.478 10 10-4.478 10-10 10z" />
-                </svg>
-                WhatsApp
-              </a>
+            <div class="flex flex-col justify-center space-y-8">
+              <div class="space-y-4">
+                <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#4a654f]">Ethical Collection</span>
+                <h1 class="font-serif text-4xl lg:text-6xl font-medium text-[#1b1c1c] leading-tight">{props.product.name}</h1>
+                <p class="text-3xl font-semibold text-[#924b25]">{props.product.price}</p>
+              </div>
+              <p class="text-lg text-[#424842] leading-relaxed">{props.product.desc}</p>
+              
+              <div class="space-y-4">
+                <div class="flex items-center space-x-3">
+                  <span class="w-8 h-8 rounded-full bg-[#4a654f] border-2 border-[#e4e2e1]"></span>
+                  <span class="w-8 h-8 rounded-full bg-[#D4C5B9] border-2 border-transparent"></span>
+                  <span class="w-8 h-8 rounded-full bg-[#303030] border-2 border-transparent"></span>
+                  <span class="text-sm font-medium text-[#424842] ml-2">Sage Green</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                  <For each={["S", "M", "L", "XL"]}>
+                    {(size) => (
+                      <button class={`px-6 py-2 border rounded-lg text-sm font-semibold transition-colors ${size === "M" ? "border-2 border-[#4a654f] text-[#4a654f]" : "border-[#737972] hover:border-[#4a654f]"}`}>
+                        {size}
+                      </button>
+                    )}
+                  </For>
+                </div>
+              </div>
+
+              <div class="space-y-4 pt-4">
+                <button onClick={props.onBuy} class="w-full bg-[#4a654f] text-white font-bold py-4 rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-3">
+                  <span class="material-symbols-outlined">shopping_bag</span>
+                  Add to Cart
+                </button>
+                <a href={`https://wa.me/6281234567890?text=${encodeURIComponent(props.product.waText)}`} target="_blank" class="w-full border-2 border-[#25D366] text-[#25D366] font-bold py-4 rounded-xl hover:bg-[#25D366]/5 transition-all flex items-center justify-center gap-3">
+                  <span class="material-symbols-outlined">chat</span>
+                  Pesan via WhatsApp
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </Match>
+
+        {/* Wellness Hero Layout */}
+        <Match when={props.product.category === "wellness"}>
+          <div class="flex flex-col md:flex-row items-stretch gap-12 lg:gap-24">
+            <div class="md:w-1/2 bg-white flex items-center justify-center relative overflow-hidden rounded-2xl shadow-lg border border-[#f0eded]">
+              <div class="absolute inset-0 bg-[#4a654f]/5"></div>
+              <img src={props.product.images[0]} alt={props.product.name} class="w-full h-full object-cover relative z-10" />
+            </div>
+            <div class="md:w-1/2 flex flex-col justify-center">
+              <nav class="flex gap-2 mb-4 text-[#737972] text-xs font-bold uppercase tracking-widest">
+                <span>Wellness</span> / <span>Premium Honey</span>
+              </nav>
+              <h1 class="font-serif text-4xl lg:text-6xl text-[#4a654f] mb-4 leading-tight">{props.product.name}</h1>
+              <div class="flex items-center gap-2 mb-6">
+                <div class="flex text-[#924b25]">
+                  <For each={[1, 2, 3, 4, 5]}>
+                    {() => <span class="material-symbols-outlined text-[18px]">star</span>}
+                  </For>
+                </div>
+                <span class="text-[#424842] text-xs font-medium">(48 Reviews)</span>
+              </div>
+              <p class="text-lg text-[#424842] mb-8 leading-relaxed">{props.product.desc}</p>
+              <div class="mb-10">
+                <span class="text-3xl font-bold text-[#4a654f]">{props.product.price}</span>
+                <Show when={props.product.originalPrice}>
+                  <span class="ml-3 text-[#737972] text-lg line-through">{props.product.originalPrice}</span>
+                </Show>
+                <div class="mt-3 bg-[#4a654f]/10 text-[#4a654f] px-4 py-1 rounded-full inline-block text-xs font-bold">
+                  Halal Certified Quality
+                </div>
+              </div>
+              <div class="flex flex-col sm:flex-row gap-4">
+                <a href={`https://wa.me/6281234567890?text=${encodeURIComponent(props.product.waText)}`} target="_blank" class="flex-1 bg-[#924b25] text-white px-8 py-4 rounded-full font-bold text-center hover:opacity-90 transition-all flex items-center justify-center gap-2">
+                  <span class="material-symbols-outlined">chat</span>
+                  WhatsApp
+                </a>
+                <button onClick={props.onBuy} class="flex-1 border-2 border-[#4a654f] text-[#4a654f] px-8 py-4 rounded-full font-bold hover:bg-[#4a654f]/5 transition-all">
+                  Checkout
+                </button>
+              </div>
+            </div>
+          </div>
+        </Match>
+      </Switch>
     </div>
   </section>
 );
@@ -165,26 +248,27 @@ const HeroSection = (props: { product: Product; onBuy: () => void }) => (
 
 const PurityBlock = (props: { info: NonNullable<Product["purityInfo"]> }) => {
   const items = [
-    { icon: "🧪", title: "Premium Ingredients", body: props.info.ingredients },
-    { icon: "🛡️", title: "Certified Quality", body: props.info.certification },
-    { icon: "🔬", title: "Rigorously Tested", body: props.info.testing },
+    { icon: "eco", title: "Natural Ingredients", body: props.info.ingredients },
+    { icon: "verified_user", title: "Halal Certified", body: props.info.certification },
+    { icon: "biotech", title: "Lab Tested", body: props.info.testing },
   ];
 
   return (
-    <section 
-      class="bg-[var(--green-50)] relative z-10"
-      style={SECTION_STYLE}
-    >
+    <section class="bg-white py-20 lg:py-32">
       <div class="container">
-        <div class="grid sm:grid-cols-3 gap-16">
+        <div class="text-center mb-16">
+          <h2 class="font-serif text-3xl lg:text-4xl text-[#4a654f] mb-4">Our Purity Promise</h2>
+          <div class="w-16 h-1 bg-[#924b25] mx-auto rounded-full"></div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-8">
           <For each={items}>
             {(item) => (
-              <div 
-                class="bg-white rounded-[var(--radius)] border border-[var(--border)] shadow-xl p-12 text-center"
-              >
-                <span class="text-5xl block mb-10" aria-hidden="true">{item.icon}</span>
-                <h3 class="text-2xl font-bold text-[var(--ink)] mb-4">{item.title}</h3>
-                <p class="text-lg text-[var(--ink-light)] leading-relaxed">{item.body}</p>
+              <div class="bg-[#4a654f]/5 p-10 lg:p-12 rounded-2xl border border-[#4a654f]/10 flex flex-col items-center text-center hover:shadow-xl transition-all">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
+                  <span class="material-symbols-outlined text-[#4a654f] text-3xl">{item.icon}</span>
+                </div>
+                <h3 class="font-serif text-xl font-semibold text-[#4a654f] mb-4">{item.title}</h3>
+                <p class="text-[#424842] leading-relaxed">{item.body}</p>
               </div>
             )}
           </For>
@@ -197,79 +281,96 @@ const PurityBlock = (props: { info: NonNullable<Product["purityInfo"]> }) => {
 // ─────────────────────────────────────────────────────────────────
 
 const ParallaxShowcase = (props: { info: NonNullable<Product["eleganceInfo"]> }) => (
-  <section
-    class="relative w-full h-[70vh] flex items-center justify-center overflow-hidden"
-    aria-label="Product showcase"
-  >
-    <div
-      class="absolute inset-0 bg-cover bg-center bg-fixed"
-      style={{ "background-image": `url(${props.info.parallaxImg})` }}
-      aria-hidden="true"
-    />
-    <div class="absolute inset-0 bg-black/50" aria-hidden="true" />
-    <div class="relative z-10 text-center text-white px-8 max-w-4xl flex flex-col gap-8">
-      <h2 class="text-5xl lg:text-7xl font-serif italic font-light leading-tight">Divine Elegance</h2>
-      <p class="text-lg uppercase tracking-[0.4em] opacity-90 font-medium">{props.info.feel}</p>
+  <section class="relative h-[600px] flex items-center justify-center overflow-hidden">
+    <div class="absolute inset-0 bg-fixed bg-center bg-cover" style={{ "background-image": `url(${props.info.parallaxImg})` }}></div>
+    <div class="absolute inset-0 bg-black/25"></div>
+    <div class="relative z-10 text-center px-4 max-w-2xl">
+      <h2 class="font-serif text-4xl lg:text-6xl text-white mb-6">Modesty in Motion</h2>
+      <p class="text-lg lg:text-xl text-white/90 leading-relaxed font-light">{props.info.feel}</p>
     </div>
   </section>
 );
 
 // ─────────────────────────────────────────────────────────────────
 
-const SpecificationsGrid = (props: { details: TechnicalDetail[] }) => (
-  <section 
-    class="border-y border-[var(--border)] bg-white relative z-20"
-    style={SECTION_STYLE}
-  >
-    <div class="container">
-      <div class="text-center flex flex-col items-center" style={{ "margin-bottom": "80px", gap: "24px" }}>
-        <p class="section-label mx-auto block w-fit">
-          Technical Specifications
-        </p>
-        <h2 class="section-title !text-4xl lg:!text-5xl">Detail Teknis Produk</h2>
+const TechnicalDetailGrid = (props: { product: Product }) => {
+  const isWellness = props.product.category === "wellness";
+  
+  return (
+    <section class="bg-[#f6f3f2] py-20 lg:py-32">
+      <div class="container">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <h2 class="font-serif text-3xl lg:text-4xl text-[#4a654f] mb-10">{isWellness ? "Wellness Specifications" : "Technical Artistry"}</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+              <For each={props.product.technical}>
+                {(detail) => (
+                  <div class="flex gap-4">
+                    <div class="bg-[#4a654f]/10 w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
+                      <span class="material-symbols-outlined text-[#4a654f]">{detail.icon}</span>
+                    </div>
+                    <div>
+                      <h4 class="text-sm font-bold text-[#1b1c1c] mb-1">{detail.label}</h4>
+                      <p class="text-sm text-[#424842] leading-relaxed">{detail.value}</p>
+                    </div>
+                  </div>
+                )}
+              </For>
+            </div>
+          </div>
+          <div class="relative rounded-2xl overflow-hidden aspect-video shadow-2xl">
+             <img src={isWellness ? props.product.purityInfo?.videoThumb : props.product.eleganceInfo?.parallaxImg} class="w-full h-full object-cover" alt="Detail Image" />
+             <div class="absolute inset-0 bg-black/10 flex items-center justify-center">
+                <button class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+                   <span class="material-symbols-outlined text-[#4a654f] text-4xl translate-x-0.5">play_arrow</span>
+                </button>
+             </div>
+          </div>
+        </div>
       </div>
-      <div class="grid sm:grid-cols-3 gap-24">
-        <For each={props.details}>
-          {(detail) => (
-            <div class="flex flex-col items-center text-center gap-6">
-              <div 
-                class="shrink-0 bg-[var(--green-50)] rounded-[var(--radius)] flex items-center justify-center text-4xl border border-[var(--border)] shadow-md"
-                style={{ width: "80px", height: "80px" }}
-              >
-                {detail.icon}
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────
+
+const TrustBlock = (props: { product: Product }) => (
+  <section class="py-20 lg:py-32">
+    <div class="container">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <div class="space-y-8">
+          <span class="text-xs font-bold text-[#924b25] uppercase tracking-widest">Voices of Excellence</span>
+          <h2 class="font-serif text-3xl lg:text-4xl text-[#1b1c1c]">Curated by Experts, Loved by the Community</h2>
+          
+          <div class="bg-[#f0eded] p-8 lg:p-10 rounded-2xl border-l-4 border-[#4a654f] space-y-6">
+            <p class="font-serif text-xl lg:text-2xl italic text-[#1b1c1c] leading-relaxed">"{props.product.expert.quote}"</p>
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 rounded-full overflow-hidden shadow-sm">
+                <img src={props.product.expert.image} class="w-full h-full object-cover" alt={props.product.expert.name} />
               </div>
-              <div class="flex flex-col gap-2">
-                <p class="text-xs uppercase tracking-widest text-[var(--muted)] font-black opacity-60">
-                  {detail.label}
-                </p>
-                <p class="text-xl font-bold text-[var(--ink)] leading-snug">{detail.value}</p>
+              <div>
+                <p class="text-sm font-bold text-[#1b1c1c]">{props.product.expert.name}</p>
+                <p class="text-xs text-[#424842]">{props.product.expert.role}</p>
               </div>
             </div>
-          )}
-        </For>
-      </div>
-    </div>
-  </section>
-);
+          </div>
+        </div>
 
-// ─────────────────────────────────────────────────────────────────
-
-const EndorsementBlock = (props: { expert: Expert }) => (
-  <section 
-    class="bg-[var(--green-900)] text-white relative z-10"
-    style={SECTION_STYLE}
-  >
-    <div class="container max-w-5xl flex flex-col items-center text-center gap-16">
-      <div 
-        class="bg-[var(--green-400)] rounded-full opacity-30" 
-        style={{ width: "80px", height: "4px" }}
-      />
-      <blockquote class="text-3xl lg:text-4xl font-serif italic leading-[1.4] opacity-95 px-8">
-        "{props.expert.quote}"
-      </blockquote>
-      <div class="flex flex-col gap-3">
-        <p class="text-xl font-bold tracking-widest uppercase">{props.expert.name}</p>
-        <p class="text-xs text-[var(--green-400)] tracking-[0.3em] uppercase font-black">{props.expert.role}</p>
+        <div class="grid gap-6">
+          <For each={props.product.reviews}>
+            {(review) => (
+              <div class="bg-white p-8 rounded-2xl shadow-sm border border-[#737972]/10 space-y-4">
+                <div class="flex text-[#924b25]">
+                  <For each={[1, 2, 3, 4, 5]}>
+                    {() => <span class="material-symbols-outlined text-[18px]">star</span>}
+                  </For>
+                </div>
+                <p class="text-[#424842] italic">"{review.text}"</p>
+                <p class="text-sm font-bold text-[#1b1c1c]">— {review.name}</p>
+              </div>
+            )}
+          </For>
+        </div>
       </div>
     </div>
   </section>
@@ -278,59 +379,31 @@ const EndorsementBlock = (props: { expert: Expert }) => (
 // ─────────────────────────────────────────────────────────────────
 
 const CheckoutModal = (props: { product: Product; onClose: () => void }) => (
-  <div
-    class="fixed inset-0 z-[300] flex items-center justify-center p-6"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Checkout options"
-  >
-    {/* Backdrop */}
-    <div
-      class="absolute inset-0 bg-black/80 backdrop-blur-2xl"
-      onClick={props.onClose}
-      aria-hidden="true"
-    />
-
-    {/* Panel */}
-    <div class="relative z-10 w-full max-w-xl bg-white rounded-[var(--radius)] shadow-2xl border border-[var(--border)] p-12">
-      <div class="flex items-center justify-between mb-10">
-        <h3 class="text-2xl font-bold text-[var(--ink)]">Opsi Pembelian</h3>
-        <button
-          onClick={props.onClose}
-          class="w-12 h-12 flex items-center justify-center rounded-full hover:bg-[var(--green-50)] text-[var(--muted)] hover:text-[var(--ink)] transition-all"
-        >
-          ✕
-        </button>
+  <div class="fixed inset-0 z-[300] flex items-center justify-center p-6">
+    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={props.onClose}></div>
+    <div class="relative z-10 w-full max-w-lg bg-white rounded-2xl shadow-2xl p-10 border border-[#f0eded]">
+      <div class="flex items-center justify-between mb-8">
+        <h3 class="text-xl font-bold text-[#1b1c1c]">Opsi Pembelian</h3>
+        <button onClick={props.onClose} class="text-[#737972] hover:text-[#1b1c1c]">✕</button>
       </div>
 
-      <div class="flex flex-col gap-6">
-        <a
-          href="/cart"
-          class="flex items-center p-8 rounded-2xl border border-[var(--border)] hover:border-[var(--green-400)] hover:bg-[var(--green-50)] transition-all group gap-6"
-        >
-          <div class="w-16 h-16 bg-[var(--green-900)] text-white rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-lg">
-            🛍️
-          </div>
+      <div class="space-y-4">
+        <a href="/cart" class="flex items-center p-6 rounded-xl border border-[#f0eded] hover:bg-[#f6f3f2] transition-all group gap-4">
+          <div class="w-12 h-12 bg-[#4a654f] text-white rounded-xl flex items-center justify-center text-xl shadow-md">🛍️</div>
           <div>
-            <p class="text-lg font-bold text-[var(--ink)]">Order via Website</p>
-            <p class="text-sm text-[var(--muted)] mt-1">Cepat, aman & otomatis</p>
+            <p class="font-bold text-[#1b1c1c]">Order via Website</p>
+            <p class="text-xs text-[#737972]">Cepat, aman & otomatis</p>
           </div>
-          <span class="ml-auto text-3xl text-[var(--border)] group-hover:text-[var(--green-500)] transition-transform group-hover:translate-x-2">→</span>
+          <span class="ml-auto text-[#f0eded] group-hover:text-[#4a654f] transition-all">→</span>
         </a>
 
-        <a
-          href={`https://wa.me/6281234567890?text=${encodeURIComponent(props.product.waText)}`}
-          target="_blank"
-          class="flex items-center p-8 rounded-2xl border border-[var(--green-100)] bg-[var(--green-50)]/50 hover:bg-[var(--green-50)] transition-all group gap-6"
-        >
-          <div class="w-16 h-16 bg-[#25D366] text-white rounded-2xl flex items-center justify-center text-2xl shrink-0 shadow-lg">
-            💬
-          </div>
+        <a href={`https://wa.me/6281234567890?text=${encodeURIComponent(props.product.waText)}`} target="_blank" class="flex items-center p-6 rounded-xl border border-[#25D366]/20 bg-[#25D366]/5 hover:bg-[#25D366]/10 transition-all group gap-4">
+          <div class="w-12 h-12 bg-[#25D366] text-white rounded-xl flex items-center justify-center text-xl shadow-md">💬</div>
           <div>
-            <p class="text-lg font-bold text-[var(--green-900)]">Order via WhatsApp</p>
-            <p class="text-sm text-[var(--green-700)]/70 mt-1">Bantuan personal & konsultasi</p>
+            <p class="font-bold text-[#25D366]">Order via WhatsApp</p>
+            <p class="text-xs text-[#25D366]/70">Bantuan personal & konsultasi</p>
           </div>
-          <span class="ml-auto text-3xl text-[var(--green-400)] group-hover:text-[#25D366] transition-transform group-hover:translate-x-2">→</span>
+          <span class="ml-auto text-[#25D366]/30 group-hover:text-[#25D366] transition-all">→</span>
         </a>
       </div>
     </div>
@@ -341,29 +414,27 @@ const CheckoutModal = (props: { product: Product; onClose: () => void }) => (
 
 export default function ProductDetail() {
   const params = useParams();
-  const product = products.find((p) => p.id === params.id) ?? products[0];
+  const product = products.find((p) => p.id === params.id) || products[0];
   const [showModal, setShowModal] = createSignal(false);
 
   return (
-    <div class="min-h-screen text-[var(--ink)] selection:bg-[var(--green-100)] bg-white">
+    <div class="min-h-screen bg-white">
       <Navbar />
 
-      <main class="flex flex-col">
+      <main class={product.category === "wellness" ? "pattern-bg" : ""}>
         <HeroSection product={product} onBuy={() => setShowModal(true)} />
 
-        <div class="flex flex-col">
-          <Switch>
-            <Match when={product.category === "wellness" && product.purityInfo}>
-              <PurityBlock info={product.purityInfo!} />
-            </Match>
-            <Match when={product.category === "fashion" && product.eleganceInfo}>
-              <ParallaxShowcase info={product.eleganceInfo!} />
-            </Match>
-          </Switch>
+        <Switch>
+          <Match when={product.category === "wellness" && product.purityInfo}>
+            <PurityBlock info={product.purityInfo!} />
+          </Match>
+          <Match when={product.category === "fashion" && product.eleganceInfo}>
+            <ParallaxShowcase info={product.eleganceInfo!} />
+          </Match>
+        </Switch>
 
-          <SpecificationsGrid details={product.technical} />
-          <EndorsementBlock expert={product.expert} />
-        </div>
+        <TechnicalDetailGrid product={product} />
+        <TrustBlock product={product} />
       </main>
 
       <Footer />

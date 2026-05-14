@@ -8,15 +8,15 @@ export function PageCard(props: {
   action?: JSX.Element;
 }) {
   return (
-    <div class="bg-white rounded-2xl border border-border/50 shadow-sm overflow-hidden">
-      <div class="flex items-center justify-between px-6 py-4 border-b border-border/40">
+    <div style={{ "background-color": "white", "border-radius": "1rem", border: "1px solid rgba(var(--color-border-rgb), 0.5)", "box-shadow": "0 1px 2px 0 rgba(0, 0, 0, 0.05)", overflow: "hidden" }}>
+      <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", padding: "1rem 1.5rem", "border-bottom": "1px solid rgba(var(--color-border-rgb), 0.4)" }}>
         <div>
-          <h3 class="text-sm font-bold text-ink">{props.title}</h3>
-          {props.subtitle && <p class="text-xs text-muted mt-0.5">{props.subtitle}</p>}
+          <h3 style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink)" }}>{props.title}</h3>
+          {props.subtitle && <p style={{ "font-size": "0.75rem", color: "var(--color-muted)", "margin-top": "0.125rem" }}>{props.subtitle}</p>}
         </div>
         {props.action && <div>{props.action}</div>}
       </div>
-      <div class="p-6">{props.children}</div>
+      <div style={{ padding: "1.5rem" }}>{props.children}</div>
     </div>
   );
 }
@@ -32,23 +32,23 @@ export function InfoRow(props: {
 }) {
   const Icon = props.icon;
   return (
-    <div class="flex items-start gap-4 py-3 border-b border-border/30 last:border-0">
+    <div style={{ display: "flex", "align-items": "flex-start", gap: "1rem", padding: "0.75rem 0", "border-bottom": "1px solid rgba(var(--color-border-rgb), 0.3)" }} class="last:border-0">
       {Icon && (
-        <div class="w-8 h-8 rounded-lg bg-sand flex items-center justify-center flex-shrink-0 mt-0.5">
-          <Icon size={15} class="text-muted" />
+        <div style={{ width: "2rem", height: "2rem", "border-radius": "0.5rem", "background-color": "var(--color-sand)", display: "flex", "align-items": "center", "justify-content": "center", "flex-shrink": 0, "margin-top": "0.125rem" }}>
+          <Icon size={15} style={{ color: "var(--color-muted)" }} />
         </div>
       )}
-      <div class="flex-1 min-w-0">
-        <p class="text-xs font-bold text-muted uppercase tracking-wider mb-1">{props.label}</p>
+      <div style={{ flex: 1, "min-width": "0" }}>
+        <p style={{ "font-size": "0.75rem", "font-weight": "700", color: "var(--color-muted)", "text-transform": "uppercase", "letter-spacing": "0.05em", "margin-bottom": "0.25rem" }}>{props.label}</p>
         <Show
           when={props.editing}
-          fallback={<p class="text-sm font-semibold text-ink break-words">{props.value}</p>}
+          fallback={<p style={{ "font-size": "0.875rem", "font-weight": "600", color: "var(--color-ink)", "word-break": "break-word" }}>{props.value}</p>}
         >
           <input
             type={props.type || "text"}
             value={props.value}
             onInput={(e) => props.onInput?.(e.currentTarget.value)}
-            class="filter-input"
+            class="login-input"
           />
         </Show>
       </div>
@@ -63,15 +63,15 @@ export function ActivityItem(props: {
   time: string;
 }) {
   return (
-    <div class="flex items-start gap-4 py-3 border-b border-border/30 last:border-0">
-      <div class="flex flex-col items-center gap-1 pt-1">
-        <div class="w-2.5 h-2.5 rounded-full bg-green-400 flex-shrink-0" />
+    <div style={{ display: "flex", "align-items": "flex-start", gap: "1rem", padding: "0.75rem 0", "border-bottom": "1px solid rgba(var(--color-border-rgb), 0.3)" }} class="last:border-0">
+      <div style={{ display: "flex", "flex-direction": "column", "align-items": "center", gap: "0.25rem", "padding-top": "0.25rem" }}>
+        <div style={{ width: "0.625rem", height: "0.625rem", "border-radius": "50%", "background-color": "#4ade80", "flex-shrink": 0 }} />
       </div>
-      <div class="flex-1 min-w-0">
-        <p class="text-sm font-semibold text-ink">{props.action}</p>
-        <p class="text-xs text-muted mt-0.5 truncate">{props.detail}</p>
+      <div style={{ flex: 1, "min-width": "0" }}>
+        <p style={{ "font-size": "0.875rem", "font-weight": "600", color: "var(--color-ink)" }}>{props.action}</p>
+        <p style={{ "font-size": "0.75rem", color: "var(--color-muted)", "margin-top": "0.125rem", overflow: "hidden", "text-overflow": "ellipsis", "white-space": "nowrap" }}>{props.detail}</p>
       </div>
-      <span class="text-xs text-muted/70 whitespace-nowrap flex-shrink-0 mt-0.5">{props.time}</span>
+      <span style={{ "font-size": "0.75rem", color: "rgba(var(--color-muted-rgb), 0.7)", "white-space": "nowrap", "flex-shrink": 0, "margin-top": "0.125rem" }}>{props.time}</span>
     </div>
   );
 }

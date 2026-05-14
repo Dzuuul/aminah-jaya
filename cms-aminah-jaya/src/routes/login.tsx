@@ -39,7 +39,7 @@ export default function LoginPage() {
       // Use Solid router navigation after a tick to ensure owner context
       setTimeout(() => navigate("/"), 0);
     } catch (err: any) {
-      setError(err.message || "Failed to sign in. Please check your credentials.");
+      setError(err.message || "Gagal masuk. Silakan periksa kredensial Anda.");
     } finally {
       setIsLoading(false);
     }
@@ -47,32 +47,31 @@ export default function LoginPage() {
 
   return (
     <Show when={!isChecking()}>
-      <div class="min-h-screen flex items-center justify-center p-4 bg-sand relative overflow-hidden">
-        {/* Decorative blobs */}
-        <div class="absolute -top-24 -left-24 w-96 h-96 bg-green-100 rounded-full blur-3xl opacity-50"></div>
-        <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-green-50 rounded-full blur-3xl opacity-50"></div>
+      <div class="login-wrapper">
+        {/* Pattern Background */}
+        <div class="absolute inset-0 login-bg-pattern"></div>
 
-        <div class="w-full max-w-md relative z-10">
-          <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center mb-4">
-              <img src="/logo.png" alt="Logo" class="w-16" />
+        <div class="login-content">
+          <div class="login-header">
+            <div class="login-logo-container">
+              <img src="/logo.png" alt="Logo" class="login-logo" />
             </div>
-            <h1 class="text-3xl font-bold text-ink mb-2">Assalamu'alaikum</h1>
-            <p class="text-ink-light">Masuk ke akun anda untuk melanjutkan</p>
+            <h1 class="login-title">Assalamu'alaikum</h1>
+            <p class="login-subtitle">Masuk ke akun anda untuk melanjutkan</p>
           </div>
 
-          <div class="bg-white p-8 rounded-3xl shadow-xl border border-border/40">
-            <form class="space-y-6" onSubmit={handleSubmit}>
+          <div class="login-card">
+            <form class="login-form" onSubmit={handleSubmit}>
               <Show when={error()}>
-                <div class="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-2xl animate-in fade-in slide-in-from-top-1">
+                <div class="login-error">
                   {error()}
                 </div>
               </Show>
 
-              <div class="space-y-2">
-                <label class="text-sm font-semibold text-ink-light ml-1 block">Email</label>
-                <div class="relative group">
-                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted transition-colors group-focus-within:text-green-500">
+              <div class="login-field">
+                <label class="login-label">Email</label>
+                <div class="login-input-group">
+                  <div class="login-icon">
                     <Mail size={18} />
                   </div>
                   <input
@@ -80,20 +79,20 @@ export default function LoginPage() {
                     value={email()}
                     required
                     onInput={(e) => setEmail(e.currentTarget.value)}
-                    class="block w-full pl-11 pr-4 py-3.5 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all outline-none disabled:opacity-50"
+                    class="login-input"
                     placeholder="admin@aminahjaya.com"
                     disabled={isLoading()}
                   />
                 </div>
               </div>
 
-              <div class="space-y-2">
-                <div class="flex justify-between items-center ml-1">
-                  <label class="text-sm font-semibold text-ink-light">Password</label>
-                  <a href="#" class="text-xs font-bold text-green-500 hover:text-green-700 transition-colors">Lupa?</a>
+              <div class="login-field">
+                <div class="login-label-row">
+                  <label class="login-label" style={{ "margin-left": 0 }}>Kata Sandi</label>
+                  <a href="#" class="login-forgot-link">Lupa?</a>
                 </div>
-                <div class="relative group">
-                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted transition-colors group-focus-within:text-green-500">
+                <div class="login-input-group">
+                  <div class="login-icon">
                     <Lock size={18} />
                   </div>
                   <input
@@ -101,14 +100,14 @@ export default function LoginPage() {
                     value={password()}
                     required
                     onInput={(e) => setPassword(e.currentTarget.value)}
-                    class="block w-full pl-11 pr-12 py-3.5 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all outline-none disabled:opacity-50"
+                    class="login-input login-password-input"
                     placeholder="••••••••"
                     disabled={isLoading()}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword())}
-                    class="absolute inset-y-0 right-0 pr-4 flex items-center text-muted hover:text-ink transition-colors"
+                    class="login-password-toggle"
                     disabled={isLoading()}
                   >
                     {showPassword() ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -116,25 +115,25 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div class="flex items-center gap-2 ml-1">
-                <input type="checkbox" id="remember" class="w-4 h-4 accent-green-500 rounded border-border" disabled={isLoading()} />
-                <label for="remember" class="text-sm text-ink-light cursor-pointer">Ingat saya</label>
+              <div class="login-remember-row">
+                <input type="checkbox" id="remember" class="login-checkbox" disabled={isLoading()} />
+                <label for="remember" class="login-checkbox-label">Ingat saya</label>
               </div>
 
               <button
                 type="submit"
                 disabled={isLoading()}
-                class="w-full py-4 bg-green-500 text-white rounded-2xl font-bold text-lg shadow-lg shadow-green-500/30 hover:bg-green-700 hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-70 disabled:hover:translate-y-0 flex items-center justify-center gap-2"
+                class="login-btn"
               >
                 <Show when={isLoading()}>
                   <Loader2 class="animate-spin" size={20} />
                 </Show>
-                {isLoading() ? "Signing In..." : "Sign In"}
+                {isLoading() ? "Masuk..." : "Masuk"}
               </button>
             </form>
           </div>
 
-          <p class="text-center mt-8 text-sm text-ink-light">
+          <p class="login-footer-text">
             &copy; 2026 Aminah Jaya. Hak Cipta Dilindungi.
           </p>
         </div>

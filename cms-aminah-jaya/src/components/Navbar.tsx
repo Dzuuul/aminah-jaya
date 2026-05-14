@@ -4,16 +4,16 @@ import { Search, Bell, Menu, ShoppingBag, Package, Users, X, ChevronRight } from
 
 // Mock searchable data — in a real app this would come from a global store/API
 const searchIndex = [
-  { type: "Product", label: "Gamis Al-Fatih", sub: "PRD-001 · In Stock", href: "/products" },
-  { type: "Product", label: "Minyak Zaitun 250ml", sub: "PRD-002 · Low Stock", href: "/products" },
-  { type: "Product", label: "Kurma Ajwa 1kg", sub: "PRD-003 · Out of Stock", href: "/products" },
-  { type: "Product", label: "Hijab Pashmina", sub: "PRD-004 · In Stock", href: "/products" },
-  { type: "Order", label: "#ORD-7234 – Ahmad Fauzi", sub: "Rp 350.000 · Paid", href: "/orders" },
-  { type: "Order", label: "#ORD-7235 – Siti Aminah", sub: "Rp 85.000 · Pending", href: "/orders" },
-  { type: "Order", label: "#ORD-7236 – Budi Santoso", sub: "Rp 210.000 · Paid", href: "/orders" },
-  { type: "Customer", label: "Ahmad Fauzi", sub: "12 orders · Active", href: "/customers" },
-  { type: "Customer", label: "Siti Aminah", sub: "7 orders · Active", href: "/customers" },
-  { type: "Customer", label: "Budi Santoso", sub: "3 orders · Inactive", href: "/customers" },
+  { type: "Product", label: "Gamis Al-Fatih", sub: "PRD-001 · Tersedia", href: "/products" },
+  { type: "Product", label: "Minyak Zaitun 250ml", sub: "PRD-002 · Stok Rendah", href: "/products" },
+  { type: "Product", label: "Kurma Ajwa 1kg", sub: "PRD-003 · Stok Habis", href: "/products" },
+  { type: "Product", label: "Hijab Pashmina", sub: "PRD-004 · Tersedia", href: "/products" },
+  { type: "Order", label: "#ORD-7234 – Ahmad Fauzi", sub: "Rp 350.000 · Dibayar", href: "/orders" },
+  { type: "Order", label: "#ORD-7235 – Siti Aminah", sub: "Rp 85.000 · Menunggu", href: "/orders" },
+  { type: "Order", label: "#ORD-7236 – Budi Santoso", sub: "Rp 210.000 · Dibayar", href: "/orders" },
+  { type: "Customer", label: "Ahmad Fauzi", sub: "12 pesanan · Aktif", href: "/customers" },
+  { type: "Customer", label: "Siti Aminah", sub: "7 pesanan · Aktif", href: "/customers" },
+  { type: "Customer", label: "Budi Santoso", sub: "3 pesanan · Tidak Aktif", href: "/customers" },
 ];
 
 const typeIcon: Record<string, any> = {
@@ -29,10 +29,10 @@ const typeColor: Record<string, string> = {
 };
 
 const notifications = [
-  { id: 1, title: "New order received", body: "#ORD-7238 from Rudi Hermawan", time: "2 min ago", read: false },
-  { id: 2, title: "Low stock alert", body: "Minyak Zaitun 250ml has only 12 left", time: "15 min ago", read: false },
-  { id: 3, title: "Payment confirmed", body: "#ORD-7236 has been paid", time: "1 hour ago", read: true },
-  { id: 4, title: "New customer", body: "Rudi Hermawan just registered", time: "3 hours ago", read: true },
+  { id: 1, title: "Pesanan baru diterima", body: "#ORD-7238 dari Rudi Hermawan", time: "2 menit lalu", read: false },
+  { id: 2, title: "Peringatan stok rendah", body: "Minyak Zaitun 250ml hanya tersisa 12", time: "15 menit lalu", read: false },
+  { id: 3, title: "Pembayaran dikonfirmasi", body: "#ORD-7236 telah dibayar", time: "1 jam lalu", read: true },
+  { id: 4, title: "Pelanggan baru", body: "Rudi Hermawan baru saja mendaftar", time: "3 jam lalu", read: true },
 ];
 
 export default function Navbar(props: { onOpenSidebar: () => void; title?: string }) {
@@ -56,38 +56,38 @@ export default function Navbar(props: { onOpenSidebar: () => void; title?: strin
   const showSearchResults = () => searchFocused() && query().length > 0;
 
   return (
-    <header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-border/50 px-4 lg:px-8 py-4">
-      <div class="flex items-center justify-between gap-4">
+    <header class="navbar">
+      <div class="navbar-inner">
 
         {/* Left */}
-        <div class="flex items-center gap-4 flex-shrink-0">
+        <div class="navbar-left">
           <button
-            class="lg:hidden p-2 hover:bg-cream rounded-xl text-ink"
+            class="navbar-mobile-toggle"
             onClick={props.onOpenSidebar}
           >
             <Menu size={24} />
           </button>
-          <h2 class="text-xl font-bold text-ink hidden sm:block">{props.title || "Overview"}</h2>
+          <h2 class="navbar-title">{props.title || "Ringkasan"}</h2>
         </div>
 
         {/* Right controls */}
-        <div class="flex items-center gap-3">
+        <div class="navbar-right">
 
           {/* Global Search */}
-          <div class="relative hidden md:block">
-            <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none z-10" size={17} />
+          <div class="navbar-search-container">
+            <Search class="navbar-search-icon" size={17} />
             <input
               type="text"
-              placeholder="Search products, orders, customers..."
+              placeholder="Cari produk, pesanan, pelanggan..."
               value={query()}
               onInput={(e) => setQuery(e.currentTarget.value)}
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
-              class="pl-10 pr-10 py-2.5 bg-cream border border-border rounded-xl focus:ring-2 focus:ring-green-500/10 focus:border-green-500 outline-none w-72 transition-all text-sm"
+              class="navbar-search-input"
             />
             <Show when={query().length > 0}>
               <button
-                class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-ink"
+                class="navbar-search-clear"
                 onClick={() => setQuery("")}
               >
                 <X size={15} />
@@ -100,7 +100,7 @@ export default function Navbar(props: { onOpenSidebar: () => void; title?: strin
                 <Show
                   when={results().length > 0}
                   fallback={
-                    <div class="px-4 py-6 text-center text-muted text-sm">No results for "{query()}"</div>
+                    <div class="px-4 py-6 text-center text-muted text-sm">Tidak ada hasil untuk "{query()}"</div>
                   }
                 >
                   <div class="py-2">
@@ -131,52 +131,52 @@ export default function Navbar(props: { onOpenSidebar: () => void; title?: strin
           </div>
 
           {/* Notifications */}
-          <div class="relative">
+          <div style={{ position: "relative" }}>
             <button
-              class="p-2.5 bg-cream hover:bg-border/30 rounded-xl text-ink-light transition-colors relative"
+              class="navbar-action-btn"
               onClick={() => setNotifOpen(!notifOpen())}
             >
               <Bell size={20} />
               <Show when={unreadCount() > 0}>
-                <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                <span class="navbar-badge"></span>
               </Show>
             </button>
 
             {/* Notification Dropdown */}
             <Show when={notifOpen()}>
               <>
-                <div class="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
-                <div class="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-border/50 overflow-hidden z-50">
-                  <div class="px-5 py-4 border-b border-border/30 flex justify-between items-center">
+                <div style={{ position: "fixed", inset: 0, "z-index": 40 }} onClick={() => setNotifOpen(false)} />
+                <div style={{ position: "absolute", right: 0, "margin-top": "0.5rem", width: "20rem", "background-color": "#ffffff", "border-radius": "1.5rem", "box-shadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", border: "1px solid rgba(229, 224, 216, 0.5)", overflow: "hidden", "z-index": 50 }}>
+                  <div style={{ padding: "1rem 1.25rem", "border-bottom": "1px solid rgba(229, 224, 216, 0.3)", display: "flex", "justify-content": "space-between", "align-items": "center" }}>
                     <div>
-                      <p class="font-bold text-ink text-sm">Notifications</p>
+                      <p style={{ "font-weight": "700", color: "var(--color-ink)", "font-size": "0.875rem" }}>Notifikasi</p>
                       <Show when={unreadCount() > 0}>
-                        <p class="text-xs text-muted">{unreadCount()} unread</p>
+                        <p style={{ "font-size": "0.75rem", color: "var(--color-muted)" }}>{unreadCount()} belum dibaca</p>
                       </Show>
                     </div>
-                    <button class="text-xs font-bold text-green-500 hover:text-green-700 transition-colors">
-                      Mark all read
+                    <button style={{ "font-size": "0.75rem", "font-weight": "700", color: "var(--color-green-500)", background: "none", border: "none", cursor: "pointer" }}>
+                      Tandai semua dibaca
                     </button>
                   </div>
-                  <div class="divide-y divide-border/30 max-h-72 overflow-y-auto">
+                  <div style={{ "max-height": "18rem", "overflow-y": "auto" }}>
                     <For each={notifications}>
                       {(notif) => (
-                        <div class={`px-5 py-3.5 flex gap-3 items-start hover:bg-cream transition-colors cursor-pointer ${!notif.read ? 'bg-green-50/50' : ''}`}>
-                          <div class={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${!notif.read ? 'bg-green-500' : 'bg-border'}`} />
-                          <div class="flex-1 min-w-0">
-                            <p class={`text-sm leading-tight ${!notif.read ? 'font-semibold text-ink' : 'font-medium text-ink-light'}`}>
+                        <div style={{ padding: "0.875rem 1.25rem", display: "flex", gap: "0.75rem", "align-items": "flex-start", cursor: "pointer", "border-bottom": "1px solid rgba(229, 224, 216, 0.3)", "background-color": !notif.read ? "rgba(243, 251, 247, 0.5)" : "transparent" }}>
+                          <div style={{ width: "0.5rem", height: "0.5rem", "border-radius": "50%", "margin-top": "0.375rem", "flex-shrink": 0, "background-color": !notif.read ? "var(--color-green-500)" : "var(--color-border)" }} />
+                          <div style={{ flex: 1, "min-width": 0 }}>
+                            <p style={{ "font-size": "0.875rem", "line-height": 1.25, "font-weight": !notif.read ? "600" : "500", color: !notif.read ? "var(--color-ink)" : "var(--color-ink-light)" }}>
                               {notif.title}
                             </p>
-                            <p class="text-xs text-muted mt-0.5">{notif.body}</p>
-                            <p class="text-xs text-muted/70 mt-1">{notif.time}</p>
+                            <p style={{ "font-size": "0.75rem", color: "var(--color-muted)", "margin-top": "0.125rem" }}>{notif.body}</p>
+                            <p style={{ "font-size": "0.75rem", color: "rgba(138, 138, 138, 0.7)", "margin-top": "0.25rem" }}>{notif.time}</p>
                           </div>
                         </div>
                       )}
                     </For>
                   </div>
-                  <div class="px-5 py-3 border-t border-border/30">
-                    <a href="#" class="text-xs font-bold text-green-500 hover:text-green-700 transition-colors">
-                      View all notifications →
+                  <div style={{ padding: "0.75rem 1.25rem", "border-top": "1px solid rgba(229, 224, 216, 0.3)" }}>
+                    <a href="#" style={{ "font-size": "0.75rem", "font-weight": "700", color: "var(--color-green-500)", "text-decoration": "none" }}>
+                      Lihat semua notifikasi →
                     </a>
                   </div>
                 </div>
@@ -187,8 +187,8 @@ export default function Navbar(props: { onOpenSidebar: () => void; title?: strin
           {/* Avatar → Profile */}
           <A
             href="/profile"
-            class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm hover:bg-green-200 transition-colors flex-shrink-0"
-            title="View Profile"
+            class="navbar-avatar"
+            title="Lihat Profil"
           >
             AD
           </A>

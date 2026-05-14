@@ -14,22 +14,27 @@ export default function StatCard(props: StatCardProps) {
   const isPositive = () => props.change?.startsWith("+");
   
   return (
-    <div class="bg-white p-6 rounded-3xl border border-border/40 shadow-sm hover:shadow-md transition-shadow">
-      <div class="flex justify-between items-start mb-4">
-        <div class={`p-3 rounded-2xl ${props.bg} ${props.color}`}>
+    <div class="stat-card-custom">
+      <div style={{ display: "flex", "justify-content": "space-between", "align-items": "flex-start", "margin-bottom": "1rem" }}>
+        <div style={{ padding: "0.75rem", "border-radius": "1rem", "background-color": props.bg, color: props.color }}>
           <props.icon size={24} />
         </div>
         {props.change && (
-          <span class={`text-xs font-bold px-2 py-1 rounded-lg ${
-            isPositive() ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"
-          }`}>
+          <span style={{ 
+            "font-size": "0.75rem", 
+            "font-weight": "700", 
+            padding: "0.25rem 0.5rem", 
+            "border-radius": "0.5rem",
+            color: isPositive() ? "#16a34a" : "#dc2626",
+            "background-color": isPositive() ? "#f0fdf4" : "#fef2f2"
+          }}>
             {props.change}
           </span>
         )}
         {props.suffix}
       </div>
-      <p class="text-muted text-sm font-semibold uppercase tracking-wider">{props.label}</p>
-      <h3 class="text-2xl font-bold text-ink mt-1">{props.value}</h3>
+      <p style={{ color: "var(--color-muted)", "font-size": "0.875rem", "font-weight": "600", "text-transform": "uppercase", "letter-spacing": "0.05em" }}>{props.label}</p>
+      <h3 style={{ "font-size": "1.5rem", "font-weight": "700", color: "var(--color-ink)", "margin-top": "0.25rem" }}>{props.value}</h3>
     </div>
   );
 }

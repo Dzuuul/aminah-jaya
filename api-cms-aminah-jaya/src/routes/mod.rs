@@ -8,3 +8,4 @@ pub mod upload;
 pub mod flash_sales;
 pub mod blogs;
 pub mod banners;
+pub mod coupons;

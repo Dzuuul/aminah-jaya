@@ -421,3 +421,49 @@ export const updateSettings = (payload: Partial<Settings>) =>
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+
+// ── Coupons ────────────────────────────────────────────────────────────────
+
+export interface Coupon {
+  id: string;
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  min_purchase: number;
+  max_discount?: number;
+  start_at: string;
+  end_at: string;
+  usage_limit?: number;
+  used_count: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCouponPayload {
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  min_purchase?: number;
+  max_discount?: number;
+  start_at: string;
+  end_at: string;
+  usage_limit?: number;
+  is_active?: boolean;
+}
+
+export const getCoupons = () => fetchApi<Coupon[]>("/coupons");
+export const createCoupon = (payload: CreateCouponPayload) =>
+  fetchApi<Coupon>("/coupons", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+export const updateCoupon = (id: string, payload: Partial<CreateCouponPayload>) =>
+  fetchApi<Coupon>(`/coupons/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+export const deleteCoupon = (id: string) =>
+  fetchApi<void>(`/coupons/${id}`, {
+    method: "DELETE",
+  });

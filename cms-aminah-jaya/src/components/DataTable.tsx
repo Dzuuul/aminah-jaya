@@ -87,41 +87,41 @@ export default function DataTable<T extends Record<string, any>>(props: DataTabl
   };
 
   return (
-    <div class="bg-white rounded-3xl border border-border/40 shadow-sm overflow-hidden">
+    <div class="data-table-container">
       {/* Toolbar */}
-      <div class="p-4 border-b border-border/40">
-        <div class="flex flex-wrap gap-2.5 items-center">
+      <div class="data-table-toolbar">
+        <div class="data-table-toolbar-inner">
 
           {/* Search */}
           <Show when={props.searchable !== false}>
-            <div class="relative flex-1 min-w-48">
-              <Search class="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" size={16} />
+            <div class="data-table-search">
+              <Search class="data-table-search-icon" size={16} />
               <input
                 type="text"
-                placeholder={props.searchPlaceholder || "Search..."}
+                placeholder={props.searchPlaceholder || "Cari..."}
                 value={searchQuery()}
                 onInput={(e) => setSearchQuery(e.currentTarget.value)}
-                class="filter-input pl-9"
+                class="data-table-search-input"
               />
             </div>
           </Show>
 
           {/* Date Range */}
           <Show when={props.dateFilter}>
-            <div class="filter-control flex-shrink-0">
-              <span class="filter-label">{props.dateFilter?.label || "Date"}:</span>
+            <div style={{ display: "flex", "align-items": "center", gap: "0.5rem", "flex-shrink": 0 }}>
+              <span style={{ "font-size": "0.75rem", "font-weight": "700", color: "var(--color-muted)", "text-transform": "uppercase", "letter-spacing": "0.05em" }}>{props.dateFilter?.label || "Tanggal"}:</span>
               <input
                 type="date"
                 value={dateRange().start}
                 onInput={(e) => setDateRange(p => ({ ...p, start: e.currentTarget.value }))}
-                class="filter-date-input"
+                style={{ padding: "0.5rem 0.75rem", "border-radius": "0.5rem", border: "1px solid var(--color-border)", "background-color": "var(--color-cream)", "font-size": "0.875rem", outline: "none", "color": "var(--color-ink)" }}
               />
-              <span class="text-muted/60 font-medium text-xs">–</span>
+              <span style={{ color: "var(--color-muted)", "font-weight": "500", "font-size": "0.75rem" }}>–</span>
               <input
                 type="date"
                 value={dateRange().end}
                 onInput={(e) => setDateRange(p => ({ ...p, end: e.currentTarget.value }))}
-                class="filter-date-input"
+                style={{ padding: "0.5rem 0.75rem", "border-radius": "0.5rem", border: "1px solid var(--color-border)", "background-color": "var(--color-cream)", "font-size": "0.875rem", outline: "none", "color": "var(--color-ink)" }}
               />
             </div>
           </Show>
@@ -130,23 +130,38 @@ export default function DataTable<T extends Record<string, any>>(props: DataTabl
           <Show when={props.filters && props.filters.length > 0}>
             <For each={props.filters}>
               {(filterGroup) => (
-                <div class="filter-control flex-shrink-0">
-                  <span class="filter-label">{filterGroup.label}:</span>
-                  <div class="flex items-center gap-4">
+                <div style={{ display: "flex", "align-items": "center", gap: "0.75rem", "flex-shrink": 0 }}>
+                  <span style={{ "font-size": "0.75rem", "font-weight": "700", color: "var(--color-muted)", "text-transform": "uppercase", "letter-spacing": "0.05em" }}>{filterGroup.label}:</span>
+                  <div style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
                     <For each={filterGroup.options}>
                       {(opt) => {
                         const isActive = () => activeFilters()[filterGroup.key]?.includes(opt.value);
                         return (
                           <label
-                            class="filter-checkbox-label"
+                            style={{ display: "flex", "align-items": "center", gap: "0.375rem", cursor: "pointer" }}
                             onClick={() => toggleFilter(filterGroup.key, opt.value)}
                           >
-                            <div class={`filter-checkbox-box ${isActive() ? 'active' : ''}`}>
+                            <div style={{ 
+                              width: "1rem", 
+                              height: "1rem", 
+                              "border-radius": "0.25rem", 
+                              border: isActive() ? "1px solid var(--color-green-500)" : "1px solid var(--color-border)",
+                              "background-color": isActive() ? "var(--color-green-500)" : "var(--color-cream)",
+                              display: "flex",
+                              "align-items": "center",
+                              "justify-content": "center",
+                              transition: "all 0.2s"
+                            }}>
                               <Show when={isActive()}>
-                                <Check size={11} class="text-white" />
+                                <Check size={11} color="#ffffff" />
                               </Show>
                             </div>
-                            <span class={`filter-checkbox-text ${isActive() ? 'active' : ''}`}>
+                            <span style={{ 
+                              "font-size": "0.875rem", 
+                              "font-weight": isActive() ? "600" : "500", 
+                              color: isActive() ? "var(--color-ink)" : "var(--color-ink-light)",
+                              transition: "all 0.2s"
+                            }}>
                               {opt.label}
                             </span>
                           </label>
@@ -163,29 +178,29 @@ export default function DataTable<T extends Record<string, any>>(props: DataTabl
       </div>
 
       {/* Table Area */}
-      <div class="overflow-x-auto relative z-10">
-        <table class="w-full text-left">
-          <thead class="bg-cream text-muted text-xs font-bold uppercase tracking-wider">
+      <div class="data-table-wrapper">
+        <table class="data-table">
+          <thead>
             <tr>
               <For each={props.columns}>
                 {(col) => (
-                  <th class="px-6 py-4">{col.header}</th>
+                  <th>{col.header}</th>
                 )}
               </For>
             </tr>
           </thead>
-          <tbody class="divide-y divide-border/30">
+          <tbody>
             <Show 
               when={filteredData().length > 0} 
               fallback={
                 <tr>
-                  <td colspan={props.columns.length} class="px-6 py-12 text-center text-muted">
-                    <div class="flex flex-col items-center justify-center gap-3">
-                      <div class="w-16 h-16 bg-cream rounded-full flex items-center justify-center">
-                        <Search size={24} class="text-muted" />
+                  <td colspan={props.columns.length} class="data-table-empty">
+                    <div class="data-table-empty-inner">
+                      <div class="data-table-empty-icon">
+                        <Search size={24} color="var(--color-muted)" />
                       </div>
-                      <p class="font-medium text-ink-light">No results found for your filters.</p>
-                      <button onClick={clearFilters} class="text-sm font-bold text-green-500 hover:text-green-700">Clear all filters</button>
+                      <p class="data-table-empty-text">Tidak ada hasil yang ditemukan.</p>
+                      <button onClick={clearFilters} class="data-table-empty-btn">Bersihkan semua filter</button>
                     </div>
                   </td>
                 </tr>
@@ -193,10 +208,10 @@ export default function DataTable<T extends Record<string, any>>(props: DataTabl
             >
               <For each={filteredData()}>
                 {(row) => (
-                  <tr class="hover:bg-cream/50 transition-colors group">
+                  <tr>
                     <For each={props.columns}>
                       {(col) => (
-                        <td class="px-6 py-4">
+                        <td>
                           {col.render ? col.render(row) : row[col.accessor as keyof T]}
                         </td>
                       )}

@@ -1,6 +1,7 @@
 import { createResource, createSignal, Show, For } from "solid-js";
 import { Plus, Trash2, Loader2, Calendar, Tag, Package } from "lucide-solid";
 import Layout from "../components/Layout";
+import Button from "../components/ui/Button";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
 import DataTable, { Column } from "../components/DataTable";
@@ -26,19 +27,19 @@ export default function FlashSales() {
 
   const columns: Column<FlashSale>[] = [
     {
-      header: "Event Name",
+      header: "Nama Event",
       accessor: "name",
-      render: (item) => <span class="font-bold text-ink">{item.name}</span>
+      render: (item) => <span style={{ "font-weight": "700", color: "var(--color-ink)" }}>{item.name}</span>
     },
     {
-      header: "Start Date",
+      header: "Waktu Mulai",
       accessor: "start_at",
-      render: (item) => <span class="text-ink-light">{new Date(item.start_at).toLocaleString()}</span>
+      render: (item) => <span style={{ color: "var(--color-ink-light)" }}>{new Date(item.start_at).toLocaleString()}</span>
     },
     {
-      header: "End Date",
+      header: "Waktu Berakhir",
       accessor: "end_at",
-      render: (item) => <span class="text-ink-light">{new Date(item.end_at).toLocaleString()}</span>
+      render: (item) => <span style={{ color: "var(--color-ink-light)" }}>{new Date(item.end_at).toLocaleString()}</span>
     },
     {
       header: "Status",
@@ -50,19 +51,19 @@ export default function FlashSales() {
         const isActive = now >= start && now <= end;
 
         return (
-          <span class={`px-3 py-1 rounded-full text-xs font-bold ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-            {isActive ? 'Ongoing' : now < start ? 'Upcoming' : 'Ended'}
+          <span class={`badge ${isActive ? 'badge-green' : 'badge-orange'}`}>
+            {isActive ? 'Berjalan' : now < start ? 'Akan Datang' : 'Berakhir'}
           </span>
         );
       }
     },
     {
-      header: "Actions",
+      header: "Aksi",
       accessor: "id",
       render: (item) => (
         <button
           onClick={() => { setSaleToDelete(item.id); setIsConfirmOpen(true); }}
-          class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+          class="action-btn action-btn-delete"
         >
           <Trash2 size={18} />
         </button>
@@ -99,108 +100,108 @@ export default function FlashSales() {
         start_at: new Date(formData().start_at).toISOString(),
         end_at: new Date(formData().end_at).toISOString(),
       });
-      toast.success("Flash sale created successfully");
+      toast.success("Flash sale berhasil dibuat");
       setIsModalOpen(false);
       refetch();
     } catch (err: any) {
-      toast.error(err.message || "Failed to create flash sale");
+      toast.error(err.message || "Gagal membuat flash sale");
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <Layout title="Flash Sales">
-      <div class="flex justify-between items-center mb-6">
+    <Layout title="Flash Sale">
+      <div class="page-header">
         <div>
-          <h1 class="text-3xl font-bold text-ink">Flash Sales</h1>
-          <p class="text-ink-light mt-1">Manage limited-time promotion events.</p>
+          <h1 class="page-title">Flash Sale</h1>
+          <p class="page-subtitle">Kelola event promosi terbatas waktu.</p>
         </div>
-        <button
+        <Button
           onClick={() => setIsModalOpen(true)}
-          class="bg-red-500 text-white p-2.5 rounded-xl shadow-lg shadow-red-500/20 hover:bg-red-700 transition-all flex items-center gap-2 px-4"
+          variant="danger"
         >
           <Plus size={20} />
-          <span class="font-bold">New Event</span>
-        </button>
+          <span>Event Baru</span>
+        </Button>
       </div>
 
-      <Show when={sales()} fallback={<div class="p-8 text-center text-muted">Loading events...</div>}>
-        <DataTable columns={columns} data={sales()!} searchPlaceholder="Search events..." />
+      <Show when={sales()} fallback={<div style={{ padding: "2rem", "text-align": "center", color: "var(--color-muted)" }}>Memuat event...</div>}>
+        <DataTable columns={columns} data={sales()!} searchPlaceholder="Cari event..." />
       </Show>
 
-      <Modal isOpen={isModalOpen()} onClose={() => setIsModalOpen(false)} title="Create Flash Sale">
-        <form onSubmit={handleSubmit} class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Event Name</label>
+      <Modal isOpen={isModalOpen()} onClose={() => setIsModalOpen(false)} title="Buat Flash Sale Baru">
+        <form onSubmit={handleSubmit} style={{ padding: "1.5rem", display: "flex", "flex-direction": "column", gap: "1rem" }}>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Nama Event</label>
             <input
-              type="text" required placeholder="e.g. 5.5 Super Sale"
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all"
+              type="text" required placeholder="Contoh: 5.5 Super Sale"
+              class="login-input"
               onInput={(e) => setFormData({ ...formData(), name: e.currentTarget.value })}
             />
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <label class="text-sm font-bold text-ink-light ml-1">Start Time</label>
+          <div style={{ display: "grid", "grid-template-columns": "repeat(2, minmax(0, 1fr))", gap: "1rem" }}>
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+              <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Waktu Mulai</label>
               <input
                 type="datetime-local" required
-                class="w-full px-4 py-3 bg-cream border border-border rounded-2xl outline-none"
+                class="login-input"
                 onInput={(e) => setFormData({ ...formData(), start_at: e.currentTarget.value })}
               />
             </div>
-            <div class="space-y-1">
-              <label class="text-sm font-bold text-ink-light ml-1">End Time</label>
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+              <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Waktu Berakhir</label>
               <input
                 type="datetime-local" required
-                class="w-full px-4 py-3 bg-cream border border-border rounded-2xl outline-none"
+                class="login-input"
                 onInput={(e) => setFormData({ ...formData(), end_at: e.currentTarget.value })}
               />
             </div>
           </div>
 
-          <div class="space-y-3 pt-4">
-            <div class="flex justify-between items-center">
-              <h3 class="font-bold text-ink">Products In Sale</h3>
-              <button type="button" onClick={addItem} class="text-sm text-red-500 font-bold hover:underline flex items-center gap-1">
-                <Plus size={14} /> Add Product
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.75rem", "padding-top": "1rem" }}>
+            <div style={{ display: "flex", "justify-content": "space-between", "align-items": "center" }}>
+              <h3 style={{ "font-weight": "700", color: "var(--color-ink)" }}>Produk dalam Promo</h3>
+              <button type="button" onClick={addItem} style={{ "font-size": "0.875rem", color: "#ef4444", "font-weight": "700", display: "flex", "align-items": "center", gap: "0.25rem", background: "none", border: "none", cursor: "pointer" }}>
+                <Plus size={14} /> Tambah Produk
               </button>
             </div>
 
             <For each={formData().items}>
               {(item, index) => (
-                <div class="p-4 bg-cream border border-border rounded-2xl space-y-3 relative">
-                  <button type="button" onClick={() => removeItem(index())} class="absolute top-2 right-2 text-muted hover:text-red-500">
+                <div style={{ padding: "1rem", "background-color": "var(--color-cream)", border: "1px solid var(--color-border)", "border-radius": "1rem", position: "relative", display: "flex", "flex-direction": "column", gap: "0.75rem" }}>
+                  <button type="button" onClick={() => removeItem(index())} style={{ position: "absolute", top: "0.5rem", right: "0.5rem", color: "var(--color-muted)", background: "none", border: "none", cursor: "pointer" }}>
                     <Trash2 size={16} />
                   </button>
                   
-                  <div class="space-y-1">
-                    <label class="text-[10px] font-bold uppercase text-muted ml-1">Select Product</label>
+                  <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+                    <label style={{ "font-size": "0.625rem", "font-weight": "700", "text-transform": "uppercase", color: "var(--color-muted)", "margin-left": "0.25rem" }}>Pilih Produk</label>
                     <select
-                      required class="w-full bg-white border border-border rounded-lg p-2 text-sm"
+                      required style={{ width: "100%", "background-color": "white", border: "1px solid var(--color-border)", "border-radius": "0.5rem", padding: "0.5rem", "font-size": "0.875rem", outline: "none" }}
                       onChange={(e) => updateItem(index(), "product_id", e.currentTarget.value)}
                     >
-                      <option value="">Choose product...</option>
+                      <option value="">Pilih produk...</option>
                       <For each={products()}>
                         {(p) => <option value={p.id}>{p.name} ({formatCurrency(p.price)})</option>}
                       </For>
                     </select>
                   </div>
 
-                  <div class="grid grid-cols-2 gap-3">
-                    <div class="space-y-1">
-                      <label class="text-[10px] font-bold uppercase text-muted ml-1">Sale Price</label>
+                  <div style={{ display: "grid", "grid-template-columns": "repeat(2, minmax(0, 1fr))", gap: "0.75rem" }}>
+                    <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+                      <label style={{ "font-size": "0.625rem", "font-weight": "700", "text-transform": "uppercase", color: "var(--color-muted)", "margin-left": "0.25rem" }}>Harga Promo</label>
                       <input
                         type="number" required placeholder="0"
-                        class="w-full bg-white border border-border rounded-lg p-2 text-sm"
+                        style={{ width: "100%", "background-color": "white", border: "1px solid var(--color-border)", "border-radius": "0.5rem", padding: "0.5rem", "font-size": "0.875rem", outline: "none" }}
                         onInput={(e) => updateItem(index(), "sale_price", parseFloat(e.currentTarget.value))}
                       />
                     </div>
-                    <div class="space-y-1">
-                      <label class="text-[10px] font-bold uppercase text-muted ml-1">Stock Limit</label>
+                    <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+                      <label style={{ "font-size": "0.625rem", "font-weight": "700", "text-transform": "uppercase", color: "var(--color-muted)", "margin-left": "0.25rem" }}>Batas Stok</label>
                       <input
                         type="number" required placeholder="0"
-                        class="w-full bg-white border border-border rounded-lg p-2 text-sm"
+                        style={{ width: "100%", "background-color": "white", border: "1px solid var(--color-border)", "border-radius": "0.5rem", padding: "0.5rem", "font-size": "0.875rem", outline: "none" }}
                         onInput={(e) => updateItem(index(), "stock_limit", parseInt(e.currentTarget.value))}
                       />
                     </div>
@@ -210,21 +211,21 @@ export default function FlashSales() {
             </For>
           </div>
 
-          <div class="pt-6 flex gap-3 sticky bottom-0 bg-white pb-2">
+          <div style={{ "padding-top": "1.5rem", display: "flex", gap: "0.75rem", position: "sticky", bottom: 0, "background-color": "white", "padding-bottom": "0.5rem" }}>
             <button
               type="button" onClick={() => setIsModalOpen(false)}
-              class="flex-1 py-3 px-4 bg-cream text-ink font-bold rounded-2xl hover:bg-border transition-all"
+              style={{ flex: 1, padding: "0.75rem 1rem", "background-color": "var(--color-cream)", color: "var(--color-ink)", "font-weight": "700", "border-radius": "1rem", border: "none", cursor: "pointer" }}
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit" disabled={isSaving() || formData().items.length === 0}
-              class="flex-[2] py-3 px-4 bg-red-500 text-white font-bold rounded-2xl shadow-lg shadow-red-500/20 hover:bg-red-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ flex: 2, padding: "0.75rem 1rem", "background-color": "#ef4444", color: "white", "font-weight": "700", "border-radius": "1rem", border: "none", cursor: "pointer", display: "flex", "align-items": "center", "justify-content": "center", gap: "0.5rem", "box-shadow": "0 10px 15px -3px rgba(239, 68, 68, 0.2)", opacity: (isSaving() || formData().items.length === 0) ? 0.5 : 1 }}
             >
               <Show when={isSaving()}>
                 <Loader2 class="animate-spin" size={20} />
               </Show>
-              {isSaving() ? "Saving..." : "Create Event"}
+              {isSaving() ? "Menyimpan..." : "Buat Event"}
             </button>
           </div>
         </form>
@@ -237,15 +238,15 @@ export default function FlashSales() {
           if (!saleToDelete()) return;
           try {
             await deleteFlashSale(saleToDelete()!);
-            toast.success("Event deleted");
+            toast.success("Event berhasil dihapus");
             refetch();
           } catch (e: any) {
             toast.error(e.message);
           }
         }}
-        title="Delete Flash Sale"
-        message="Are you sure you want to delete this event? This will also remove the flash sale pricing for all associated products."
-        confirmText="Delete"
+        title="Hapus Flash Sale"
+        message="Apakah Anda yakin ingin menghapus event ini? Tindakan ini juga akan menghapus harga flash sale untuk semua produk terkait."
+        confirmText="Hapus"
         isDanger={true}
       />
     </Layout>

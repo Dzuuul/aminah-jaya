@@ -6,6 +6,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import DataTable, { Column } from "../components/DataTable";
 import { toast } from "../lib/toast";
 import { getBlogs, Blog, createBlog, deleteBlog, getProducts } from "../lib/api";
+import Button from "~/components/ui/Button";
 
 export default function Blogs() {
   const [blogs, { refetch }] = createResource(getBlogs);
@@ -27,28 +28,28 @@ export default function Blogs() {
 
   const columns: Column<Blog>[] = [
     {
-      header: "Article",
+      header: "Artikel",
       accessor: "title",
       render: (item) => (
-        <div class="flex items-center gap-3">
-          <div class="w-12 h-12 rounded-lg bg-cream border border-border overflow-hidden flex-shrink-0">
-            <Show when={item.image_url} fallback={<div class="w-full h-full flex items-center justify-center text-muted"><ImageIcon size={18} /></div>}>
-              <img src={item.image_url!} class="w-full h-full object-cover" />
+        <div style={{ display: "flex", "align-items": "center", gap: "0.75rem" }}>
+          <div style={{ width: "3rem", height: "3rem", "border-radius": "0.5rem", "background-color": "var(--color-cream)", border: "1px solid var(--color-border)", overflow: "hidden", "flex-shrink": 0 }}>
+            <Show when={item.image_url} fallback={<div style={{ width: "100%", height: "100%", display: "flex", "align-items": "center", "justify-content": "center", color: "var(--color-muted)" }}><ImageIcon size={18} /></div>}>
+              <img src={item.image_url!} style={{ width: "100%", height: "100%", "object-fit": "cover" }} />
             </Show>
           </div>
           <div>
-            <div class="font-bold text-ink">{item.title}</div>
-            <div class="text-[10px] text-muted uppercase tracking-wider">{item.slug}</div>
+            <div style={{ "font-weight": "700", color: "var(--color-ink)" }}>{item.title}</div>
+            <div style={{ "font-size": "0.625rem", color: "var(--color-muted)", "text-transform": "uppercase", "letter-spacing": "0.05em" }}>{item.slug}</div>
           </div>
         </div>
       )
     },
     {
-      header: "CTA Product",
+      header: "Produk CTA",
       accessor: "cta_product_name",
       render: (item) => (
-        <Show when={item.cta_product_name} fallback={<span class="text-muted text-xs">—</span>}>
-          <div class="flex items-center gap-1.5 text-green-600 font-semibold">
+        <Show when={item.cta_product_name} fallback={<span style={{ color: "var(--color-muted)", "font-size": "0.75rem" }}>—</span>}>
+          <div style={{ display: "flex", "align-items": "center", gap: "0.375rem", color: "#16a34a", "font-weight": "600" }}>
             <LinkIcon size={12} />
             <span>{item.cta_product_name}</span>
           </div>
@@ -59,24 +60,24 @@ export default function Blogs() {
       header: "Status",
       accessor: "is_published",
       render: (item) => (
-        <span class={`px-3 py-1 rounded-full text-xs font-bold ${item.is_published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
-          {item.is_published ? 'Published' : 'Draft'}
+        <span class={`badge ${item.is_published ? 'badge-green' : 'badge-orange'}`}>
+          {item.is_published ? 'Diterbitkan' : 'Draft'}
         </span>
       )
     },
     {
-      header: "Date",
+      header: "Tanggal",
       accessor: "created_at",
-      render: (item) => <span class="text-ink-light text-sm">{new Date(item.created_at).toLocaleDateString()}</span>
+      render: (item) => <span style={{ color: "var(--color-ink-light)", "font-size": "0.875rem" }}>{new Date(item.created_at).toLocaleDateString()}</span>
     },
     {
-      header: "Actions",
+      header: "Aksi",
       accessor: "id",
       render: (item) => (
-        <div class="flex gap-2">
+        <div style={{ display: "flex", gap: "0.5rem" }}>
           <button
             onClick={() => { setBlogToDelete(item.id); setIsConfirmOpen(true); }}
-            class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            class="action-btn action-btn-delete"
           >
             <Trash2 size={18} />
           </button>
@@ -94,81 +95,81 @@ export default function Blogs() {
         ...formData(),
         cta_product_id: formData().cta_product_id || null,
       });
-      toast.success("Article created successfully");
+      toast.success("Artikel berhasil dibuat");
       setIsModalOpen(false);
       refetch();
     } catch (err: any) {
-      toast.error(err.message || "Failed to create article");
+      toast.error(err.message || "Gagal membuat artikel");
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <Layout title="Blogs">
-      <div class="flex justify-between items-center mb-6">
+    <Layout title="Blog">
+      <div class="page-header">
         <div>
-          <h1 class="text-3xl font-bold text-ink">Blog Articles</h1>
-          <p class="text-ink-light mt-1">Create and manage education content & promotions.</p>
+          <h1 class="page-title">Artikel Blog</h1>
+          <p class="page-subtitle">Buat dan kelola konten edukasi & promosi.</p>
         </div>
-        <button
+        <Button
           onClick={() => setIsModalOpen(true)}
-          class="bg-green-500 text-white p-2.5 rounded-xl shadow-lg shadow-green-500/20 hover:bg-green-700 transition-all flex items-center gap-2 px-4"
         >
           <Plus size={20} />
-          <span class="font-bold">Write Article</span>
-        </button>
+          <span>Tulis Artikel</span>
+        </Button>
       </div>
 
-      <Show when={blogs()} fallback={<div class="p-8 text-center text-muted">Loading articles...</div>}>
-        <DataTable columns={columns} data={blogs()!} searchPlaceholder="Search articles..." />
+      <Show when={blogs()} fallback={<div style={{ padding: "2rem", "text-align": "center", color: "var(--color-muted)" }}>Memuat artikel...</div>}>
+        <DataTable columns={columns} data={blogs()!} searchPlaceholder="Cari artikel..." />
       </Show>
 
-      <Modal isOpen={isModalOpen()} onClose={() => setIsModalOpen(false)} title="Create New Article">
-        <form onSubmit={handleSubmit} class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Title</label>
+      <Modal isOpen={isModalOpen()} onClose={() => setIsModalOpen(false)} title="Buat Artikel Baru">
+        <form onSubmit={handleSubmit} style={{ padding: "1.5rem", display: "flex", "flex-direction": "column", gap: "1rem" }}>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Judul</label>
             <input
-              type="text" required placeholder="e.g. Tips Memilih Gamis untuk Acara Formal"
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+              type="text" required placeholder="Contoh: Tips Memilih Gamis untuk Acara Formal"
+              class="login-input"
               onInput={(e) => setFormData({ ...formData(), title: e.currentTarget.value })}
             />
           </div>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Excerpt (Short Summary)</label>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Ringkasan (Singkat)</label>
             <textarea
-              rows="2" placeholder="Brief summary for the blog card..."
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+              rows="2" placeholder="Ringkasan singkat untuk kartu blog..."
+              class="login-input"
               onInput={(e) => setFormData({ ...formData(), excerpt: e.currentTarget.value })}
             ></textarea>
           </div>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Content (Markdown/Text)</label>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Konten (Markdown/Teks)</label>
             <textarea
-              rows="6" required placeholder="Write your full article here..."
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all font-mono text-sm"
+              rows="6" required placeholder="Tulis artikel lengkap Anda di sini..."
+              class="login-input"
+              style={{ "font-family": "monospace", "font-size": "0.875rem" }}
               onInput={(e) => setFormData({ ...formData(), content: e.currentTarget.value })}
             ></textarea>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <label class="text-sm font-bold text-ink-light ml-1">Featured Image URL</label>
+          <div style={{ display: "grid", "grid-template-columns": "repeat(2, minmax(0, 1fr))", gap: "1rem" }}>
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+              <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>URL Gambar Utama</label>
               <input
                 type="text" placeholder="https://..."
-                class="w-full px-4 py-3 bg-cream border border-border rounded-2xl outline-none"
+                class="login-input"
                 onInput={(e) => setFormData({ ...formData(), image_url: e.currentTarget.value })}
               />
             </div>
-            <div class="space-y-1">
-              <label class="text-sm font-bold text-ink-light ml-1">CTA Product</label>
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+              <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Produk CTA</label>
               <select
-                class="w-full px-4 py-3 bg-cream border border-border rounded-2xl outline-none appearance-none"
+                class="login-input"
                 onChange={(e) => setFormData({ ...formData(), cta_product_id: e.currentTarget.value || null })}
               >
-                <option value="">No CTA Product</option>
+                <option value="">Tanpa Produk CTA</option>
                 <For each={products()}>
                   {(p) => <option value={p.id}>{p.name}</option>}
                 </For>
@@ -176,30 +177,30 @@ export default function Blogs() {
             </div>
           </div>
 
-          <div class="flex items-center gap-2 pt-2">
+          <div style={{ display: "flex", "align-items": "center", gap: "0.5rem", "padding-top": "0.5rem" }}>
             <input
               type="checkbox" id="published" checked={formData().is_published}
               onChange={(e) => setFormData({ ...formData(), is_published: e.currentTarget.checked })}
-              class="w-4 h-4 accent-green-500"
+              style={{ width: "1rem", height: "1rem", "accent-color": "var(--color-green-500)" }}
             />
-            <label for="published" class="text-sm font-bold text-ink">Publish immediately</label>
+            <label for="published" style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink)", cursor: "pointer" }}>Terbitkan segera</label>
           </div>
 
-          <div class="pt-6 flex gap-3 sticky bottom-0 bg-white pb-2">
+          <div style={{ "padding-top": "1.5rem", display: "flex", gap: "0.75rem", position: "sticky", bottom: 0, "background-color": "white", "padding-bottom": "0.5rem" }}>
             <button
               type="button" onClick={() => setIsModalOpen(false)}
-              class="flex-1 py-3 px-4 bg-cream text-ink font-bold rounded-2xl hover:bg-border transition-all"
+              style={{ flex: 1, padding: "0.75rem 1rem", "background-color": "var(--color-cream)", color: "var(--color-ink)", "font-weight": "700", "border-radius": "1rem", border: "none", cursor: "pointer" }}
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit" disabled={isSaving()}
-              class="flex-[2] py-3 px-4 bg-green-500 text-white font-bold rounded-2xl shadow-lg shadow-green-500/20 hover:bg-green-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              style={{ flex: 2, padding: "0.75rem 1rem", "background-color": "var(--color-green-500)", color: "white", "font-weight": "700", "border-radius": "1rem", border: "none", cursor: "pointer", display: "flex", "align-items": "center", "justify-content": "center", gap: "0.5rem" }}
             >
               <Show when={isSaving()}>
                 <Loader2 class="animate-spin" size={20} />
               </Show>
-              {isSaving() ? "Saving..." : "Create Article"}
+              {isSaving() ? "Menyimpan..." : "Buat Artikel"}
             </button>
           </div>
         </form>
@@ -212,15 +213,15 @@ export default function Blogs() {
           if (!blogToDelete()) return;
           try {
             await deleteBlog(blogToDelete()!);
-            toast.success("Article deleted");
+            toast.success("Artikel berhasil dihapus");
             refetch();
           } catch (e: any) {
             toast.error(e.message);
           }
         }}
-        title="Delete Article"
-        message="Are you sure you want to delete this article? This action cannot be undone."
-        confirmText="Delete"
+        title="Hapus Artikel"
+        message="Apakah Anda yakin ingin menghapus artikel ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Hapus"
         isDanger={true}
       />
     </Layout>

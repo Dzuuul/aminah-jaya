@@ -30,25 +30,26 @@ export default function Modal(props: ModalProps) {
     <Portal>
       <Show when={props.isOpen}>
         <div 
-          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm animate-in fade-in duration-200"
+          class="modal-overlay"
           onClick={(e) => e.target === e.currentTarget && props.onClose()}
         >
           <div 
-            class={`bg-white w-full ${props.maxWidth || 'max-w-lg'} rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200`}
+            class="modal-container"
+            style={{ "max-width": props.maxWidth === 'max-w-md' ? '28rem' : props.maxWidth === 'max-w-2xl' ? '42rem' : props.maxWidth === 'max-w-3xl' ? '48rem' : '32rem' }}
           >
             {/* Header */}
-            <div class="p-6 border-b border-border flex justify-between items-center bg-cream/30">
-              <h2 class="text-xl font-bold text-ink">{props.title}</h2>
+            <div class="modal-header">
+              <h2 class="modal-title">{props.title}</h2>
               <button 
                 onClick={props.onClose}
-                class="p-2 hover:bg-cream rounded-full transition-colors"
+                class="modal-close-btn"
               >
                 <X size={20} />
               </button>
             </div>
             
             {/* Body */}
-            <div class="max-h-[80vh] overflow-y-auto">
+            <div class="modal-body">
               {props.children}
             </div>
           </div>

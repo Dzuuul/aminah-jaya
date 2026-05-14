@@ -1,6 +1,7 @@
 import { createResource, createSignal, Show, For } from "solid-js";
 import { Plus, Edit, Trash2, Loader2, Image as ImageIcon } from "lucide-solid";
 import Layout from "../components/Layout";
+import Button from "../components/ui/Button";
 import Modal from "../components/Modal";
 import ConfirmModal from "../components/ConfirmModal";
 import DataTable, { Column, FilterDef } from "../components/DataTable";
@@ -83,51 +84,51 @@ export default function Products() {
     {
       header: "SKU / ID",
       accessor: "id",
-      render: (item) => <span class="font-bold text-ink">{item.sku || item.id.substring(0, 8).toUpperCase()}</span>
+      render: (item) => <span style={{ "font-weight": "700", color: "var(--color-ink)" }}>{item.sku || item.id.substring(0, 8).toUpperCase()}</span>
     },
     {
-      header: "Product",
+      header: "Produk",
       accessor: "name",
       render: (item) => (
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-lg bg-cream border border-border overflow-hidden flex-shrink-0 flex items-center justify-center text-muted">
+        <div style={{ display: "flex", "align-items": "center", gap: "0.75rem" }}>
+          <div style={{ width: "2.5rem", height: "2.5rem", "border-radius": "0.5rem", "background-color": "var(--color-cream)", border: "1px solid var(--color-border)", overflow: "hidden", "flex-shrink": 0, display: "flex", "align-items": "center", "justify-content": "center", color: "var(--color-muted)" }}>
             <Show when={item.thumbnail_url} fallback={<ImageIcon size={18} />}>
               <Show when={isVideo(item.thumbnail_url!)} fallback={
-                <img src={item.thumbnail_url!} alt={item.name} class="w-full h-full object-cover" />
+                <img src={item.thumbnail_url!} alt={item.name} style={{ width: "100%", height: "100%", "object-fit": "cover" }} />
               }>
-                <div class="w-full h-full bg-ink flex items-center justify-center">
-                  <div class="w-0 h-0 border-t-[4px] border-t-transparent border-l-[6px] border-l-white border-b-[4px] border-b-transparent ml-0.5"></div>
+                <div style={{ width: "100%", height: "100%", "background-color": "var(--color-ink)", display: "flex", "align-items": "center", "justify-content": "center" }}>
+                  <div style={{ width: 0, height: 0, "border-top": "4px solid transparent", "border-left": "6px solid white", "border-bottom": "4px solid transparent", "margin-left": "0.125rem" }}></div>
                 </div>
               </Show>
             </Show>
           </div>
-          <span class="font-semibold text-ink">{item.name}</span>
+          <span style={{ "font-weight": "600", color: "var(--color-ink)" }}>{item.name}</span>
         </div>
       )
     },
     {
-      header: "Category",
+      header: "Kategori",
       accessor: "category_name",
-      render: (item) => <span class="text-ink-light">{item.category_name}</span>
+      render: (item) => <span style={{ color: "var(--color-ink-light)" }}>{item.category_name}</span>
     },
     {
-      header: "Price",
+      header: "Harga",
       accessor: "price",
-      render: (item) => <span class="font-bold text-ink">{formatCurrency(item.price)}</span>
+      render: (item) => <span style={{ "font-weight": "700", color: "var(--color-ink)" }}>{formatCurrency(item.price)}</span>
     },
     {
-      header: "Stock",
+      header: "Stok",
       accessor: "stock",
-      render: (item) => <span class="text-ink-light">{item.stock}</span>
+      render: (item) => <span style={{ color: "var(--color-ink-light)" }}>{item.stock}</span>
     },
     {
       header: "Status",
       accessor: "status",
       render: (item) => (
-        <span class={`px-3 py-1 rounded-full text-xs font-bold ${item.status === 'In Stock' ? 'bg-green-100 text-green-700' :
-          item.status === 'Low Stock' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
+        <span class={`badge ${item.status === 'In Stock' ? 'badge-green' :
+          item.status === 'Low Stock' ? 'badge-orange' : 'badge-red'
           }`}>
-          {item.status}
+          {item.status === 'In Stock' ? 'Tersedia' : item.status === 'Low Stock' ? 'Hampir Habis' : 'Stok Habis'}
         </span>
       )
     },
@@ -135,16 +136,16 @@ export default function Products() {
       header: "Actions",
       accessor: "id",
       render: (item) => (
-        <div class="flex items-center gap-2">
+        <div style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}>
           <button
             onClick={() => handleEdit(item)}
-            class="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+            class="action-btn action-btn-edit"
           >
             <Edit size={18} />
           </button>
           <button
             onClick={() => handleDelete(item.id)}
-            class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+            class="action-btn action-btn-delete"
           >
             <Trash2 size={18} />
           </button>
@@ -158,9 +159,9 @@ export default function Products() {
       key: "status",
       label: "Status",
       options: [
-        { label: "In Stock", value: "In Stock" },
-        { label: "Low Stock", value: "Low Stock" },
-        { label: "Out of Stock", value: "Out of Stock" },
+        { label: "Tersedia", value: "In Stock" },
+        { label: "Hampir Habis", value: "Low Stock" },
+        { label: "Stok Habis", value: "Out of Stock" },
       ]
     }
   ];
@@ -227,10 +228,10 @@ export default function Products() {
       }
 
       handleCloseModal();
-      toast.success(productToEdit ? "Product updated successfully" : "Product created successfully");
+      toast.success(productToEdit ? "Produk berhasil diperbarui" : "Produk berhasil ditambahkan");
       refetch();
     } catch (err: any) {
-      setError(err.message || "Failed to save product");
+      setError(err.message || "Gagal menyimpan produk");
     } finally {
       setIsSaving(false);
     }
@@ -251,26 +252,23 @@ export default function Products() {
   };
 
   return (
-    <Layout title="Products">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+    <Layout title="Produk">
+      <div class="page-header">
         <div>
-          <h1 class="text-2xl lg:text-3xl font-bold text-ink">Products</h1>
-          <p class="text-ink-light mt-1">Manage your product inventory and catalog.</p>
+          <h1 class="page-title">Produk</h1>
+          <p class="page-subtitle">Kelola inventaris dan katalog produk Anda.</p>
         </div>
-        <button
-          onClick={handleAddClick}
-          class="bg-green-500 text-white p-2.5 rounded-xl shadow-lg shadow-green-500/20 hover:bg-green-700 transition-all flex items-center gap-2 px-4"
-        >
+        <Button onClick={handleAddClick}>
           <Plus size={20} />
-          <span class="font-bold">Add Product</span>
-        </button>
+          <span>Tambah Produk</span>
+        </Button>
       </div>
 
-      <Show when={products()} fallback={<div class="p-8 text-center text-muted">Loading products...</div>}>
+      <Show when={products()} fallback={<div style={{ padding: "2rem", "text-align": "center", color: "var(--color-muted)" }}>Memuat produk...</div>}>
         <DataTable
           columns={columns}
           data={products()!}
-          searchPlaceholder="Search products..."
+          searchPlaceholder="Cari produk..."
           filters={filters}
         />
       </Show>
@@ -279,77 +277,78 @@ export default function Products() {
       <Modal
         isOpen={isModalOpen()}
         onClose={handleCloseModal}
-        title={editingProduct() ? "Edit Product" : "Add New Product"}
+        title={editingProduct() ? "Edit Produk" : "Tambah Produk Baru"}
       >
-        <form onSubmit={handleSubmit} class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} style={{ padding: "1.5rem", display: "flex", "flex-direction": "column", gap: "1rem", "max-height": "80vh", "overflow-y": "auto" }}>
           <Show when={error()}>
-            <div class="p-4 bg-red-50 text-red-600 text-sm rounded-2xl border border-red-100">
+            <div style={{ padding: "1rem", "background-color": "#fef2f2", color: "#dc2626", "font-size": "0.875rem", "border-radius": "1rem", border: "1px solid #fee2e2" }}>
               {error()}
             </div>
           </Show>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Product Media (Images/Videos)</label>
-            <div class="grid grid-cols-4 gap-3">
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Media Produk (Gambar/Video)</label>
+            <div style={{ display: "grid", "grid-template-columns": "repeat(4, minmax(0, 1fr))", gap: "0.75rem" }}>
               <For each={previewItems()}>
                 {(item, index) => (
-                  <div class="aspect-square rounded-2xl bg-cream border border-border overflow-hidden relative group">
+                  <div style={{ "aspect-ratio": "1 / 1", "border-radius": "1rem", "background-color": "var(--color-cream)", border: "1px solid var(--color-border)", overflow: "hidden", position: "relative" }} class="group">
                     <Show when={item.type === 'image'} fallback={
-                      <div class="w-full h-full bg-ink flex items-center justify-center">
-                        <div class="w-0 h-0 border-t-[10px] border-t-transparent border-l-[15px] border-l-white border-b-[10px] border-b-transparent ml-1"></div>
+                      <div style={{ width: "100%", height: "100%", "background-color": "var(--color-ink)", display: "flex", "align-items": "center", "justify-content": "center" }}>
+                        <div style={{ width: 0, height: 0, "border-top": "10px solid transparent", "border-left": "15px solid white", "border-bottom": "10px solid transparent", "margin-left": "0.25rem" }}></div>
                       </div>
                     }>
-                      <img src={item.url} class="w-full h-full object-cover" />
+                      <img src={item.url} style={{ width: "100%", height: "100%", "object-fit": "cover" }} />
                     </Show>
                     <button
                       type="button"
                       onClick={() => removePreview(index())}
-                      class="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      style={{ position: "absolute", top: "0.25rem", right: "0.25rem", width: "1.5rem", height: "1.5rem", "background-color": "#ef4444", color: "white", "border-radius": "50%", display: "flex", "align-items": "center", "justify-content": "center", "border": "none", cursor: "pointer", opacity: 0, transition: "opacity 0.2s" }}
+                      class="group-hover:opacity-100"
                     >
-                      <Plus size={14} class="rotate-45" />
+                      <Plus size={14} style={{ transform: "rotate(45deg)" }} />
                     </button>
                     <Show when={index() === 0}>
-                      <div class="absolute bottom-0 inset-x-0 bg-green-500 text-white text-[10px] font-bold py-0.5 text-center">Thumbnail</div>
+                      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, "background-color": "var(--color-green-500)", color: "white", "font-size": "0.625rem", "font-weight": "700", padding: "0.125rem 0", "text-align": "center" }}>Utama</div>
                     </Show>
                   </div>
                 )}
               </For>
-              <div class="aspect-square rounded-2xl bg-cream border-2 border-dashed border-border flex items-center justify-center text-muted relative hover:border-green-500 hover:text-green-500 transition-colors">
+              <div style={{ "aspect-ratio": "1 / 1", "border-radius": "1rem", "background-color": "var(--color-cream)", border: "2px dashed var(--color-border)", display: "flex", "align-items": "center", "justify-content": "center", color: "var(--color-muted)", position: "relative", transition: "all 0.2s", cursor: "pointer" }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-green-500)'; e.currentTarget.style.color = 'var(--color-green-500)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-muted)'; }}>
                 <ImageIcon size={24} />
                 <input
                   type="file"
                   multiple
                   accept="image/*,video/*"
-                  class="absolute inset-0 opacity-0 cursor-pointer"
+                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }}
                   onChange={handleFileChange}
                 />
               </div>
             </div>
-            <p class="text-[10px] text-muted mt-2 ml-1">
-              * The first item will be used as the product thumbnail.
+            <p style={{ "font-size": "0.625rem", color: "var(--color-muted)", "margin-top": "0.5rem", "margin-left": "0.25rem" }}>
+              * Item pertama akan digunakan sebagai thumbnail produk.
             </p>
           </div>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Product Name</label>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Nama Produk</label>
             <input
               type="text"
               required
-              placeholder="e.g. Gamis Premium"
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+              placeholder="Contoh: Gamis Premium"
+              class="login-input"
               value={formData().name}
               onInput={(e) => setFormData({ ...formData(), name: e.currentTarget.value })}
             />
           </div>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">Category</label>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Kategori</label>
             <select
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all appearance-none"
+              class="login-input"
               value={formData().category_id || ""}
               onChange={(e) => setFormData({ ...formData(), category_id: e.currentTarget.value || null })}
             >
-              <option value="">Uncategorized</option>
+              <option value="">Tanpa Kategori</option>
               <For each={categories()}>
                 {(category) => (
                   <option value={category.id}>{category.name}</option>
@@ -358,59 +357,59 @@ export default function Products() {
             </select>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <label class="text-sm font-bold text-ink-light ml-1">Price (IDR)</label>
+          <div style={{ display: "grid", "grid-template-columns": "repeat(2, minmax(0, 1fr))", gap: "1rem" }}>
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+              <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Harga (Rp)</label>
               <input
                 type="number"
                 required
                 placeholder="0"
-                class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+                class="login-input"
                 value={formData().price}
                 onInput={(e) => setFormData({ ...formData(), price: parseFloat(e.currentTarget.value) })}
               />
             </div>
-            <div class="space-y-1">
-              <label class="text-sm font-bold text-ink-light ml-1">Stock</label>
+            <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+              <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>Stok</label>
               <input
                 type="number"
                 required
                 placeholder="0"
-                class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+                class="login-input"
                 value={formData().stock}
                 onInput={(e) => setFormData({ ...formData(), stock: parseInt(e.currentTarget.value) })}
               />
             </div>
           </div>
 
-          <div class="space-y-1">
-            <label class="text-sm font-bold text-ink-light ml-1">SKU (Optional)</label>
+          <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+            <label style={{ "font-size": "0.875rem", "font-weight": "700", color: "var(--color-ink-light)", "margin-left": "0.25rem" }}>SKU (Opsional)</label>
             <input
               type="text"
-              placeholder="e.g. GMS-001"
-              class="w-full px-4 py-3 bg-cream border border-border rounded-2xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-all"
+              placeholder="Contoh: GMS-001"
+              class="login-input"
               value={formData().sku}
               onInput={(e) => setFormData({ ...formData(), sku: e.currentTarget.value })}
             />
           </div>
 
-          <div class="pt-4 flex gap-3 sticky bottom-0 bg-white pb-2">
+          <div style={{ "padding-top": "1rem", display: "flex", gap: "0.75rem", position: "sticky", bottom: 0, "background-color": "white", "padding-bottom": "0.5rem" }}>
             <button
               type="button"
               onClick={handleCloseModal}
-              class="flex-1 py-3 px-4 bg-cream text-ink font-bold rounded-2xl hover:bg-border transition-all"
+              style={{ flex: 1, padding: "0.75rem 1rem", "background-color": "var(--color-cream)", color: "var(--color-ink)", "font-weight": "700", "border-radius": "1rem", border: "none", cursor: "pointer" }}
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
               disabled={isSaving()}
-              class="flex-[2] py-3 px-4 bg-green-500 text-white font-bold rounded-2xl shadow-lg shadow-green-500/20 hover:bg-green-700 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+              style={{ flex: 2, padding: "0.75rem 1rem", "background-color": "var(--color-green-500)", color: "white", "font-weight": "700", "border-radius": "1rem", border: "none", cursor: "pointer", display: "flex", "align-items": "center", "justify-content": "center", gap: "0.5rem" }}
             >
               <Show when={isSaving()}>
                 <Loader2 class="animate-spin" size={20} />
               </Show>
-              {isSaving() ? "Saving..." : (editingProduct() ? "Update Product" : "Save Product")}
+              {isSaving() ? "Menyimpan..." : (editingProduct() ? "Update Produk" : "Simpan Produk")}
             </button>
           </div>
         </form>
@@ -420,9 +419,9 @@ export default function Products() {
         isOpen={isConfirmOpen()}
         onClose={() => setIsConfirmOpen(false)}
         onConfirm={confirmDelete}
-        title="Delete Product"
-        message="Are you sure you want to delete this product? This action cannot be undone."
-        confirmText="Delete"
+        title="Hapus Produk"
+        message="Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan."
+        confirmText="Hapus"
         isDanger={true}
       />
     </Layout>

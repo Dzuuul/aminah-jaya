@@ -344,3 +344,46 @@ pub struct UpdateBannerPayload {
     pub starts_at: Option<DateTime<Utc>>,
     pub ends_at: Option<DateTime<Utc>>,
 }
+// ── Coupons ────────────────────────────────────────────────────────────────
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Coupon {
+    pub id: Uuid,
+    pub code: String,
+    pub discount_type: String,
+    pub discount_value: f64,
+    pub min_purchase: f64,
+    pub max_discount: Option<f64>,
+    pub start_at: DateTime<Utc>,
+    pub end_at: DateTime<Utc>,
+    pub usage_limit: Option<i32>,
+    pub used_count: i32,
+    pub is_active: bool,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateCouponPayload {
+    pub code: String,
+    pub discount_type: String,
+    pub discount_value: f64,
+    pub min_purchase: Option<f64>,
+    pub max_discount: Option<f64>,
+    pub start_at: DateTime<Utc>,
+    pub end_at: DateTime<Utc>,
+    pub usage_limit: Option<i32>,
+    pub is_active: Option<bool>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCouponPayload {
+    pub code: Option<String>,
+    pub discount_type: Option<String>,
+    pub discount_value: Option<f64>,
+    pub min_purchase: Option<f64>,
+    pub max_discount: Option<f64>,
+    pub start_at: Option<DateTime<Utc>>,
+    pub end_at: Option<DateTime<Utc>>,
+    pub usage_limit: Option<i32>,
+    pub is_active: Option<bool>,
+}
