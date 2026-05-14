@@ -1,5 +1,6 @@
 import { createSignal, createResource, For, Show } from "solid-js";
 import { A } from "@solidjs/router";
+import { Search, Bell, ShoppingCart, User as UserIcon } from "lucide-solid";
 
 const fetchProducts = async () => {
   try {
@@ -24,10 +25,24 @@ const fetchActiveFlashSale = async () => {
   }
 };
 
+const fetchUnreadCount = async () => {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/unread-count`);
+    const json = await res.json();
+    return json.count || 0;
+  } catch (e) {
+    return 0;
+  }
+};
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = createSignal(false);
   const [products] = createResource(fetchProducts);
   const [activeFlashSale] = createResource(fetchActiveFlashSale);
+  const [unreadCount] = createResource(fetchUnreadCount);
+  
+  // Dummy cart count for now
+  const [cartCount] = createSignal(3);
 
   const handleAnchorClick = (e: MouseEvent, href: string) => {
     if (href.startsWith("#")) {
@@ -51,11 +66,10 @@ export default function Navbar() {
               <span class={isOpen() ? "open" : ""}></span>
               <span class={isOpen() ? "open" : ""}></span>
             </button>
+            <A href="/" class="nav-logo">
+              <img src="/logo_inverted.png" alt="Logo" style={{ "width": "45px", "height": "auto" }} />
+            </A>
           </div>
-
-          <A href="/" class="nav-logo">
-            <img src="/logo_inverted.png" alt="Logo" style={{ "width": "45px", "height": "auto" }} />
-          </A>
 
           <ul class={`nav-links ${isOpen() ? "mobile-open" : ""}`}>
             <li class="has-mega">
@@ -115,29 +129,9 @@ export default function Navbar() {
               </div>
             </li>
 
-            {/* Perlengkapan Ibadah */}
-            <li class="has-mega">
-              <a href="#produk">Perlengkapan Ibadah</a>
-              <div class="mega-menu">
-                <div class="container">
-                  <div class="mega-menu-inner">
-                    <div class="mega-menu-content">
-                      <div class="mega-col">
-                        <h4>Perlengkapan</h4>
-                        <ul>
-                          <li><a href="#">Mukena</a></li>
-                          <li><a href="#">Sarung</a></li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </li>
-
             {/* Health & Wellness */}
             <li class="has-mega">
-              <a href="#produk">Health & Wellness</a>
+              <a href="#produk">Journal</a>
               <div class="mega-menu">
                 <div class="container">
                   <div class="mega-menu-inner">
@@ -176,25 +170,27 @@ export default function Navbar() {
           </ul>
 
           <div class="nav-icons">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-            </svg>
-            <a href="/cart">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"></path>
-                <line x1="3" y1="6" x2="21" y2="6"></line>
-                <path d="M16 10a4 4 0 0 1-8 0"></path>
-              </svg>
-            </a>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
+            <div class="nav-icon-wrapper">
+              <Search size={22} />
+            </div>
+            
+            <div class="nav-icon-wrapper">
+              <Bell size={22} />
+              <Show when={unreadCount() > 0}>
+                <span class="icon-badge">{unreadCount()}</span>
+              </Show>
+            </div>
+
+            <A href="/cart" class="nav-icon-wrapper">
+              <ShoppingCart size={22} />
+              <Show when={cartCount() > 0}>
+                <span class="icon-badge">{cartCount()}</span>
+              </Show>
+            </A>
+
+            <div class="nav-icon-wrapper">
+              <UserIcon size={22} />
+            </div>
           </div>
         </div>
       </div>

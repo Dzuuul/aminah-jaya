@@ -235,6 +235,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/settings",
             get(routes::settings::get_settings).patch(routes::settings::update_settings),
         )
+        // Notifications
+        .route("/api/notifications", get(routes::notifications::list_notifications))
+        .route("/api/notifications/unread-count", get(routes::notifications::get_unread_count))
+        .route("/api/notifications/:id/read", patch(routes::notifications::mark_as_read))
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))

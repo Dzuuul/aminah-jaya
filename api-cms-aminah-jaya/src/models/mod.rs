@@ -387,3 +387,18 @@ pub struct UpdateCouponPayload {
     pub usage_limit: Option<i32>,
     pub is_active: Option<bool>,
 }
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Notification {
+    pub id: i32,
+    pub user_id: Option<Uuid>,
+    pub contact_id: Option<Uuid>,
+    pub title: String,
+    pub message: String,
+    #[serde(rename = "type")]
+    #[sqlx(rename = "type")]
+    pub type_: String,
+    pub is_read: bool,
+    pub link: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
