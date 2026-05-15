@@ -1,0 +1,2384 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Waiteu Collagen Premium – Pomegranate 3x Injeksi</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Jost:wght@200;300;400;500;600&display=swap"
+        rel="stylesheet" />
+    <style>
+        :root {
+            --ink: #0f0e0c;
+            --ink-mid: #3a3832;
+            --ink-soft: #8c8880;
+            --canvas: #faf8f3;
+            --surface: #ffffff;
+            --green: #1d5c3b;
+            --green-mid: #2e7d52;
+            --green-tint: #edf5ef;
+            --blush: #c9626e;
+            --blush-tint: #fdf1f2;
+            --gold: #b8923a;
+            --gold-tint: #fdf6e8;
+            --border: #e5e0d8;
+            --r: 12px;
+            --r-sm: 8px;
+            --shadow: 0 2px 20px rgba(15, 14, 12, .07);
+            --shadow-md: 0 8px 40px rgba(15, 14, 12, .11);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Jost', sans-serif;
+            background: var(--canvas);
+            color: var(--ink);
+            min-height: 100vh;
+            font-weight: 300;
+        }
+
+        /* ─── NAV ─── */
+        nav {
+            background: var(--green);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 56px;
+            height: 58px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+        }
+
+        .nav-logo {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.7rem;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 36px;
+        }
+
+        .nav-links a {
+            color: rgba(255, 255, 255, .75);
+            font-size: .72rem;
+            font-weight: 500;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: color .2s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .nav-icons {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-icons svg {
+            width: 19px;
+            height: 19px;
+            stroke: rgba(255, 255, 255, .8);
+            fill: none;
+            stroke-width: 1.6;
+            cursor: pointer;
+        }
+
+        .cart-wrap {
+            position: relative;
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -5px;
+            right: -6px;
+            background: var(--blush);
+            color: #fff;
+            font-size: .55rem;
+            font-weight: 700;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ─── BREADCRUMB ─── */
+        .breadcrumb {
+            padding: 16px 56px;
+            font-size: .72rem;
+            color: var(--ink-soft);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            letter-spacing: .5px;
+        }
+
+        .breadcrumb a {
+            color: var(--ink-mid);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            color: var(--green);
+        }
+
+        /* ══════════════════════════════════
+     1. PRODUCT HERO
+  ══════════════════════════════════ */
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 0 56px 80px;
+            align-items: start;
+        }
+
+        /* ── Gallery ── */
+        .gallery {
+            position: sticky;
+            top: 74px;
+            padding-right: 48px;
+        }
+
+        .gallery-main {
+            background: var(--surface);
+            border-radius: var(--r);
+            overflow: hidden;
+            aspect-ratio: 1/1;
+            position: relative;
+            box-shadow: var(--shadow-md);
+        }
+
+        .gallery-main img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .6s cubic-bezier(.25, .8, .25, 1);
+        }
+
+        .gallery-main:hover img {
+            transform: scale(1.03);
+        }
+
+        .badge-row {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge {
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+
+        .badge-halal {
+            background: var(--green);
+            color: #fff;
+        }
+
+        .badge-sale {
+            background: var(--blush);
+            color: #fff;
+        }
+
+        .thumb-strip {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .thumb {
+            flex: 1;
+            aspect-ratio: 1/1;
+            background: var(--surface);
+            border-radius: var(--r-sm);
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color .2s, transform .2s;
+        }
+
+        .thumb:hover,
+        .thumb.active {
+            border-color: var(--green);
+            transform: translateY(-2px);
+        }
+
+        .thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cert-strip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 14px;
+            padding: 12px 16px;
+            background: var(--surface);
+            border-radius: var(--r-sm);
+            border: 1px solid var(--border);
+        }
+
+        .cert-strip span {
+            font-size: .68rem;
+            color: var(--ink-soft);
+            font-weight: 500;
+            letter-spacing: .5px;
+        }
+
+        .cert-pill {
+            background: var(--green-tint);
+            color: var(--green);
+            font-size: .62rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: .3px;
+        }
+
+        /* ── Detail ── */
+        .detail {
+            padding-top: 4px;
+        }
+
+        .prod-category {
+            font-size: .65rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--green-mid);
+            margin-bottom: 12px;
+        }
+
+        .prod-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3rem;
+            font-weight: 300;
+            line-height: 1.1;
+            color: var(--ink);
+            margin-bottom: 4px;
+            letter-spacing: -.5px;
+        }
+
+        .prod-subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-style: italic;
+            color: var(--ink-soft);
+            margin-bottom: 20px;
+            font-weight: 300;
+        }
+
+        .rating-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+
+        .stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .stars svg {
+            width: 14px;
+            height: 14px;
+            fill: #e8a020;
+            stroke: none;
+        }
+
+        .rating-val {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .rating-count {
+            font-size: .76rem;
+            color: var(--ink-soft);
+        }
+
+        .sold-pill {
+            background: var(--blush-tint);
+            color: var(--blush);
+            font-size: .68rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+
+        /* Price */
+        .price-block {
+            margin-bottom: 26px;
+            padding-bottom: 26px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .price-original {
+            font-size: .82rem;
+            color: var(--ink-soft);
+            text-decoration: line-through;
+            margin-bottom: 6px;
+        }
+
+        .price-main {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .price-currency {
+            font-family: 'Jost', sans-serif;
+            font-size: 1rem;
+            font-weight: 400;
+            color: var(--ink-mid);
+        }
+
+        .price-amount {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.8rem;
+            font-weight: 600;
+            color: var(--green);
+            line-height: 1;
+        }
+
+        .price-disc {
+            background: var(--blush);
+            color: #fff;
+            font-size: .65rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            align-self: center;
+        }
+
+        .price-note {
+            font-size: .72rem;
+            color: var(--ink-soft);
+            margin-top: 6px;
+            letter-spacing: .3px;
+        }
+
+        /* Variants */
+        .field-block {
+            margin-bottom: 22px;
+        }
+
+        .field-label {
+            font-size: .65rem;
+            font-weight: 600;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            margin-bottom: 10px;
+        }
+
+        .chip-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            padding: 8px 20px;
+            border-radius: 50px;
+            border: 1.5px solid var(--border);
+            background: var(--surface);
+            font-family: 'Jost', sans-serif;
+            font-size: .8rem;
+            font-weight: 400;
+            cursor: pointer;
+            transition: all .18s;
+            color: var(--ink-mid);
+            letter-spacing: .3px;
+        }
+
+        .chip:hover {
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .chip.active {
+            background: var(--green);
+            border-color: var(--green);
+            color: #fff;
+        }
+
+        /* Qty */
+        .qty-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 26px;
+        }
+
+        .qty-ctrl {
+            display: inline-flex;
+            align-items: center;
+            border: 1.5px solid var(--border);
+            border-radius: 50px;
+            background: var(--surface);
+            overflow: hidden;
+        }
+
+        .qty-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: var(--ink-mid);
+            transition: background .15s;
+        }
+
+        .qty-btn:hover {
+            background: var(--green-tint);
+        }
+
+        .qty-num {
+            width: 44px;
+            text-align: center;
+            font-size: .9rem;
+            font-weight: 500;
+            color: var(--ink);
+        }
+
+        .stock-note {
+            font-size: .72rem;
+            color: var(--ink-soft);
+        }
+
+        .stock-note b {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        /* CTA */
+        .cta-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .btn-cart {
+            flex: 1;
+            padding: 14px 20px;
+            background: var(--surface);
+            border: 1.5px solid var(--green);
+            color: var(--green);
+            border-radius: 50px;
+            font-family: 'Jost', sans-serif;
+            font-size: .82rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background .18s;
+        }
+
+        .btn-cart:hover {
+            background: var(--green-tint);
+        }
+
+        .btn-buy {
+            flex: 1.5;
+            padding: 14px 20px;
+            background: var(--green);
+            border: none;
+            color: #fff;
+            border-radius: 50px;
+            font-family: 'Jost', sans-serif;
+            font-size: .82rem;
+            font-weight: 500;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 20px rgba(29, 92, 59, .3);
+            transition: all .18s;
+        }
+
+        .btn-buy:hover {
+            background: var(--green-mid);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 28px rgba(29, 92, 59, .38);
+        }
+
+        .btn-icon {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .wishlist-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all .18s;
+        }
+
+        .wishlist-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: var(--ink-soft);
+            fill: none;
+            stroke-width: 1.6;
+            transition: all .18s;
+        }
+
+        .wishlist-btn:hover svg,
+        .wishlist-btn.active svg {
+            stroke: var(--blush);
+            fill: #fde8ea;
+        }
+
+        /* Share */
+        .share-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+        }
+
+        .share-label {
+            font-size: .65rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+        }
+
+        .share-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border);
+            background: var(--surface);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: .8rem;
+            transition: transform .15s, border-color .15s;
+        }
+
+        .share-btn:hover {
+            transform: scale(1.1);
+            border-color: var(--green);
+        }
+
+        /* Tabs */
+        .tabs {
+            margin-top: 4px;
+        }
+
+        .tab-head {
+            display: flex;
+            border-bottom: 1.5px solid var(--border);
+            gap: 0;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 11px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: 'Jost', sans-serif;
+            font-size: .7rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1.5px;
+            transition: all .18s;
+        }
+
+        .tab-btn.active {
+            color: var(--green);
+            border-bottom-color: var(--green);
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeUp .28s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .desc-text {
+            font-size: .85rem;
+            line-height: 1.85;
+            color: var(--ink-mid);
+        }
+
+        .desc-text p {
+            margin-bottom: 12px;
+        }
+
+        .desc-text strong {
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .ingred-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ingred-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            background: var(--surface);
+            border-radius: var(--r-sm);
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+        }
+
+        .ingred-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            flex-shrink: 0;
+            margin-top: 6px;
+        }
+
+        .ingred-name {
+            font-size: .84rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 3px;
+        }
+
+        .ingred-desc {
+            font-size: .76rem;
+            color: var(--ink-soft);
+            line-height: 1.6;
+        }
+
+        .how-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .how-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .how-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--green);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .how-text {
+            font-size: .84rem;
+            color: var(--ink-mid);
+            line-height: 1.75;
+            padding-top: 5px;
+        }
+
+        /* ══════════════════════════════════
+     2. FEATURE STORY BLOCK
+  ══════════════════════════════════ */
+        .story-block {
+            position: relative;
+            width: 100%;
+            max-height: 620px;
+            overflow: hidden;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .story-img {
+            width: 100%;
+            height: 620px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .story-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(10, 20, 14, .72) 0%, rgba(10, 20, 14, .25) 55%, transparent 100%);
+        }
+
+        .story-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 56px 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .story-heading {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 4.5rem;
+            font-weight: 300;
+            line-height: 1.05;
+            color: #fff;
+            letter-spacing: -1px;
+            max-width: 540px;
+        }
+
+        .story-heading em {
+            font-style: italic;
+            color: rgba(255, 255, 255, .75);
+        }
+
+        .story-right {
+            text-align: right;
+        }
+
+        .story-kicker {
+            font-size: .65rem;
+            font-weight: 600;
+            letter-spacing: 3.5px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .6);
+            margin-bottom: 10px;
+        }
+
+        .story-desc {
+            font-size: .85rem;
+            color: rgba(255, 255, 255, .78);
+            line-height: 1.7;
+            max-width: 280px;
+        }
+
+        .story-line {
+            position: absolute;
+            top: 0;
+            left: 80px;
+            width: 1px;
+            height: 60px;
+            background: rgba(255, 255, 255, .3);
+        }
+
+        /* ══════════════════════════════════
+     3. MACRO DETAIL BLOCK
+  ══════════════════════════════════ */
+        .macro-block {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            max-width: 1320px;
+            margin: 80px auto;
+            padding: 0 56px;
+            gap: 64px;
+            align-items: center;
+        }
+
+        .macro-img-wrap {
+            border-radius: var(--r);
+            overflow: hidden;
+            aspect-ratio: 4/3;
+            box-shadow: var(--shadow-md);
+        }
+
+        .macro-img-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .7s ease;
+        }
+
+        .macro-img-wrap:hover img {
+            transform: scale(1.04);
+        }
+
+        .macro-content {}
+
+        .macro-eyebrow {
+            font-size: .65rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 14px;
+        }
+
+        .macro-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.6rem;
+            font-weight: 300;
+            line-height: 1.15;
+            color: var(--ink);
+            margin-bottom: 10px;
+        }
+
+        .macro-title em {
+            font-style: italic;
+            color: var(--green);
+        }
+
+        .macro-subtitle {
+            font-size: .88rem;
+            color: var(--ink-soft);
+            line-height: 1.7;
+            margin-bottom: 32px;
+        }
+
+        .spec-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .spec-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .spec-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--r-sm);
+            background: var(--green-tint);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        .spec-name {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 2px;
+        }
+
+        .spec-desc {
+            font-size: .76rem;
+            color: var(--ink-soft);
+            line-height: 1.5;
+        }
+
+        /* ══════════════════════════════════
+     4. FUNCTIONALITY GRID
+  ══════════════════════════════════ */
+        .feat-section {
+            background: var(--green);
+            padding: 72px 56px;
+        }
+
+        .feat-inner {
+            max-width: 1320px;
+            margin: 0 auto;
+        }
+
+        .feat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 44px;
+        }
+
+        .feat-eyebrow {
+            font-size: .65rem;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, .55);
+            margin-bottom: 10px;
+        }
+
+        .feat-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.4rem;
+            font-weight: 300;
+            color: #fff;
+            line-height: 1.1;
+        }
+
+        .feat-note {
+            font-size: .78rem;
+            color: rgba(255, 255, 255, .5);
+            max-width: 200px;
+            text-align: right;
+            line-height: 1.6;
+        }
+
+        .feat-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 14px;
+        }
+
+        .feat-card {
+            background: rgba(255, 255, 255, .08);
+            border: 1px solid rgba(255, 255, 255, .12);
+            border-radius: var(--r);
+            padding: 22px 16px;
+            text-align: center;
+            transition: background .2s, transform .2s;
+            cursor: default;
+        }
+
+        .feat-card:hover {
+            background: rgba(255, 255, 255, .14);
+            transform: translateY(-3px);
+        }
+
+        .feat-icon {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .feat-name {
+            font-size: .72rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, .9);
+            line-height: 1.4;
+            letter-spacing: .3px;
+        }
+
+        /* ══════════════════════════════════
+     5. SIZE GUIDE MODULE
+  ══════════════════════════════════ */
+        .size-section {
+            max-width: 1320px;
+            margin: 80px auto;
+            padding: 0 56px 80px;
+        }
+
+        .size-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .section-heading {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            font-weight: 300;
+            color: var(--ink);
+        }
+
+        .size-note {
+            font-size: .75rem;
+            color: var(--ink-soft);
+            max-width: 260px;
+            text-align: right;
+            line-height: 1.6;
+        }
+
+        /* Tabs */
+        .size-tabs-head {
+            display: flex;
+            border-bottom: 1.5px solid var(--border);
+            margin-bottom: 28px;
+            gap: 0;
+        }
+
+        .size-tab-btn {
+            padding: 11px 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-family: 'Jost', sans-serif;
+            font-size: .7rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1.5px;
+            transition: all .18s;
+        }
+
+        .size-tab-btn.active {
+            color: var(--green);
+            border-bottom-color: var(--green);
+        }
+
+        .size-pane {
+            display: none;
+            animation: fadeUp .28s ease;
+        }
+
+        .size-pane.active {
+            display: block;
+        }
+
+        /* Size table */
+        .size-table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .82rem;
+        }
+
+        thead tr {
+            background: var(--green);
+        }
+
+        thead th {
+            padding: 13px 20px;
+            text-align: left;
+            color: #fff;
+            font-weight: 500;
+            letter-spacing: 1px;
+            font-size: .7rem;
+            text-transform: uppercase;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr:nth-child(even) {
+            background: var(--canvas);
+        }
+
+        tbody td {
+            padding: 12px 20px;
+            color: var(--ink-mid);
+        }
+
+        tbody td:first-child {
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .size-rec {
+            display: inline-block;
+            background: var(--gold-tint);
+            color: var(--gold);
+            font-size: .62rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+        }
+
+        /* Model stats */
+        .model-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-top: 28px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .stat-label {
+            font-size: .65rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--ink-soft);
+        }
+
+        .stat-val {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--green);
+        }
+
+        .stat-note {
+            font-size: .74rem;
+            color: var(--ink-soft);
+        }
+
+        /* How-to-measure */
+        .measure-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+
+        .measure-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r-sm);
+            padding: 18px 20px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+        }
+
+        .measure-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--green);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .measure-label {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--ink);
+            margin-bottom: 3px;
+        }
+
+        .measure-desc {
+            font-size: .75rem;
+            color: var(--ink-soft);
+            line-height: 1.6;
+        }
+
+        /* ─── REVIEWS ─── */
+        .review-section {
+            max-width: 1320px;
+            margin: 0 auto 80px;
+            padding: 0 56px;
+        }
+
+        .review-summary {
+            display: flex;
+            gap: 36px;
+            align-items: center;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 28px 36px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        .score-big {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 4rem;
+            font-weight: 600;
+            color: var(--green);
+            line-height: 1;
+        }
+
+        .score-stars {
+            display: flex;
+            gap: 2px;
+            margin: 6px 0;
+        }
+
+        .score-stars svg {
+            width: 16px;
+            height: 16px;
+            fill: #e8a020;
+        }
+
+        .score-count {
+            font-size: .74rem;
+            color: var(--ink-soft);
+        }
+
+        .review-bars {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bar-label {
+            font-size: .72rem;
+            color: var(--ink-soft);
+            width: 28px;
+            text-align: right;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: var(--green);
+        }
+
+        .bar-pct {
+            font-size: .68rem;
+            color: var(--ink-soft);
+            width: 30px;
+        }
+
+        .review-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .review-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 22px 26px;
+            border-left: 3px solid var(--green);
+        }
+
+        .reviewer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .reviewer-info {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: var(--green-tint);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .9rem;
+            font-weight: 700;
+            color: var(--green);
+            flex-shrink: 0;
+        }
+
+        .reviewer-name {
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--ink);
+        }
+
+        .review-date {
+            font-size: .7rem;
+            color: var(--ink-soft);
+            margin-top: 1px;
+        }
+
+        .review-stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .review-stars svg {
+            width: 13px;
+            height: 13px;
+            fill: #e8a020;
+        }
+
+        .review-text {
+            font-size: .82rem;
+            color: var(--ink-mid);
+            line-height: 1.75;
+        }
+
+        .review-tag {
+            display: inline-block;
+            background: var(--green-tint);
+            color: var(--green);
+            font-size: .65rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+
+        /* ─── RELATED ─── */
+        .related-section {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 0 56px 100px;
+        }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 22px;
+        }
+
+        .related-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform .2s, box-shadow .2s;
+        }
+
+        .related-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .related-img {
+            aspect-ratio: 1/1;
+            overflow: hidden;
+        }
+
+        .related-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .4s;
+        }
+
+        .related-card:hover .related-img img {
+            transform: scale(1.05);
+        }
+
+        .related-body {
+            padding: 14px 16px;
+        }
+
+        .related-name {
+            font-size: .8rem;
+            font-weight: 500;
+            color: var(--ink);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .related-price {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--green);
+        }
+
+        .related-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 6px;
+        }
+
+        .related-rating svg {
+            width: 11px;
+            height: 11px;
+            fill: #e8a020;
+        }
+
+        .related-rating span {
+            font-size: .7rem;
+            color: var(--ink-soft);
+        }
+
+        /* ─── TOAST ─── */
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--green);
+            color: #fff;
+            padding: 13px 28px;
+            border-radius: 50px;
+            font-size: .82rem;
+            font-weight: 500;
+            letter-spacing: .3px;
+            box-shadow: 0 8px 32px rgba(29, 92, 59, .4);
+            transition: transform .35s cubic-bezier(.34, 1.56, .64, 1);
+            z-index: 999;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ─── DIVIDER ─── */
+        .divider {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 0 56px;
+        }
+
+        .divider hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 0 0 64px;
+        }
+
+        /* ─── RESPONSIVE ─── */
+        @media (max-width: 1024px) {
+            .feat-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+
+            nav,
+            .breadcrumb {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .hero {
+                grid-template-columns: 1fr;
+                padding: 0 20px 60px;
+            }
+
+            .gallery {
+                position: static;
+                padding-right: 0;
+            }
+
+            .story-content {
+                padding: 32px 28px;
+                flex-direction: column;
+                gap: 20px;
+                align-items: flex-start;
+            }
+
+            .story-heading {
+                font-size: 2.8rem;
+            }
+
+            .story-line {
+                display: none;
+            }
+
+            .macro-block {
+                grid-template-columns: 1fr;
+                padding: 0 20px;
+                gap: 36px;
+            }
+
+            .feat-section {
+                padding: 52px 20px;
+            }
+
+            .feat-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .feat-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .feat-note {
+                text-align: left;
+            }
+
+            .size-section,
+            .review-section,
+            .related-section {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            .related-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .size-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .size-note {
+                text-align: left;
+            }
+
+            .model-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .measure-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .review-summary {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAVBAR -->
+    <nav>
+        <div class="nav-logo">Waiteu</div>
+        <div class="nav-links">
+            <a href="#">Shop</a>
+            <a href="#">Journal</a>
+            <a href="#">Beauty & Wellness</a>
+        </div>
+        <div class="nav-icons">
+            <svg viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <svg viewBox="0 0 24 24">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            <div class="cart-wrap">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="9" cy="21" r="1" />
+                    <circle cx="20" cy="21" r="1" />
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                </svg>
+                <div class="cart-badge">3</div>
+            </div>
+            <svg viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+            </svg>
+        </div>
+    </nav>
+
+    <!-- BREADCRUMB -->
+    <div class="breadcrumb">
+        <a href="#">Beranda</a> › <a href="#">Health & Wellness</a> › <span>Waiteu Collagen Premium</span>
+    </div>
+
+    <!-- ══════════════════════════════════════
+  1. PRODUCT HERO
+══════════════════════════════════════ -->
+    <div class="hero">
+
+        <!-- LEFT: Gallery -->
+        <div class="gallery">
+            <div class="gallery-main">
+                <img id="mainImg" src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=900&q=85"
+                    alt="Waiteu Collagen" />
+                <div class="badge-row">
+                    <div class="badge badge-halal">✓ HALAL</div>
+                    <div class="badge badge-sale">–30%</div>
+                </div>
+            </div>
+            <div class="thumb-strip">
+                <div class="thumb active"
+                    onclick="switchImg(this,'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=900&q=85')">
+                    <img src="https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=200&q=80" alt="" />
+                </div>
+                <div class="thumb"
+                    onclick="switchImg(this,'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=900&q=85')">
+                    <img src="https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=200&q=80" alt="" />
+                </div>
+                <div class="thumb"
+                    onclick="switchImg(this,'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=900&q=85')">
+                    <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&q=80" alt="" />
+                </div>
+                <div class="thumb"
+                    onclick="switchImg(this,'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=900&q=85')">
+                    <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=200&q=80" alt="" />
+                </div>
+            </div>
+            <div class="cert-strip">
+                <span>Sertifikasi:</span>
+                <div class="cert-pill">BPOM RI</div>
+                <div class="cert-pill">HALAL MUI</div>
+                <div class="cert-pill">ISO 22000</div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Detail -->
+        <div class="detail">
+            <div class="prod-category">Health & Wellness · Kolagen Premium</div>
+            <h1 class="prod-title">Waiteu Collagen<br />Pomegranate</h1>
+            <div class="prod-subtitle">3X Brightening Injection Formula</div>
+
+            <div class="rating-row">
+                <div class="stars">
+                    <svg viewBox="0 0 24 24">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <svg viewBox="0 0 24 24">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <svg viewBox="0 0 24 24">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <svg viewBox="0 0 24 24">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <svg viewBox="0 0 24 24">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                </div>
+                <span class="rating-val">4.9</span>
+                <span class="rating-count">(2.341 ulasan)</span>
+                <span class="sold-pill">🔥 13rb+ terjual</span>
+            </div>
+
+            <div class="price-block">
+                <div class="price-original">Rp 350.000</div>
+                <div class="price-main">
+                    <span class="price-currency">Rp</span>
+                    <span class="price-amount">245.000</span>
+                    <span class="price-disc">–30%</span>
+                </div>
+                <div class="price-note">Harga per box · Gratis ongkir seluruh Indonesia</div>
+            </div>
+
+            <div class="field-block">
+                <div class="field-label">Varian Rasa</div>
+                <div class="chip-row">
+                    <div class="chip active" onclick="setVariant(this)">Pomegranate</div>
+                    <div class="chip" onclick="setVariant(this)">Strawberry</div>
+                    <div class="chip" onclick="setVariant(this)">Mango</div>
+                    <div class="chip" onclick="setVariant(this)">Original</div>
+                </div>
+            </div>
+
+            <div class="field-block">
+                <div class="field-label">Jumlah</div>
+                <div class="qty-row">
+                    <div class="qty-ctrl">
+                        <button class="qty-btn" onclick="changeQty(-1)">−</button>
+                        <div class="qty-num" id="qtyNum">1</div>
+                        <button class="qty-btn" onclick="changeQty(1)">+</button>
+                    </div>
+                    <div class="stock-note">Stok: <b>248 box</b> tersedia</div>
+                </div>
+            </div>
+
+            <div class="cta-row">
+                <button class="btn-cart" onclick="addToCart()">
+                    <svg class="btn-icon" viewBox="0 0 24 24">
+                        <circle cx="9" cy="21" r="1" />
+                        <circle cx="20" cy="21" r="1" />
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                    </svg>
+                    Keranjang
+                </button>
+                <button class="btn-buy">
+                    <svg class="btn-icon" viewBox="0 0 24 24">
+                        <polyline points="13 17 18 12 13 7" />
+                        <path d="M6 12h12" />
+                    </svg>
+                    Beli Sekarang
+                </button>
+                <div class="wishlist-btn" id="wishBtn" onclick="toggleWish()">
+                    <svg viewBox="0 0 24 24">
+                        <path
+                            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                </div>
+            </div>
+
+            <div class="share-row">
+                <span class="share-label">Bagikan:</span>
+                <div class="share-btn" title="WhatsApp">🟢</div>
+                <div class="share-btn" title="Instagram">📸</div>
+                <div class="share-btn" title="Facebook">🔵</div>
+                <div class="share-btn" title="Salin Link">🔗</div>
+            </div>
+
+            <div class="tabs">
+                <div class="tab-head">
+                    <button class="tab-btn active" onclick="switchTab(this,'desc')">Deskripsi</button>
+                    <button class="tab-btn" onclick="switchTab(this,'ingred')">Kandungan</button>
+                    <button class="tab-btn" onclick="switchTab(this,'how')">Cara Pakai</button>
+                </div>
+
+                <div class="tab-pane active" id="tab-desc">
+                    <div class="desc-text">
+                        <p><strong>Waiteu Collagen</strong> adalah minuman kolagen premium dengan teknologi <em>3X
+                                Injeksi Pencerah</em> yang mengandung 100% kolagen peptide ikan laut. Diformulasikan
+                            khusus untuk wanita Indonesia yang menginginkan kulit cerah, glowing, dan kenyal secara
+                            alami.</p>
+                        <p>Kandungan pomegranate extract yang kaya antioksidan membantu melindungi kulit dari radikal
+                            bebas, mempercepat regenerasi sel kulit, dan memberikan cahaya alami dari dalam. Proses
+                            produksi tersertifikasi ISO 22000 memastikan kualitas terjaga di setiap tegukan.</p>
+                        <p>Rasakan perbedaannya dalam <strong>14 hari</strong> pemakaian rutin. Dipercaya lebih dari 13
+                            juta wanita Indonesia.</p>
+                    </div>
+                </div>
+
+                <div class="tab-pane" id="tab-ingred">
+                    <ul class="ingred-list">
+                        <li class="ingred-item">
+                            <div class="ingred-dot"></div>
+                            <div>
+                                <div class="ingred-name">Marine Collagen Peptide 5000mg</div>
+                                <div class="ingred-desc">Kolagen tipe I & III dari ikan laut dalam, diserap tubuh hingga
+                                    90% lebih cepat dibanding kolagen biasa.</div>
+                            </div>
+                        </li>
+                        <li class="ingred-item">
+                            <div class="ingred-dot"></div>
+                            <div>
+                                <div class="ingred-name">Pomegranate Extract 500mg</div>
+                                <div class="ingred-desc">Kaya polifenol & ellagic acid – antioksidan kuat yang
+                                    mencerahkan dan melindungi kulit dari penuaan dini.</div>
+                            </div>
+                        </li>
+                        <li class="ingred-item">
+                            <div class="ingred-dot"></div>
+                            <div>
+                                <div class="ingred-name">Vitamin C 1000mg</div>
+                                <div class="ingred-desc">Meningkatkan produksi kolagen alami tubuh dan mempercepat
+                                    proses pencerah kulit.</div>
+                            </div>
+                        </li>
+                        <li class="ingred-item">
+                            <div class="ingred-dot"></div>
+                            <div>
+                                <div class="ingred-name">Hyaluronic Acid 50mg</div>
+                                <div class="ingred-desc">Menjaga kelembaban kulit sepanjang hari dan mengurangi tampilan
+                                    garis halus.</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tab-pane" id="tab-how">
+                    <ol class="how-list">
+                        <li class="how-item">
+                            <div class="how-num">1</div>
+                            <div class="how-text">Campurkan 1 sachet (15g) ke dalam 150–200ml air mineral dingin atau
+                                suhu ruang.</div>
+                        </li>
+                        <li class="how-item">
+                            <div class="how-num">2</div>
+                            <div class="how-text">Aduk atau kocok hingga larut sempurna selama ±30 detik.</div>
+                        </li>
+                        <li class="how-item">
+                            <div class="how-num">3</div>
+                            <div class="how-text">Konsumsi 1 sachet sehari, dianjurkan di malam hari sebelum tidur untuk
+                                hasil optimal.</div>
+                        </li>
+                        <li class="how-item">
+                            <div class="how-num">4</div>
+                            <div class="how-text">Gunakan secara rutin minimal 30 hari untuk merasakan perubahan yang
+                                signifikan.</div>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+  2. FEATURE STORY BLOCK
+══════════════════════════════════════ -->
+    <section class="story-block">
+        <img class="story-img" src="https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=1600&q=85"
+            alt="Waiteu Lifestyle" />
+        <div class="story-overlay"></div>
+        <div class="story-line"></div>
+        <div class="story-content">
+            <div>
+                <h2 class="story-heading">Glowing<br />from the<br /><em>Inside Out</em></h2>
+            </div>
+            <div class="story-right">
+                <div class="story-kicker">Visual Story · Waiteu Collagen</div>
+                <div class="story-desc">Kecantikan sejati berasal dari nutrisi yang tepat. Waiteu Collagen hadir untuk
+                    merawat dari dalam — setiap sachet adalah ritual kecantikan harianmu.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+  3. MACRO DETAIL BLOCK
+══════════════════════════════════════ -->
+    <section class="macro-block">
+        <div class="macro-img-wrap">
+            <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?w=900&q=85" alt="Macro Ingredients" />
+        </div>
+        <div class="macro-content">
+            <div class="macro-eyebrow">Premium Formula · Marine Grade</div>
+            <h2 class="macro-title">Diformulasikan<br />dengan <em>Presisi</em></h2>
+            <div class="macro-subtitle">Setiap sachet dirancang dengan standar farmasi tertinggi — bukan sekadar
+                suplemen, melainkan ritual pencerah kulit yang terbukti secara ilmiah.</div>
+            <div class="spec-list">
+                <div class="spec-item">
+                    <div class="spec-icon">🐟</div>
+                    <div>
+                        <div class="spec-name">Marine Collagen Peptide — Berat Molekul Rendah</div>
+                        <div class="spec-desc">Molekul kecil memastikan absorpsi optimal ke lapisan dermis.
+                            Bioavailability 90% lebih tinggi.</div>
+                    </div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-icon">🌱</div>
+                    <div>
+                        <div class="spec-name">100% Natural Extract — Tanpa Pengawet Buatan</div>
+                        <div class="spec-desc">Bebas pewarna sintetis, bebas gula tambahan. Manis alami dari stevia &
+                            pomegranate.</div>
+                    </div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-icon">🔬</div>
+                    <div>
+                        <div class="spec-name">Diproduksi Sesuai GMP & ISO 22000</div>
+                        <div class="spec-desc">Fasilitas produksi tersertifikasi internasional, diuji klinis di
+                            laboratorium independen.</div>
+                    </div>
+                </div>
+                <div class="spec-item">
+                    <div class="spec-icon">💊</div>
+                    <div>
+                        <div class="spec-name">Synergistic Blend — Kolagen + Vitamin C + HA</div>
+                        <div class="spec-desc">Tiga komponen bekerja bersama: kolagen membangun, vitamin C mengaktifkan,
+                            hyaluronic acid mengunci kelembaban.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+  4. FUNCTIONALITY GRID
+══════════════════════════════════════ -->
+    <section class="feat-section">
+        <div class="feat-inner">
+            <div class="feat-header">
+                <div>
+                    <div class="feat-eyebrow">Keunggulan Produk</div>
+                    <h2 class="feat-title">Mengapa Waiteu<br />Berbeda?</h2>
+                </div>
+                <div class="feat-note">Setiap fitur dirancang untuk kehidupan wanita Indonesia yang aktif dan modern.
+                </div>
+            </div>
+            <div class="feat-grid">
+                <div class="feat-card">
+                    <div class="feat-icon">🌙</div>
+                    <div class="feat-name">Sugar-Free Formula</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">✅</div>
+                    <div class="feat-name">BPOM Certified</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🌿</div>
+                    <div class="feat-name">Natural Ingredients</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🕌</div>
+                    <div class="feat-name">Halal MUI Certified</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🦴</div>
+                    <div class="feat-name">Bone & Joint Support</div>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🚚</div>
+                    <div class="feat-name">Free Shipping Indonesia</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════
+  5. SIZE GUIDE MODULE
+══════════════════════════════════════ -->
+    <section class="size-section">
+        <div class="size-header">
+            <h2 class="section-heading">Panduan Konsumsi & Dosis</h2>
+            <div class="size-note">Temukan dosis yang tepat berdasarkan tujuan dan kondisi tubuhmu.</div>
+        </div>
+
+        <div class="size-tabs-head">
+            <button class="size-tab-btn active" onclick="switchSizeTab(this,'dose')">Dosis & Tujuan</button>
+            <button class="size-tab-btn" onclick="switchSizeTab(this,'model')">Info Model & Testimoni</button>
+            <button class="size-tab-btn" onclick="switchSizeTab(this,'howto')">Cara Minum yang Benar</button>
+        </div>
+
+        <div class="size-pane active" id="size-dose">
+            <div class="size-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tujuan</th>
+                            <th>Dosis Harian</th>
+                            <th>Durasi Optimal</th>
+                            <th>Waktu Terbaik</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Pencerah Kulit Awal <span class="size-rec">Pemula</span></td>
+                            <td>1 sachet</td>
+                            <td>30 hari</td>
+                            <td>Malam sebelum tidur</td>
+                        </tr>
+                        <tr>
+                            <td>Anti-Aging & Elastisitas</td>
+                            <td>1–2 sachet</td>
+                            <td>60–90 hari</td>
+                            <td>Pagi + Malam</td>
+                        </tr>
+                        <tr>
+                            <td>Pemeliharaan Kulit <span class="size-rec">Rutin</span></td>
+                            <td>1 sachet</td>
+                            <td>Setiap hari</td>
+                            <td>Fleksibel</td>
+                        </tr>
+                        <tr>
+                            <td>Kesehatan Sendi & Tulang</td>
+                            <td>1 sachet</td>
+                            <td>90 hari</td>
+                            <td>Pagi bersama sarapan</td>
+                        </tr>
+                        <tr>
+                            <td>Pasca Melahirkan / Busui</td>
+                            <td>1 sachet</td>
+                            <td>Konsultasikan dokter</td>
+                            <td>Pagi</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="size-pane" id="size-model">
+            <div class="model-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Tinggi Badan Model</div>
+                    <div class="stat-val">165 cm</div>
+                    <div class="stat-note">Menggunakan dosis 1 sachet/hari selama 60 hari</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Berat Badan</div>
+                    <div class="stat-val">52 kg</div>
+                    <div class="stat-note">Cocok untuk semua berat badan</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Hasil Tampak</div>
+                    <div class="stat-val">14 hr</div>
+                    <div class="stat-note">Kulit lebih cerah & lembap terasa sejak minggu ke-2</div>
+                </div>
+            </div>
+            <div
+                style="margin-top:20px;padding:20px 24px;background:var(--green-tint);border-radius:var(--r);border-left:3px solid var(--green);">
+                <div
+                    style="font-size:.7rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:8px;">
+                    Testimoni Nyata</div>
+                <div
+                    style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-style:italic;color:var(--ink-mid);line-height:1.7;">
+                    "Dalam 14 hari pertama saya sudah melihat perubahan pada kulit. Lebih cerah, lebih kenyal, dan
+                    teman-teman mulai bertanya apa rahasia saya."</div>
+                <div style="font-size:.76rem;color:var(--ink-soft);margin-top:8px;">— Rahmawati, 32 tahun · Jakarta ·
+                    Pemakaian 3 bulan</div>
+            </div>
+        </div>
+
+        <div class="size-pane" id="size-howto">
+            <div class="measure-grid">
+                <div class="measure-card">
+                    <div class="measure-num">1</div>
+                    <div>
+                        <div class="measure-label">Gunakan Air Dingin atau Suhu Ruang</div>
+                        <div class="measure-desc">Hindari air panas karena dapat merusak kolagen. Suhu ideal 15–25°C
+                            untuk menjaga keutuhan formula.</div>
+                    </div>
+                </div>
+                <div class="measure-card">
+                    <div class="measure-num">2</div>
+                    <div>
+                        <div class="measure-label">150–200ml Air Mineral</div>
+                        <div class="measure-desc">Takaran tepat memastikan rasa optimal dan konsentrasi nutrisi yang pas
+                            untuk penyerapan terbaik.</div>
+                    </div>
+                </div>
+                <div class="measure-card">
+                    <div class="measure-num">3</div>
+                    <div>
+                        <div class="measure-label">Aduk 30 Detik Hingga Larut</div>
+                        <div class="measure-desc">Pastikan serbuk larut sempurna sebelum diminum. Bisa juga dikocok
+                            dalam botol tertutup.</div>
+                    </div>
+                </div>
+                <div class="measure-card">
+                    <div class="measure-num">4</div>
+                    <div>
+                        <div class="measure-label">Konsumsi Rutin di Waktu yang Sama</div>
+                        <div class="measure-desc">Konsistensi adalah kunci. Pilih waktu yang paling mudah diingat — pagi
+                            saat sarapan atau malam sebelum tidur.</div>
+                    </div>
+                </div>
+                <div class="measure-card">
+                    <div class="measure-num">5</div>
+                    <div>
+                        <div class="measure-label">Perbanyak Minum Air Putih</div>
+                        <div class="measure-desc">Minum minimal 8 gelas/hari untuk memaksimalkan kerja hyaluronic acid
+                            dalam menjaga kelembaban kulit.</div>
+                    </div>
+                </div>
+                <div class="measure-card">
+                    <div class="measure-num">6</div>
+                    <div>
+                        <div class="measure-label">Simpan di Tempat Sejuk & Kering</div>
+                        <div class="measure-desc">Jauhkan dari paparan sinar matahari langsung. Masa simpan 24 bulan
+                            dari tanggal produksi.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── DIVIDER ─── -->
+    <div class="divider">
+        <hr />
+    </div>
+
+    <!-- ─── REVIEWS ─── -->
+    <div class="review-section">
+        <h2 class="section-heading" style="margin-bottom:24px;">Ulasan Pembeli</h2>
+        <div class="review-summary">
+            <div>
+                <div class="score-big">4.9</div>
+                <div class="score-stars">
+                    <svg viewBox="0 0 24 24">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <svg viewBox="0 0 24 24">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <svg viewBox="0 0 24 24">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <svg viewBox="0 0 24 24">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <svg viewBox="0 0 24 24">
+                        <polygon
+                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                </div>
+                <div class="score-count">dari 2.341 ulasan</div>
+            </div>
+            <div class="review-bars">
+                <div class="bar-row"><span class="bar-label">5★</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:88%"></div>
+                    </div><span class="bar-pct">88%</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">4★</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:9%"></div>
+                    </div><span class="bar-pct">9%</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">3★</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:2%"></div>
+                    </div><span class="bar-pct">2%</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">2★</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:1%"></div>
+                    </div><span class="bar-pct">1%</span>
+                </div>
+                <div class="bar-row"><span class="bar-label">1★</span>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:0%"></div>
+                    </div><span class="bar-pct">0%</span>
+                </div>
+            </div>
+        </div>
+        <div class="review-cards">
+            <div class="review-card">
+                <div class="reviewer-row">
+                    <div class="reviewer-info">
+                        <div class="avatar">S</div>
+                        <div>
+                            <div class="reviewer-name">Siti Rahmawati</div>
+                            <div class="review-date">12 Mei 2025 · Verified Buyer</div>
+                        </div>
+                    </div>
+                    <div class="review-stars">
+                        <svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="review-text">Sudah pakai 2 box dan hasilnya luar biasa! Kulit jadi lebih cerah dan kenyal,
+                    flek hitam berkurang signifikan. Rasanya juga enak banget, seger kayak jus delima. Akan repeat order
+                    lagi pastinya!</div>
+                <span class="review-tag">✓ Pemakaian 2 bulan</span>
+            </div>
+            <div class="review-card">
+                <div class="reviewer-row">
+                    <div class="reviewer-info">
+                        <div class="avatar">F</div>
+                        <div>
+                            <div class="reviewer-name">Fatimah Azzahra</div>
+                            <div class="review-date">3 April 2025 · Verified Buyer</div>
+                        </div>
+                    </div>
+                    <div class="review-stars">
+                        <svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        <svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                    </div>
+                </div>
+                <div class="review-text">Packaging bagus dan aman sampai. Produknya asli dan bukan palsu. Sendi lutut
+                    saya yang sering nyeri juga terasa lebih baik setelah rutin minum selama 3 minggu. Recommended
+                    banget untuk yang aktif bekerja!</div>
+                <span class="review-tag">✓ Pemakaian 3 minggu</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── RELATED ─── -->
+    <div class="related-section">
+        <h2 class="section-heading">Produk Terkait</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <div class="related-img"><img src="https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80"
+                        alt="" /></div>
+                <div class="related-body">
+                    <div class="related-name">Waiteu Collagen Strawberry</div>
+                    <div class="related-price">Rp 245.000</div>
+                    <div class="related-rating"><svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg><span>4.8 (1.2k)</span></div>
+                </div>
+            </div>
+            <div class="related-card">
+                <div class="related-img"><img
+                        src="https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=300&q=80" alt="" /></div>
+                <div class="related-body">
+                    <div class="related-name">Waiteu Serum Vitamin C Brightening</div>
+                    <div class="related-price">Rp 189.000</div>
+                    <div class="related-rating"><svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg><span>4.9 (987)</span></div>
+                </div>
+            </div>
+            <div class="related-card">
+                <div class="related-img"><img
+                        src="https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=300&q=80" alt="" /></div>
+                <div class="related-body">
+                    <div class="related-name">Waiteu Multivitamin Wanita</div>
+                    <div class="related-price">Rp 155.000</div>
+                    <div class="related-rating"><svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg><span>4.7 (654)</span></div>
+                </div>
+            </div>
+            <div class="related-card">
+                <div class="related-img"><img
+                        src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=300&q=80" alt="" /></div>
+                <div class="related-body">
+                    <div class="related-name">Waiteu Kolagen Mango Premium</div>
+                    <div class="related-price">Rp 245.000</div>
+                    <div class="related-rating"><svg viewBox="0 0 24 24">
+                            <polygon
+                                points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg><span>4.8 (890)</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12" />
+        </svg>
+        Produk berhasil ditambahkan ke keranjang!
+    </div>
+
+    <script>
+        let qty = 1;
+
+        function changeQty(d) {
+            qty = Math.max(1, Math.min(qty + d, 99));
+            document.getElementById('qtyNum').textContent = qty;
+        }
+
+        function switchImg(el, src) {
+            document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('mainImg').src = src;
+        }
+
+        function setVariant(el) {
+            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function switchTab(btn, id) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('tab-' + id).classList.add('active');
+        }
+
+        function switchSizeTab(btn, id) {
+            document.querySelectorAll('.size-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.size-pane').forEach(p => p.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('size-' + id).classList.add('active');
+        }
+
+        function addToCart() {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2600);
+        }
+
+        function toggleWish() {
+            document.getElementById('wishBtn').classList.toggle('active');
+        }
+    </script>
+</body>
+
+</html>

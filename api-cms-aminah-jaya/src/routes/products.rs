@@ -30,6 +30,7 @@ pub async fn list_products(
             p.category_id,
             COALESCE(c.name, 'Uncategorized') AS category_name,
             p.price::FLOAT8,
+            p.price_compare::FLOAT8,
             p.stock,
             CASE
                 WHEN p.stock = 0     THEN 'Out of Stock'
@@ -37,7 +38,21 @@ pub async fn list_products(
                 ELSE                      'In Stock'
             END AS status,
             p.sku,
-            (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC LIMIT 1) AS thumbnail_url
+            (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC LIMIT 1) AS thumbnail_url,
+            p.subtitle,
+            p.rating::FLOAT8,
+            p.reviews_count,
+            p.sold_count,
+            p.certifications,
+            p.variants_chips,
+            p.ingredients,
+            p.how_to_use,
+            p.story,
+            p.macro_detail,
+            p.benefits,
+            p.dosage,
+            p.discount_label,
+            p.wa_message_template
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
         WHERE p.status != 'inactive'
@@ -69,12 +84,16 @@ pub async fn get_product(
         r#"
         SELECT p.id, p.name, p.category_id,
                COALESCE(c.name, 'Uncategorized') AS category_name,
-               p.price::FLOAT8, p.stock,
+               p.price::FLOAT8, p.price_compare::FLOAT8, p.stock,
                CASE WHEN p.stock = 0 THEN 'Out of Stock'
                     WHEN p.stock <= 15 THEN 'Low Stock'
                     ELSE 'In Stock' END AS status,
                p.sku,
-               (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC LIMIT 1) AS thumbnail_url
+               (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC LIMIT 1) AS thumbnail_url,
+               p.subtitle, p.rating::FLOAT8, p.reviews_count, p.sold_count,
+               p.certifications, p.variants_chips, p.ingredients, p.how_to_use,
+               p.story, p.macro_detail, p.benefits, p.dosage, p.discount_label,
+               p.wa_message_template
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
         WHERE p.id = $1
@@ -112,16 +131,36 @@ pub async fn create_product(
     };
 
     let product_id: Uuid = match sqlx::query_scalar(
-        r#"INSERT INTO products (name, category_id, price, stock, sku, slug)
-           VALUES ($1, $2, $3, $4, $5, $6)
+        r#"INSERT INTO products (
+            name, category_id, price, price_compare, stock, sku, slug,
+            subtitle, rating, reviews_count, sold_count, certifications,
+            variants_chips, ingredients, how_to_use, story, macro_detail,
+            benefits, dosage, discount_label, wa_message_template
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
            RETURNING id"#
     )
     .bind(&payload.name)
     .bind(payload.category_id)
     .bind(payload.price)
+    .bind(payload.price_compare)
     .bind(payload.stock)
     .bind(&payload.sku)
     .bind(&slug)
+    .bind(&payload.subtitle)
+    .bind(payload.rating)
+    .bind(payload.reviews_count)
+    .bind(&payload.sold_count)
+    .bind(serde_json::to_value(&payload.certifications).unwrap_or(serde_json::json!([])))
+    .bind(serde_json::to_value(&payload.variants_chips).unwrap_or(serde_json::json!([])))
+    .bind(&payload.ingredients)
+    .bind(&payload.how_to_use)
+    .bind(&payload.story)
+    .bind(&payload.macro_detail)
+    .bind(&payload.benefits)
+    .bind(&payload.dosage)
+    .bind(&payload.discount_label)
+    .bind(&payload.wa_message_template)
     .fetch_one(&mut *tx).await {
         Ok(id) => id,
         Err(e) => {
@@ -177,13 +216,45 @@ pub async fn update_product(
                name        = COALESCE($1, name),
                category_id = COALESCE($2, category_id),
                price       = COALESCE($3, price),
-               stock       = COALESCE($4, stock)
-           WHERE id = $5"#
+               price_compare = COALESCE($4, price_compare),
+               stock       = COALESCE($5, stock),
+               sku         = COALESCE($6, sku),
+               subtitle    = COALESCE($7, subtitle),
+               rating      = COALESCE($8, rating),
+               reviews_count = COALESCE($9, reviews_count),
+               sold_count  = COALESCE($10, sold_count),
+               certifications = COALESCE($11, certifications),
+               variants_chips = COALESCE($12, variants_chips),
+               ingredients = COALESCE($13, ingredients),
+               how_to_use  = COALESCE($14, how_to_use),
+               story       = COALESCE($15, story),
+               macro_detail = COALESCE($16, macro_detail),
+               benefits    = COALESCE($17, benefits),
+               dosage      = COALESCE($18, dosage),
+               discount_label = COALESCE($19, discount_label),
+               wa_message_template = COALESCE($20, wa_message_template)
+           WHERE id = $21"#
     )
     .bind(&payload.name)
     .bind(payload.category_id)
     .bind(payload.price)
+    .bind(payload.price_compare)
     .bind(payload.stock)
+    .bind(&payload.sku)
+    .bind(&payload.subtitle)
+    .bind(payload.rating)
+    .bind(payload.reviews_count)
+    .bind(&payload.sold_count)
+    .bind(payload.certifications.map(|c| serde_json::to_value(c).unwrap_or(serde_json::json!([]))))
+    .bind(payload.variants_chips.map(|v| serde_json::to_value(v).unwrap_or(serde_json::json!([]))))
+    .bind(&payload.ingredients)
+    .bind(&payload.how_to_use)
+    .bind(&payload.story)
+    .bind(&payload.macro_detail)
+    .bind(&payload.benefits)
+    .bind(&payload.dosage)
+    .bind(&payload.discount_label)
+    .bind(&payload.wa_message_template)
     .bind(id)
     .execute(&mut *tx).await;
 

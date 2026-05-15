@@ -1,447 +1,600 @@
-import { createSignal, Switch, Match, For, Show } from "solid-js";
+import { createSignal, Switch, Match, For, Show, onMount } from "solid-js";
 import { useParams } from "@solidjs/router";
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
+import Loading from "~/components/ui/Loading";
 
 // --- Types ---
-type TechnicalDetail = {
-  label: string;
-  value: string;
+
+type Ingredient = {
+  name: string;
+  desc: string;
+};
+
+type HowTo = {
+  num: number;
+  text: string;
+};
+
+type Benefit = {
+  name: string;
   icon: string;
 };
 
-type Expert = {
+type RelatedProduct = {
   name: string;
-  role: string;
-  quote: string;
+  price: string;
   image: string;
-};
-
-type Review = {
-  name: string;
-  text: string;
+  rating: string;
 };
 
 type Product = {
   id: string;
   name: string;
+  subtitle?: string;
+  category: string;
   price: string;
   originalPrice?: string;
-  category: "wellness" | "fashion";
+  discount?: string;
+  rating: number;
+  reviewsCount: number;
+  soldCount: string;
   images: string[];
+  certifications: string[];
+  variants: string[];
   desc: string;
-  purityInfo?: { 
-    ingredients: string; 
-    certification: string; 
-    testing: string;
-    dosage?: string;
-    benefit?: string;
-    storage?: string;
-    culinary?: string;
-    videoThumb?: string;
+  ingredients: Ingredient[];
+  howToUse: HowTo[];
+  story: {
+    heading: string;
+    subheading: string;
+    image: string;
   };
-  eleganceInfo?: { 
-    feel: string; 
-    parallaxImg: string;
-    features: { title: string; desc: string; icon: string }[];
+  macro: {
+    title: string;
+    desc: string;
+    image: string;
+    specs: { icon: string; name: string; desc: string }[];
   };
-  technical: TechnicalDetail[];
-  expert: Expert;
-  reviews: Review[];
+  benefits: Benefit[];
+  dosage: { goal: string; dose: string; duration: string; time: string }[];
+  reviews: { name: string; date: string; text: string; tag: string; avatar: string }[];
+  related: RelatedProduct[];
   waText: string;
 };
 
 // --- Mock Data ---
+
 const products: Product[] = [
   {
-    id: "breathable-silk-abaya",
-    name: "Breathable Silk Abaya",
-    price: "Rp 1.450.000",
-    category: "fashion",
+    id: "waiteu-collagen-pomegranate",
+    name: "Waiteu Collagen Pomegranate",
+    subtitle: "3X Brightening Injection Formula",
+    category: "wellness",
+    price: "Rp 245.000",
+    originalPrice: "Rp 350.000",
+    discount: "–30%",
+    rating: 4.9,
+    reviewsCount: 2341,
+    soldCount: "13rb+",
     images: [
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuAhxsVZu2AW9IGXAWkbX1RYO6ZChAeSm8T1vPERcKSk4AQ4bS4wLfJl9jk3pMVu8pV00QIQF7EUvvPB3_eYo459oF_eSpDxGYT5k8Z8sW1nEEP2mvWzNGvoc5oOuFzMNKAeks9sPILpTE1CJKXJ6XmFizXaOJ2z_-zragqeq25NfmJrXJV6yoTnhvNaeZ4VlFTiH1oxCV3zT4UfBYIouy-e64ygozxz8gVn347AlX4AJJrYszNr_UDzZwvLn_xk0_6N75FliIzyCE_E",
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCdonYoYhZhY_c2pUZ_BT17x9J2-6CkZAAWcj5uZxuHy9vsHBjj2qvXVMcAPe7uH1Hg6pcWMO9QA3u6kvkG_8JqynwFn68xUZ9Qb8CSzznzClfWbqD8KpS2FdMf034IYUJNdBZh8LENvJBSjmkfRE-hfnniIaZ5VARbQ1jWWnQcVWYSKc-yleUg9NXCf-ZsW649-ILXG3T8ifv7aGj_hKkLcXe5xOolYj2fJt4yiOlj6goREyqHGf8vRwnZe9920OOQJkCdH6B0JE4L",
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuCTGP6NP3GNzS-xS3OtemglDwWcDW3VTzmeFQx_7NnDScXQ8o-jX3phAODN15NOrQouuv-HLmcdeWSXZ_yEXNjk60IEd_YkpAkICveNqiTsAUvuKzhSeOp1Nd21M3uhdE0wPGW_76aLY00QUOWs0gpJNeawoSFnZqyb4ABNvZ4giWL1Uxguu2ypL9R-5Aj-FodNt9ct-bR1CWA4Tt8D8q_T7-cV30FndkI9WmzAOna6d8SRsngUmEK__1PoKxKb4CwWdhErMJ5EAny_"
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=900&q=85",
+      "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=900&q=85",
+      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=900&q=85",
     ],
-    desc: "Designed for the modern woman who seeks tranquility in her daily worship. Our signature breathable silk offers a weightless feel with a sophisticated matte finish, ensuring modesty without compromise.",
-    eleganceInfo: {
-      feel: "Breathable Silk for Daily Worship. Experience the intersection of traditional values and modern luxury.",
-      parallaxImg: "https://lh3.googleusercontent.com/aida-public/AB6AXuDQzJ9Nq5v0xcaanyJlmD3n5hnlWMMoIbQ-4kSjuda7xXWltmGAjiIrJcWxahG6VrGsyK_HZHhdizXBbzppY3EjdHUZrUjuveVJYO0rbHrw-gKGkrc225zGiAyM9qnSm9ej-J5hYqVk3qZBzZ29MlnpAmrDL4QWdLvuGMHjMGD3Lr-fbVavWsqXXXA2KMjbZSzjmEk6QvSH_RmPKorU5xEfcRJoeAmMvSyJxo9VLEXgscm0-Wck26sSBOFM-aIRJv_Ozzm08tfT3H6D",
-      features: [
-        { title: "Wudhu-friendly", desc: "Discreet zipper closures on the sleeves for ease and convenience during ablution.", icon: "water_drop" },
-        { title: "Lightweight", desc: "The 14-momme silk provides a weightless experience, ideal for tropical climates.", icon: "air" },
-        { title: "Opaque", desc: "A tight weave ensures full coverage and modesty, even under bright lighting.", icon: "visibility_off" }
+    certifications: ["BPOM RI", "HALAL MUI", "ISO 22000"],
+    variants: ["Pomegranate", "Strawberry", "Mango", "Original"],
+    desc: "Waiteu Collagen adalah minuman kolagen premium dengan teknologi 3X Injeksi Pencerah yang mengandung 100% kolagen peptide ikan laut. Diformulasikan khusus untuk wanita Indonesia yang menginginkan kulit cerah, glowing, dan kenyal secara alami.",
+    ingredients: [
+      { name: "Marine Collagen Peptide 5000mg", desc: "Kolagen tipe I & III dari ikan laut dalam, diserap tubuh hingga 90% lebih cepat." },
+      { name: "Pomegranate Extract 500mg", desc: "Kaya polifenol – antioksidan kuat yang mencerahkan kulit." },
+      { name: "Vitamin C 1000mg", desc: "Meningkatkan produksi kolagen alami tubuh." },
+    ],
+    howToUse: [
+      { num: 1, text: "Campurkan 1 sachet (15g) ke dalam 150–200ml air mineral dingin." },
+      { num: 2, text: "Aduk atau kocok hingga larut sempurna selama ±30 detik." },
+      { num: 3, text: "Konsumsi 1 sachet sehari sebelum tidur." },
+    ],
+    story: {
+      heading: "Glowing from the Inside Out",
+      subheading: "Kecantikan sejati berasal dari nutrisi yang tepat. Waiteu Collagen hadir untuk merawat dari dalam — setiap sachet adalah ritual kecantikan harianmu.",
+      image: "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=1600&q=85"
+    },
+    macro: {
+      title: "Diformulasikan dengan Presisi",
+      desc: "Setiap sachet dirancang dengan standar farmasi tertinggi — bukan sekadar suplemen, melainkan ritual pencerah kulit yang terbukti secara ilmiah.",
+      image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=900&q=85",
+      specs: [
+        { icon: "🐟", name: "Marine Collagen Peptide", desc: "Molekul kecil memastikan absorpsi optimal ke lapisan dermis." },
+        { icon: "🌱", name: "100% Natural Extract", desc: "Bebas pewarna sintetis, manis alami dari stevia." },
+        { icon: "🔬", name: "GMP & ISO Certified", desc: "Fasilitas produksi tersertifikasi internasional." },
       ]
     },
-    technical: [
-      { label: "Wudhu Friendly", value: "Invisible Elastic Sleeves", icon: "water_drop" },
-      { label: "Material", value: "100% Mulberry Silk", icon: "eco" },
-      { label: "Transparency", value: "Fully Opaque Lining", icon: "visibility_off" },
+    benefits: [
+      { name: "Sugar-Free", icon: "🌙" },
+      { name: "BPOM Certified", icon: "✅" },
+      { name: "Natural", icon: "🌿" },
+      { name: "Halal MUI", icon: "🕌" },
+      { name: "Joint Support", icon: "🦴" },
+      { name: "Free Shipping", icon: "🚚" },
     ],
-    expert: {
-      name: "Amina Al-Fayed",
-      role: "Senior Stylist, Modest Fashion Week",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDvZLFUvZEn_v3rrR8IrDKqKTw3QEJ29Lm-rkUFhp8Yvp5kFH-UM8LJ9vqaDM9qZYUoFrrauoHpF2u5-_HgNH8S6bBK-PEAtWByrpEPvL1GEBH0nq92ZJrfZq8EsTIcQhHNUpsmIELDWwGIw-reh6VzEangc02IUu3A2KfVk6zI-jx0TNSG9CX9e9O_jKknPXc7e0JvKwh4jk_6zX4idRMbgygGU1xTuc6lz_uuhojytZ3gEidJhzldHzu50p8WI0nUFnRtAJ1XefKB",
-      quote: "Finding a garment that balances high-fashion aesthetics with the strict requirements of modesty is rare. Nur & Nature has perfected the silhouette for the modern worshipper.",
-    },
+    dosage: [
+      { goal: "Pencerah Awal", dose: "1 sachet", duration: "30 hari", time: "Malam" },
+      { goal: "Anti-Aging", dose: "1-2 sachet", duration: "60 hari", time: "Pagi + Malam" },
+      { goal: "Rutin", dose: "1 sachet", duration: "Setiap hari", time: "Fleksibel" },
+    ],
     reviews: [
-      { name: "Sarah K.", text: "The most comfortable abaya I've ever owned. The silk is so soft against the skin." },
-      { name: "Maryam J.", text: "Beautiful drape and very practical for daily wear. Truly modest and elegant." }
+      { name: "Siti Rahmawati", date: "12 Mei 2025", text: "Sudah pakai 2 box dan hasilnya luar biasa! Kulit jadi lebih cerah dan kenyal.", tag: "Pemakaian 2 bulan", avatar: "S" },
+      { name: "Fatimah Azzahra", date: "3 April 2025", text: "Packaging bagus dan aman. Sendi lutut juga terasa lebih baik.", tag: "Pemakaian 3 minggu", avatar: "F" },
     ],
-    waText: "Hello, I would like to order the Breathable Silk Abaya.",
+    related: [
+      { name: "Waiteu Strawberry", price: "Rp 245.000", image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80", rating: "4.8 (1.2k)" },
+      { name: "Waiteu Serum Vit C", price: "Rp 189.000", image: "https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=300&q=80", rating: "4.9 (987)" },
+    ],
+    waText: "Halo, saya ingin memesan Waiteu Collagen Pomegranate.",
   },
   {
-    id: "pure-yemeni-sidr-honey",
-    name: "Pure Yemeni Sidr Honey",
-    price: "Rp 485.000",
-    originalPrice: "Rp 550.000",
-    category: "wellness",
-    images: ["https://lh3.googleusercontent.com/aida-public/AB6AXuCROwfD-a15c10wpRmJoNsh-qKZMpmMkYWfffQ6JJiJLrjgsMjOd5dEUJcg_1vTkFSkzG51EoyIwkM-ZU24J4zeI3996LNcB4wpWYKo9HnwFmiJiPPqKpiXWvYRJ9YWBFuqfHEIzLKzAYz0sxMAc_Hc6d4l4cSowLj3NLoU0sHgxMDvDY1KqX3pOBrXE9HHwU1r1pBGKs0LjFRuB788bYrbYkvJVuzA7JopZhPWxPEEU-QB8ECiNYYt4sCqsSNlaTR--zOKCgyLYyd1"],
-    desc: "Sourced from the sacred Sidr trees of Yemen, our honey is unfiltered, cold-pressed, and maintains its potent medicinal properties. A rare nectar known for its exceptional healing and immunity-boosting capabilities.",
-    purityInfo: {
-      ingredients: "100% Raw, unheated, and unfiltered honey. No additives, syrups, or preservatives ever added.",
-      certification: "Strictly sourced according to ethical Halal standards, ensuring integrity from hive to home.",
-      testing: "Each batch undergoes rigorous independent lab testing for pollen count and antioxidant levels.",
-      dosage: "1-2 spoons daily, preferably on an empty stomach.",
-      benefit: "Powerful immune system support & natural energy.",
-      storage: "Store in a cool, dry place away from direct sunlight.",
-      culinary: "Best enjoyed raw or mixed into warm (not hot) water.",
-      videoThumb: "https://lh3.googleusercontent.com/aida-public/AB6AXuBmLtX6RRlKonZAipd5FY69vR4R5zKpiHN4jRggzs4q6RfA6t3kWK_1iFBKX3HpikHWQzlHCkpluxvby9sLst7FLeMEAGPpjS2fk5CxgbNXiDUxJwHFcAoxlHvnNqWgJxi7BgT0oIfvbMePpP1Aaj-PVMhxZ0_j7-nLb4RfLBZy0jtQ6077881IHR567IhVb8Jg_thWKMrTA-Ur57FWf-zMKn_ubHZ58N03oLSNqp2B9Jvfi9KwR_ayvggA6c_JWXrFXq8H10nHbySm"
-    },
-    technical: [
-      { label: "Dosage", value: "1-2 spoons daily", icon: "medication" },
-      { label: "Benefits", value: "Immune Support", icon: "health_and_safety" },
-      { label: "Storage", value: "Cool & Dry Place", icon: "inventory_2" },
-      { label: "Culinary Use", value: "Best enjoyed raw", icon: "restaurant" },
+    id: "aminah-premium-kaftan",
+    name: "Aminah Premium Silk Kaftan",
+    subtitle: "Elegance in Every Drape",
+    category: "fashion",
+    price: "Rp 850.000",
+    originalPrice: "Rp 1.200.000",
+    discount: "–29%",
+    rating: 4.8,
+    reviewsCount: 452,
+    soldCount: "1.2rb+",
+    images: [
+      "https://images.unsplash.com/photo-1583394060263-f30d52627a1d?w=900&q=85",
+      "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=900&q=85",
     ],
-    expert: {
-      name: "Dr. Sarah Mansour",
-      role: "Clinical Nutritionist",
-      image: "https://lh3.googleusercontent.com/aida-public/AB6AXuD65gplpbd0aKXySZfNIxUNVSkCgjzYXHgwhGQYZAcxBTp4j8pNnZjy65lpLSfPx8glXiKUmq2zzCcuTabKksbSvvgUrmdkV88nt9hSz4VnOg6A6p8gbiIxDRKBiXd06TLUUlMFAku2HzttPO8l2-8T7OA7AefliXLNZKhtczqFnFqzFdnH5LQGcx4S3KiA-7ryCfjDvheHPPPQPELwH93Ly0vd8iQ96GJL54mOiWzn_0aewHUhyo15UcIX6pcJUigdWZxK1aTemHq2",
-      quote: "The purity of this Sidr honey is unparalleled. Its high enzyme content and antimicrobial properties make it a staple recommendation for my patients seeking natural immune support.",
+    certifications: ["PREMIUM SILK", "HANDMADE"],
+    variants: ["Emerald Green", "Midnight Blue", "Rose Gold"],
+    desc: "Kaftan Aminah Premium terbuat dari sutra satin berkualitas tinggi yang memberikan kilau mewah dan kenyamanan maksimal. Didesain dengan potongan loose yang elegan, cocok untuk acara formal maupun hari raya.",
+    ingredients: [
+      { name: "Premium Satin Silk", desc: "Bahan lembut, tidak mudah kusut, dan memiliki kilau mewah." },
+      { name: "Inner Included", desc: "Sudah termasuk furing dalam agar tidak menerawang." },
+    ],
+    howToUse: [
+      { num: 1, text: "Cuci dengan tangan (hand wash) menggunakan deterjen lembut." },
+      { num: 2, text: "Jangan gunakan pemutih." },
+      { num: 3, text: "Setrika dengan suhu rendah atau steam." },
+    ],
+    story: {
+      heading: "Graceful Movement",
+      subheading: "Terinspirasi dari siluet klasik yang timeless. Aminah Kaftan dirancang untuk merayakan keanggunan wanita dalam setiap langkahnya.",
+      image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=85"
     },
+    macro: {
+      title: "Craftsmanship & Detail",
+      desc: "Setiap jahitan diproses dengan ketelitian tinggi oleh pengrajin lokal untuk memastikan kualitas standar butik.",
+      image: "https://images.unsplash.com/photo-1445205174275-5157f2a15950?w=900&q=85",
+      specs: [
+        { icon: "👗", name: "Loose Fit Design", desc: "Memberikan ruang gerak yang nyaman namun tetap terlihat slim." },
+        { icon: "✨", name: "Hand-Beaded Accents", desc: "Detail payet dijahit tangan untuk sentuhan eksklusif." },
+      ]
+    },
+    benefits: [
+      { name: "Luxury Silk", icon: "✨" },
+      { name: "Breathable", icon: "💨" },
+      { name: "Exclusive", icon: "💎" },
+      { name: "Tailored Fit", icon: "✂️" },
+    ],
+    dosage: [ 
+      { goal: "All Size", dose: "115 cm", duration: "140 cm", time: "Loose Fit" },
+      { goal: "XL Size", dose: "125 cm", duration: "142 cm", time: "Loose Fit" },
+    ],
     reviews: [
-      { name: "Ahmed Rizwan", text: "I have tried many brands, but the taste and texture of Nur & Nature's honey are truly authentic." },
-      { name: "Layla Hasan", text: "Remarkable quality! I use it daily in my morning tea. I've noticed a significant improvement in my digestive health." }
+      { name: "Aisyah", date: "15 April 2025", text: "Bahannya sangat jatuh dan mewah. Dipakai ke pesta banyak yang tanya beli dimana.", tag: "Verified Buyer", avatar: "A" },
     ],
-    waText: "Hello, I would like to order the Pure Yemeni Sidr Honey.",
-  },
+    related: [
+      { name: "Scarf Silk Aminah", price: "Rp 150.000", image: "https://images.unsplash.com/photo-1601924638867-3a6de6b7a500?w=300&q=80", rating: "4.9 (120)" },
+    ],
+    waText: "Halo, saya ingin memesan Aminah Premium Silk Kaftan.",
+  }
 ];
 
-// ─── Shared Styles ───────────────────────────────────────────────
-const COLORS = {
-  primary: "#4a654f",
-  secondary: "#924b25",
-  onSurface: "#1b1c1c",
-  onSurfaceVariant: "#424842",
-};
+// --- Sub-Components ---
 
-// ─── Components ──────────────────────────────────────────────────
-
-const HeroSection = (props: { product: Product; onBuy: () => void }) => (
-  <section class="bg-white">
-    <div class="container py-12 lg:py-24">
-      <Switch>
-        {/* Fashion Hero Layout */}
-        <Match when={props.product.category === "fashion"}>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24">
-            <div class="grid grid-cols-2 gap-2">
-              <div class="col-span-2 aspect-[4/5] bg-[#f0eded] overflow-hidden rounded-2xl shadow-sm">
-                <img src={props.product.images[0]} alt={props.product.name} class="w-full h-full object-cover" />
-              </div>
-              <For each={props.product.images.slice(1, 3)}>
-                {(img) => (
-                  <div class="aspect-square bg-[#f0eded] overflow-hidden rounded-xl shadow-sm">
-                    <img src={img} alt="Product Detail" class="w-full h-full object-cover" />
-                  </div>
-                )}
-              </For>
-            </div>
-            <div class="flex flex-col justify-center space-y-8">
-              <div class="space-y-4">
-                <span class="text-xs font-bold uppercase tracking-[0.2em] text-[#4a654f]">Ethical Collection</span>
-                <h1 class="font-serif text-4xl lg:text-6xl font-medium text-[#1b1c1c] leading-tight">{props.product.name}</h1>
-                <p class="text-3xl font-semibold text-[#924b25]">{props.product.price}</p>
-              </div>
-              <p class="text-lg text-[#424842] leading-relaxed">{props.product.desc}</p>
-              
-              <div class="space-y-4">
-                <div class="flex items-center space-x-3">
-                  <span class="w-8 h-8 rounded-full bg-[#4a654f] border-2 border-[#e4e2e1]"></span>
-                  <span class="w-8 h-8 rounded-full bg-[#D4C5B9] border-2 border-transparent"></span>
-                  <span class="w-8 h-8 rounded-full bg-[#303030] border-2 border-transparent"></span>
-                  <span class="text-sm font-medium text-[#424842] ml-2">Sage Green</span>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                  <For each={["S", "M", "L", "XL"]}>
-                    {(size) => (
-                      <button class={`px-6 py-2 border rounded-lg text-sm font-semibold transition-colors ${size === "M" ? "border-2 border-[#4a654f] text-[#4a654f]" : "border-[#737972] hover:border-[#4a654f]"}`}>
-                        {size}
-                      </button>
-                    )}
-                  </For>
-                </div>
-              </div>
-
-              <div class="space-y-4 pt-4">
-                <button onClick={props.onBuy} class="w-full bg-[#4a654f] text-white font-bold py-4 rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-3">
-                  <span class="material-symbols-outlined">shopping_bag</span>
-                  Add to Cart
-                </button>
-                <a href={`https://wa.me/6281234567890?text=${encodeURIComponent(props.product.waText)}`} target="_blank" class="w-full border-2 border-[#25D366] text-[#25D366] font-bold py-4 rounded-xl hover:bg-[#25D366]/5 transition-all flex items-center justify-center gap-3">
-                  <span class="material-symbols-outlined">chat</span>
-                  Pesan via WhatsApp
-                </a>
-              </div>
-            </div>
-          </div>
-        </Match>
-
-        {/* Wellness Hero Layout */}
-        <Match when={props.product.category === "wellness"}>
-          <div class="flex flex-col md:flex-row items-stretch gap-12 lg:gap-24">
-            <div class="md:w-1/2 bg-white flex items-center justify-center relative overflow-hidden rounded-2xl shadow-lg border border-[#f0eded]">
-              <div class="absolute inset-0 bg-[#4a654f]/5"></div>
-              <img src={props.product.images[0]} alt={props.product.name} class="w-full h-full object-cover relative z-10" />
-            </div>
-            <div class="md:w-1/2 flex flex-col justify-center">
-              <nav class="flex gap-2 mb-4 text-[#737972] text-xs font-bold uppercase tracking-widest">
-                <span>Wellness</span> / <span>Premium Honey</span>
-              </nav>
-              <h1 class="font-serif text-4xl lg:text-6xl text-[#4a654f] mb-4 leading-tight">{props.product.name}</h1>
-              <div class="flex items-center gap-2 mb-6">
-                <div class="flex text-[#924b25]">
-                  <For each={[1, 2, 3, 4, 5]}>
-                    {() => <span class="material-symbols-outlined text-[18px]">star</span>}
-                  </For>
-                </div>
-                <span class="text-[#424842] text-xs font-medium">(48 Reviews)</span>
-              </div>
-              <p class="text-lg text-[#424842] mb-8 leading-relaxed">{props.product.desc}</p>
-              <div class="mb-10">
-                <span class="text-3xl font-bold text-[#4a654f]">{props.product.price}</span>
-                <Show when={props.product.originalPrice}>
-                  <span class="ml-3 text-[#737972] text-lg line-through">{props.product.originalPrice}</span>
-                </Show>
-                <div class="mt-3 bg-[#4a654f]/10 text-[#4a654f] px-4 py-1 rounded-full inline-block text-xs font-bold">
-                  Halal Certified Quality
-                </div>
-              </div>
-              <div class="flex flex-col sm:flex-row gap-4">
-                <a href={`https://wa.me/6281234567890?text=${encodeURIComponent(props.product.waText)}`} target="_blank" class="flex-1 bg-[#924b25] text-white px-8 py-4 rounded-full font-bold text-center hover:opacity-90 transition-all flex items-center justify-center gap-2">
-                  <span class="material-symbols-outlined">chat</span>
-                  WhatsApp
-                </a>
-                <button onClick={props.onBuy} class="flex-1 border-2 border-[#4a654f] text-[#4a654f] px-8 py-4 rounded-full font-bold hover:bg-[#4a654f]/5 transition-all">
-                  Checkout
-                </button>
-              </div>
-            </div>
-          </div>
-        </Match>
-      </Switch>
-    </div>
-  </section>
-);
-
-// ─────────────────────────────────────────────────────────────────
-
-const PurityBlock = (props: { info: NonNullable<Product["purityInfo"]> }) => {
-  const items = [
-    { icon: "eco", title: "Natural Ingredients", body: props.info.ingredients },
-    { icon: "verified_user", title: "Halal Certified", body: props.info.certification },
-    { icon: "biotech", title: "Lab Tested", body: props.info.testing },
-  ];
-
-  return (
-    <section class="bg-white py-20 lg:py-32">
-      <div class="container">
-        <div class="text-center mb-16">
-          <h2 class="font-serif text-3xl lg:text-4xl text-[#4a654f] mb-4">Our Purity Promise</h2>
-          <div class="w-16 h-1 bg-[#924b25] mx-auto rounded-full"></div>
-        </div>
-        <div class="grid md:grid-cols-3 gap-8">
-          <For each={items}>
-            {(item) => (
-              <div class="bg-[#4a654f]/5 p-10 lg:p-12 rounded-2xl border border-[#4a654f]/10 flex flex-col items-center text-center hover:shadow-xl transition-all">
-                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-6 shadow-sm">
-                  <span class="material-symbols-outlined text-[#4a654f] text-3xl">{item.icon}</span>
-                </div>
-                <h3 class="font-serif text-xl font-semibold text-[#4a654f] mb-4">{item.title}</h3>
-                <p class="text-[#424842] leading-relaxed">{item.body}</p>
-              </div>
-            )}
-          </For>
-        </div>
-      </div>
-    </section>
-  );
-};
-
-// ─────────────────────────────────────────────────────────────────
-
-const ParallaxShowcase = (props: { info: NonNullable<Product["eleganceInfo"]> }) => (
-  <section class="relative h-[600px] flex items-center justify-center overflow-hidden">
-    <div class="absolute inset-0 bg-fixed bg-center bg-cover" style={{ "background-image": `url(${props.info.parallaxImg})` }}></div>
-    <div class="absolute inset-0 bg-black/25"></div>
-    <div class="relative z-10 text-center px-4 max-w-2xl">
-      <h2 class="font-serif text-4xl lg:text-6xl text-white mb-6">Modesty in Motion</h2>
-      <p class="text-lg lg:text-xl text-white/90 leading-relaxed font-light">{props.info.feel}</p>
-    </div>
-  </section>
-);
-
-// ─────────────────────────────────────────────────────────────────
-
-const TechnicalDetailGrid = (props: { product: Product }) => {
-  const isWellness = props.product.category === "wellness";
-  
-  return (
-    <section class="bg-[#f6f3f2] py-20 lg:py-32">
-      <div class="container">
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <h2 class="font-serif text-3xl lg:text-4xl text-[#4a654f] mb-10">{isWellness ? "Wellness Specifications" : "Technical Artistry"}</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <For each={props.product.technical}>
-                {(detail) => (
-                  <div class="flex gap-4">
-                    <div class="bg-[#4a654f]/10 w-12 h-12 rounded-xl flex items-center justify-center shrink-0">
-                      <span class="material-symbols-outlined text-[#4a654f]">{detail.icon}</span>
-                    </div>
-                    <div>
-                      <h4 class="text-sm font-bold text-[#1b1c1c] mb-1">{detail.label}</h4>
-                      <p class="text-sm text-[#424842] leading-relaxed">{detail.value}</p>
-                    </div>
-                  </div>
-                )}
-              </For>
-            </div>
-          </div>
-          <div class="relative rounded-2xl overflow-hidden aspect-video shadow-2xl">
-             <img src={isWellness ? props.product.purityInfo?.videoThumb : props.product.eleganceInfo?.parallaxImg} class="w-full h-full object-cover" alt="Detail Image" />
-             <div class="absolute inset-0 bg-black/10 flex items-center justify-center">
-                <button class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
-                   <span class="material-symbols-outlined text-[#4a654f] text-4xl translate-x-0.5">play_arrow</span>
-                </button>
-             </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────────
-
-const TrustBlock = (props: { product: Product }) => (
-  <section class="py-20 lg:py-32">
-    <div class="container">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-        <div class="space-y-8">
-          <span class="text-xs font-bold text-[#924b25] uppercase tracking-widest">Voices of Excellence</span>
-          <h2 class="font-serif text-3xl lg:text-4xl text-[#1b1c1c]">Curated by Experts, Loved by the Community</h2>
-          
-          <div class="bg-[#f0eded] p-8 lg:p-10 rounded-2xl border-l-4 border-[#4a654f] space-y-6">
-            <p class="font-serif text-xl lg:text-2xl italic text-[#1b1c1c] leading-relaxed">"{props.product.expert.quote}"</p>
-            <div class="flex items-center gap-4">
-              <div class="w-14 h-14 rounded-full overflow-hidden shadow-sm">
-                <img src={props.product.expert.image} class="w-full h-full object-cover" alt={props.product.expert.name} />
-              </div>
-              <div>
-                <p class="text-sm font-bold text-[#1b1c1c]">{props.product.expert.name}</p>
-                <p class="text-xs text-[#424842]">{props.product.expert.role}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid gap-6">
-          <For each={props.product.reviews}>
-            {(review) => (
-              <div class="bg-white p-8 rounded-2xl shadow-sm border border-[#737972]/10 space-y-4">
-                <div class="flex text-[#924b25]">
-                  <For each={[1, 2, 3, 4, 5]}>
-                    {() => <span class="material-symbols-outlined text-[18px]">star</span>}
-                  </For>
-                </div>
-                <p class="text-[#424842] italic">"{review.text}"</p>
-                <p class="text-sm font-bold text-[#1b1c1c]">— {review.name}</p>
-              </div>
-            )}
-          </For>
-        </div>
-      </div>
-    </div>
-  </section>
-);
-
-// ─────────────────────────────────────────────────────────────────
-
-const CheckoutModal = (props: { product: Product; onClose: () => void }) => (
-  <div class="fixed inset-0 z-[300] flex items-center justify-center p-6">
-    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={props.onClose}></div>
-    <div class="relative z-10 w-full max-w-lg bg-white rounded-2xl shadow-2xl p-10 border border-[#f0eded]">
-      <div class="flex items-center justify-between mb-8">
-        <h3 class="text-xl font-bold text-[#1b1c1c]">Opsi Pembelian</h3>
-        <button onClick={props.onClose} class="text-[#737972] hover:text-[#1b1c1c]">✕</button>
-      </div>
-
-      <div class="space-y-4">
-        <a href="/cart" class="flex items-center p-6 rounded-xl border border-[#f0eded] hover:bg-[#f6f3f2] transition-all group gap-4">
-          <div class="w-12 h-12 bg-[#4a654f] text-white rounded-xl flex items-center justify-center text-xl shadow-md">🛍️</div>
-          <div>
-            <p class="font-bold text-[#1b1c1c]">Order via Website</p>
-            <p class="text-xs text-[#737972]">Cepat, aman & otomatis</p>
-          </div>
-          <span class="ml-auto text-[#f0eded] group-hover:text-[#4a654f] transition-all">→</span>
-        </a>
-
-        <a href={`https://wa.me/6281234567890?text=${encodeURIComponent(props.product.waText)}`} target="_blank" class="flex items-center p-6 rounded-xl border border-[#25D366]/20 bg-[#25D366]/5 hover:bg-[#25D366]/10 transition-all group gap-4">
-          <div class="w-12 h-12 bg-[#25D366] text-white rounded-xl flex items-center justify-center text-xl shadow-md">💬</div>
-          <div>
-            <p class="font-bold text-[#25D366]">Order via WhatsApp</p>
-            <p class="text-xs text-[#25D366]/70">Bantuan personal & konsultasi</p>
-          </div>
-          <span class="ml-auto text-[#25D366]/30 group-hover:text-[#25D366] transition-all">→</span>
-        </a>
-      </div>
+const Breadcrumb = (props: { name: string }) => (
+  <div class="pd-container">
+    <div class="breadcrumb">
+      <a href="/">Beranda</a>
+      <span class="material-symbols-outlined" style="font-size: 1rem;">chevron_right</span>
+      <a href="/shop">Shop</a>
+      <span class="material-symbols-outlined" style="font-size: 1rem;">chevron_right</span>
+      <span style="color: var(--ink); font-weight: 600;">{props.name}</span>
     </div>
   </div>
 );
 
-// ─── Main Page ───────────────────────────────────────────────────
+const Gallery = (props: { images: string[]; certs: string[] }) => {
+  const [activeImg, setActiveImg] = createSignal(props.images[0]);
+  return (
+    <div class="pd-gallery-wrap">
+      <div class="pd-main-img">
+        <img src={activeImg()} alt="Main Product" />
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 12px;">
+        <For each={props.images}>
+          {(img) => (
+            <div 
+              class={`pd-thumb ${activeImg() === img ? 'active' : ''}`} 
+              onClick={() => setActiveImg(img)}
+              style={`cursor: pointer; border: 2px solid ${activeImg() === img ? 'var(--green-500)' : 'transparent'}`}
+            >
+              <img src={img} alt="Thumb" style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+          )}
+        </For>
+      </div>
+      <div class="cert-strip">
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--muted);">Sertifikasi:</span>
+        <For each={props.certs}>
+          {(cert) => <span class="cert-pill">{cert}</span>}
+        </For>
+      </div>
+    </div>
+  );
+};
+
+const ProductInfo = (props: { product: Product; onAction: (msg: string) => void }) => {
+  const [variant, setVariant] = createSignal(props.product.variants[0]);
+  const [qty, setQty] = createSignal(1);
+
+  return (
+    <div class="pd-info">
+      <span class="pd-label">{props.product.category.toUpperCase()}</span>
+      <h1 class="pd-title">{props.product.name}</h1>
+      <Show when={props.product.subtitle}>
+        <p style="font-family: 'Lora', serif; font-size: 1.2rem; font-style: italic; color: var(--muted); margin-top: -15px; margin-bottom: 20px;">
+          {props.product.subtitle}
+        </p>
+      </Show>
+
+      <div class="rating-row">
+        <div class="stars">
+          <For each={[1,2,3,4,5]}>
+            {() => <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>}
+          </For>
+        </div>
+        <span style="font-weight: 700;">{props.product.rating}</span>
+        <span class="rating-count">({props.product.reviewsCount} ulasan)</span>
+        <span class="sold-pill">🔥 {props.product.soldCount} terjual</span>
+      </div>
+
+      <div class="price-block" style="margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 30px;">
+        <Show when={props.product.originalPrice}>
+          <div class="pd-price-old">{props.product.originalPrice}</div>
+        </Show>
+        <div class="pd-price-row">
+          <span class="pd-price">{props.product.price}</span>
+          <Show when={props.product.discount}>
+            <span style="background: var(--red-500); color: white; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;">{props.product.discount}</span>
+          </Show>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--muted); margin-top: 10px;">Gratis ongkir seluruh Indonesia · 7 Hari pengembalian</p>
+      </div>
+
+      <div class="field-block">
+        <span class="field-label">{props.product.category === 'fashion' ? 'Pilih Warna' : 'Pilih Varian'}</span>
+        <div class="chip-row">
+          <For each={props.product.variants}>
+            {(v) => (
+              <button 
+                class={`chip ${variant() === v ? 'active' : ''}`}
+                onClick={() => setVariant(v)}
+              >
+                {v}
+              </button>
+            )}
+          </For>
+        </div>
+      </div>
+
+      <div class="field-block">
+        <span class="field-label">Jumlah</span>
+        <div class="qty-row">
+          <div class="qty-ctrl">
+            <button class="qty-btn" onClick={() => setQty(Math.max(1, qty() - 1))}>−</button>
+            <div class="qty-num">{qty()}</div>
+            <button class="qty-btn" onClick={() => setQty(qty() + 1)}>+</button>
+          </div>
+          <span style="font-size: 0.85rem; color: var(--muted);">Tersedia dalam stok</span>
+        </div>
+      </div>
+
+      <div class="pd-actions" style="flex-direction: row; flex-wrap: wrap;">
+        <button class="btn-buy" style="flex: 1; min-width: 180px;" onClick={() => props.onAction("Produk ditambahkan ke keranjang!")}>
+          <span class="material-symbols-outlined">shopping_cart</span>
+          Keranjang
+        </button>
+        <button class="btn-buy" style="flex: 1.5; min-width: 220px; background: var(--green-700);" onClick={() => props.onAction("Lanjut ke pembayaran...")}>
+          <span class="material-symbols-outlined">bolt</span>
+          Beli Sekarang
+        </button>
+        <button class="wishlist-btn" style="width: 56px; height: 56px; border-radius: 50%; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; background: white; cursor: pointer;">
+          <span class="material-symbols-outlined">favorite</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// --- Page Components ---
 
 export default function ProductDetail() {
   const params = useParams();
-  const product = products.find((p) => p.id === params.id) || products[0];
-  const [showModal, setShowModal] = createSignal(false);
+  const [product, setProduct] = createSignal<Product | null>(null);
+  const [loading, setLoading] = createSignal(true);
+  const [activeTab, setActiveTab] = createSignal("desc");
+  const [showToast, setShowToast] = createSignal(false);
+  const [toastMsg, setToastMsg] = createSignal("");
+
+  const triggerToast = (msg: string) => {
+    setToastMsg(msg);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
+
+  onMount(() => {
+    setTimeout(() => {
+      const found = products.find((p) => p.id === params.id) || products[0];
+      setProduct(found);
+      setLoading(false);
+    }, 600);
+  });
 
   return (
     <div class="min-h-screen bg-white">
       <Navbar />
 
-      <main class={product.category === "wellness" ? "pattern-bg" : ""}>
-        <HeroSection product={product} onBuy={() => setShowModal(true)} />
+      <Show when={!loading()} fallback={
+        <div style="height: 80vh; display: flex; align-items: center; justify-content: center;">
+          <Loading message="Menyiapkan detail produk..." />
+        </div>
+      }>
+        <main>
+          <Breadcrumb name={product()!.name} />
 
-        <Switch>
-          <Match when={product.category === "wellness" && product.purityInfo}>
-            <PurityBlock info={product.purityInfo!} />
-          </Match>
-          <Match when={product.category === "fashion" && product.eleganceInfo}>
-            <ParallaxShowcase info={product.eleganceInfo!} />
-          </Match>
-        </Switch>
+          <section class="pd-section" style="padding-top: 20px;">
+            <div class="pd-container">
+              <div class="pd-hero-grid">
+                <Gallery images={product()!.images} certs={product()!.certifications} />
+                <ProductInfo product={product()!} onAction={triggerToast} />
+              </div>
 
-        <TechnicalDetailGrid product={product} />
-        <TrustBlock product={product} />
-      </main>
+              {/* Tabs Section */}
+              <div class="tabs">
+                <div class="tab-head">
+                  <button class={`tab-btn ${activeTab() === 'desc' ? 'active' : ''}`} onClick={() => setActiveTab('desc')}>Deskripsi</button>
+                  <button class={`tab-btn ${activeTab() === 'ingred' ? 'active' : ''}`} onClick={() => setActiveTab('ingred')}>
+                    {product()!.category === 'wellness' ? 'Kandungan' : 'Material'}
+                  </button>
+                  <button class={`tab-btn ${activeTab() === 'how' ? 'active' : ''}`} onClick={() => setActiveTab('how')}>
+                    {product()!.category === 'wellness' ? 'Cara Pakai' : 'Perawatan'}
+                  </button>
+                </div>
 
-      <Footer />
+                <div class="tab-content">
+                  <Show when={activeTab() === 'desc'}>
+                    <div class="pd-desc" style="max-width: 800px;">
+                      <p>{product()!.desc}</p>
+                    </div>
+                  </Show>
+                  <Show when={activeTab() === 'ingred'}>
+                    <div class="spec-list">
+                      <For each={product()!.ingredients}>
+                        {(item) => (
+                          <div class="spec-item" style="background: var(--sand); padding: 20px; border-radius: 16px;">
+                            <div class="spec-icon" style="background: var(--white);">{product()!.category === 'wellness' ? '✨' : '🧵'}</div>
+                            <div>
+                              <div style="font-weight: 700; color: var(--ink);">{item.name}</div>
+                              <div style="font-size: 0.9rem; color: var(--muted);">{item.desc}</div>
+                            </div>
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                  </Show>
+                  <Show when={activeTab() === 'how'}>
+                    <div class="spec-list">
+                      <For each={product()!.howToUse}>
+                        {(item) => (
+                          <div class="spec-item" style="align-items: center;">
+                            <div class="spec-icon" style="border-radius: 50%; width: 40px; height: 40px; background: var(--green-500); color: white;">{item.num}</div>
+                            <div style="font-size: 1rem; color: var(--ink-light);">{item.text}</div>
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                  </Show>
+                </div>
+              </div>
+            </div>
+          </section>
 
-      <Show when={showModal()}>
-        <CheckoutModal product={product} onClose={() => setShowModal(false)} />
+          {/* Story Block */}
+          <section class="story-block">
+            <img class="story-img" src={product()!.story.image} alt="Story" />
+            <div class="story-overlay"></div>
+            <div class="story-content">
+              <h2 class="story-heading" innerHTML={product()!.story.heading.replace('Graceful', '<em>Graceful</em>').replace('Inside Out', '<em>Inside Out</em>')}></h2>
+              <p style="max-width: 400px; line-height: 1.8; opacity: 0.9;">{product()!.story.subheading}</p>
+            </div>
+          </section>
+
+          {/* Macro Detail Block */}
+          <section class="pd-section">
+            <div class="pd-container">
+              <div class="macro-grid">
+                <div style="border-radius: 24px; overflow: hidden; aspect-ratio: 4/3;">
+                  <img src={product()!.macro.image} alt="Macro" style="width: 100%; height: 100%; object-fit: cover;" />
+                </div>
+                <div>
+                  <span class="pd-label">{product()!.category === 'wellness' ? 'Premium Formula' : 'Design Philosophy'}</span>
+                  <h2 class="pd-title" innerHTML={product()!.macro.title.replace('Presisi', '<em>Presisi</em>').replace('Detail', '<em>Detail</em>')}></h2>
+                  <p class="pd-desc" style="margin-bottom: 30px;">{product()!.macro.desc}</p>
+                  <div class="spec-list">
+                    <For each={product()!.macro.specs}>
+                      {(spec) => (
+                        <div class="spec-item">
+                          <div class="spec-icon">{spec.icon}</div>
+                          <div>
+                            <div style="font-weight: 700;">{spec.name}</div>
+                            <div style="font-size: 0.85rem; color: var(--muted);">{spec.desc}</div>
+                          </div>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Benefits Grid */}
+          <section class="pd-section" style="background: var(--green-700); color: white;">
+            <div class="pd-container">
+              <div style="text-align: center; margin-bottom: 60px;">
+                <span style="color: rgba(255,255,255,0.6); font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em;">Value & Quality</span>
+                <h2 class="pd-title" style="color: white; margin-top: 10px;">Why Choose Aminah Jaya?</h2>
+              </div>
+              <div class="feat-grid">
+                <For each={product()!.benefits}>
+                  {(item) => (
+                    <div class="feat-card">
+                      <div class="feat-icon">{item.icon}</div>
+                      <div class="feat-name">{item.name}</div>
+                    </div>
+                  )}
+                </For>
+              </div>
+            </div>
+          </section>
+
+          {/* Dynamic Table Section (Dosage or Size Chart) */}
+          <section class="pd-section">
+            <div class="pd-container">
+              <h2 class="pd-title">{product()!.category === 'wellness' ? 'Panduan Konsumsi & Dosis' : 'Panduan Ukuran (Size Chart)'}</h2>
+              <p class="pd-desc">Pastikan Anda memilih sesuai kebutuhan dan ukuran yang tepat.</p>
+              <div class="size-table-wrap">
+                <table class="size-table">
+                  <thead>
+                    <tr>
+                      <th>{product()!.category === 'wellness' ? 'Tujuan' : 'Ukuran'}</th>
+                      <th>{product()!.category === 'wellness' ? 'Dosis Harian' : 'Lingkar Dada'}</th>
+                      <th>{product()!.category === 'wellness' ? 'Durasi' : 'Panjang Baju'}</th>
+                      <th>{product()!.category === 'wellness' ? 'Waktu' : 'Keterangan'}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <For each={product()!.dosage}>
+                      {(row) => (
+                        <tr>
+                          <td><strong>{row.goal}</strong></td>
+                          <td>{row.dose}</td>
+                          <td>{row.duration}</td>
+                          <td>{row.time}</td>
+                        </tr>
+                      )}
+                    </For>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          {/* Reviews Summary */}
+          <section class="pd-section" style="background: var(--white);">
+            <div class="pd-container">
+              <h2 class="pd-title">Ulasan Pembeli</h2>
+              <div class="review-summary">
+                <div style="text-align: center;">
+                  <div class="score-big">{product()!.rating}</div>
+                  <div class="stars" style="justify-content: center; margin: 10px 0;">
+                    <For each={[1,2,3,4,5]}>
+                      {() => <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">star</span>}
+                    </For>
+                  </div>
+                  <div style="font-size: 0.85rem; color: var(--muted);">dari {product()!.reviewsCount} ulasan</div>
+                </div>
+                <div class="review-bars">
+                  <div class="bar-row">
+                    <span class="bar-label">5★</span>
+                    <div class="bar-track"><div class="bar-fill" style="width: 88%;"></div></div>
+                    <span style="font-size: 0.8rem; width: 40px;">88%</span>
+                  </div>
+                  <div class="bar-row">
+                    <span class="bar-label">4★</span>
+                    <div class="bar-track"><div class="bar-fill" style="width: 9%;"></div></div>
+                    <span style="font-size: 0.8rem; width: 40px;">9%</span>
+                  </div>
+                  <div class="bar-row">
+                    <span class="bar-label">3★</span>
+                    <div class="bar-track"><div class="bar-fill" style="width: 2%;"></div></div>
+                    <span style="font-size: 0.8rem; width: 40px;">2%</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <For each={product()!.reviews}>
+                  {(review) => (
+                    <div style="padding: 30px; border-radius: 20px; border: 1px solid var(--border); border-left: 4px solid var(--green-500);">
+                      <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--green-100); color: var(--green-700); display: flex; align-items: center; justify-content: center; font-weight: 700;">{review.avatar}</div>
+                        <div>
+                          <div style="font-weight: 700;">{review.name}</div>
+                          <div style="font-size: 0.75rem; color: var(--muted);">{review.date} · Verified Buyer</div>
+                        </div>
+                      </div>
+                      <p style="font-size: 0.9rem; color: var(--ink-light); line-height: 1.6;">"{review.text}"</p>
+                      <div style="margin-top: 15px; font-size: 0.75rem; font-weight: 700; color: var(--green-500);">{review.tag}</div>
+                    </div>
+                  )}
+                </For>
+              </div>
+            </div>
+          </section>
+
+          {/* Related Products */}
+          <section class="pd-section">
+            <div class="pd-container">
+              <h2 class="pd-title" style="margin-bottom: 40px;">Produk Terkait</h2>
+              <div class="related-grid">
+                <For each={product()!.related}>
+                  {(item) => (
+                    <div class="related-card">
+                      <div class="related-img">
+                        <img src={item.image} alt={item.name} />
+                      </div>
+                      <div class="related-body">
+                        <div class="related-name">{item.name}</div>
+                        <div class="related-price">{item.price}</div>
+                        <div style="display: flex; align-items: center; gap: 5px; margin-top: 10px; font-size: 0.8rem; color: var(--muted);">
+                          <span class="material-symbols-outlined" style="color: #e8a020; font-size: 1rem; font-variation-settings: 'FILL' 1;">star</span>
+                          {item.rating}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </For>
+              </div>
+            </div>
+          </section>
+
+          <Footer />
+        </main>
       </Show>
+
+      {/* Toast Notification */}
+      <div class={`toast ${showToast() ? 'show' : ''}`}>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="material-symbols-outlined">check_circle</span>
+          {toastMsg()}
+        </div>
+      </div>
     </div>
   );
 }

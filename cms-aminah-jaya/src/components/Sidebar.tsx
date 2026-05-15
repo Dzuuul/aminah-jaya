@@ -10,8 +10,10 @@ import {
   FileText,
   LayoutGrid,
   Image,
-  Ticket
+  Ticket,
+  Shield
 } from "lucide-solid";
+
 import { A, useLocation, useNavigate } from "@solidjs/router";
 import { createMemo } from "solid-js";
 
@@ -74,7 +76,9 @@ export default function Sidebar(props: { isOpen: boolean, onClose: () => void })
           <SidebarLink href="/coupons" icon={Ticket} label="Kupon" active={location.pathname.startsWith('/coupons')} />
           <SidebarLink href="/orders" icon={Package} label="Pesanan" active={location.pathname.startsWith('/orders')} />
           <SidebarLink href="/customers" icon={Users} label="Pelanggan" active={location.pathname.startsWith('/customers')} />
+          <SidebarLink href="/legal" icon={Shield} label="Dokumen Legal" active={location.pathname.startsWith('/legal')} />
           <SidebarLink href="/settings" icon={Settings} label="Pengaturan" active={location.pathname.startsWith('/settings')} />
+
         </nav>
 
         <div class="sidebar-footer">

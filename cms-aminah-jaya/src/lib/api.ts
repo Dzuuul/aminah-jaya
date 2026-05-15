@@ -149,20 +149,50 @@ export interface Product {
   category_id: string | null;
   category_name: string;
   price: number;
+  price_compare: number | null;
   stock: number;
   status: string;
   sku: string | null;
   thumbnail_url: string | null;
   images: ProductImage[];
+  subtitle: string | null;
+  rating: number | null;
+  reviews_count: number | null;
+  sold_count: string | null;
+  certifications: string[];
+  variants_chips: string[];
+  ingredients: any[];
+  how_to_use: any[];
+  story: any;
+  macro_detail: any;
+  benefits: any[];
+  dosage: any[];
+  discount_label: string | null;
+  wa_message_template: string | null;
 }
 
 export interface CreateProductPayload {
   name: string;
   category_id?: string | null;
   price: number;
+  price_compare?: number | null;
   stock: number;
   sku?: string | null;
   image_urls: string[];
+  subtitle?: string | null;
+  rating?: number | null;
+  reviews_count?: number | null;
+  sold_count?: string | null;
+  certifications?: string[];
+  variants_chips?: string[];
+  ingredients?: any[];
+  how_to_use?: any[];
+  story?: any;
+  macro_detail?: any;
+  benefits?: any[];
+  dosage?: any[];
+  discount_label?: string | null;
+  wa_message_template?: string | null;
 }
 
 export interface Category {
@@ -467,3 +497,31 @@ export const deleteCoupon = (id: string) =>
   fetchApi<void>(`/coupons/${id}`, {
     method: "DELETE",
   });
+
+// ── Legal Pages ────────────────────────────────────────────────────────────
+
+export interface LegalPage {
+  key: string;
+  title_id: string;
+  content_id: string;
+  title_en: string;
+  content_en: string;
+  updated_at: string;
+}
+
+
+export interface UpdateLegalPagePayload {
+  title_id: string;
+  content_id: string;
+  title_en: string;
+  content_en: string;
+}
+
+export const getLegalPages = () => fetchApi<LegalPage[]>("/legal");
+export const getLegalPage = (key: string) => fetchApi<LegalPage>(`/legal/${key}`);
+export const updateLegalPage = (key: string, payload: UpdateLegalPagePayload) =>
+  fetchApi<LegalPage>(`/legal/${key}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+

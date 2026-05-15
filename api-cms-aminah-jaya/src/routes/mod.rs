@@ -10,3 +10,4 @@ pub mod blogs;
 pub mod banners;
 pub mod coupons;
 pub mod notifications;
+pub mod legal;

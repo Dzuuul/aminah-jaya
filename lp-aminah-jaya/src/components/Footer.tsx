@@ -1,3 +1,5 @@
+import { A } from "@solidjs/router";
+
 export default function Footer() {
   const year = new Date().getFullYear();
 
@@ -6,7 +8,7 @@ export default function Footer() {
       <div class="container">
         <div class="footer-top">
           {/* Brand */}
-          <div>
+          <div class="footer-brand">
             <div class="footer-logo">
               <img src="/logo_new.png" alt="Logo" />
               <span>Aminah Jaya</span>
@@ -47,10 +49,11 @@ export default function Footer() {
         </div>
 
         <div class="footer-bottom">
-          <span>© {year} Aminah Jaya Store. Hak cipta dilindungi.</span>
+          <span>© {year} Aminah Jaya. Hak cipta dilindungi.</span>
           <div class="footer-bottom-links">
-            <a href="#">Kebijakan Privasi</a>
-            <a href="#">Syarat &amp; Ketentuan</a>
+            <a href="/kebijakan-privasi">Kebijakan Privasi</a>
+            <a href="/syarat-ketentuan">Syarat &amp; Ketentuan</a>
+            <a href="/kebijakan-pengembalian">Kebijakan Pengembalian</a>
           </div>
         </div>
       </div>

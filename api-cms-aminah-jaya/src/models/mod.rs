@@ -139,10 +139,25 @@ pub struct Product {
     pub category_id: Option<Uuid>,
     pub category_name: String,   // joined from categories
     pub price: f64,
+    pub price_compare: Option<f64>,
     pub stock: i32,
     pub status: String,          // computed: In Stock / Low Stock / Out of Stock
     pub sku: Option<String>,
     pub thumbnail_url: Option<String>, // First image from product_images
+    pub subtitle: Option<String>,
+    pub rating: Option<f64>,
+    pub reviews_count: Option<i32>,
+    pub sold_count: Option<String>,
+    pub certifications: Option<Value>,
+    pub variants_chips: Option<Value>,
+    pub ingredients: Option<Value>,
+    pub how_to_use: Option<Value>,
+    pub story: Option<Value>,
+    pub macro_detail: Option<Value>,
+    pub benefits: Option<Value>,
+    pub dosage: Option<Value>,
+    pub discount_label: Option<String>,
+    pub wa_message_template: Option<String>,
     #[sqlx(skip)]
     pub images: Vec<ProductImage>,     // Full gallery
 }
@@ -152,9 +167,24 @@ pub struct CreateProductPayload {
     pub name: String,
     pub category_id: Option<Uuid>,
     pub price: f64,
+    pub price_compare: Option<f64>,
     pub stock: i32,
     pub sku: Option<String>,
     pub image_urls: Vec<String>,
+    pub subtitle: Option<String>,
+    pub rating: Option<f64>,
+    pub reviews_count: Option<i32>,
+    pub sold_count: Option<String>,
+    pub certifications: Option<Vec<String>>,
+    pub variants_chips: Option<Vec<String>>,
+    pub ingredients: Option<Value>,
+    pub how_to_use: Option<Value>,
+    pub story: Option<Value>,
+    pub macro_detail: Option<Value>,
+    pub benefits: Option<Value>,
+    pub dosage: Option<Value>,
+    pub discount_label: Option<String>,
+    pub wa_message_template: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -162,8 +192,24 @@ pub struct UpdateProductPayload {
     pub name: Option<String>,
     pub category_id: Option<Uuid>,
     pub price: Option<f64>,
+    pub price_compare: Option<f64>,
     pub stock: Option<i32>,
+    pub sku: Option<String>,
     pub image_urls: Option<Vec<String>>,
+    pub subtitle: Option<String>,
+    pub rating: Option<f64>,
+    pub reviews_count: Option<i32>,
+    pub sold_count: Option<String>,
+    pub certifications: Option<Vec<String>>,
+    pub variants_chips: Option<Vec<String>>,
+    pub ingredients: Option<Value>,
+    pub how_to_use: Option<Value>,
+    pub story: Option<Value>,
+    pub macro_detail: Option<Value>,
+    pub benefits: Option<Value>,
+    pub dosage: Option<Value>,
+    pub discount_label: Option<String>,
+    pub wa_message_template: Option<String>,
 }
 
 // ── Orders ─────────────────────────────────────────────────────────────────
@@ -402,3 +448,20 @@ pub struct Notification {
     pub link: Option<String>,
     pub created_at: DateTime<Utc>,
 }
+
+// ── Legal Pages ────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct LegalPage {
+    pub key: String,
+    pub title_id: String,
+    pub content_id: String,
+    pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateLegalPagePayload {
+    pub title_id: String,
+    pub content_id: String,
+}
+
