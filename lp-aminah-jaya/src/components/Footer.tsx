@@ -1,4 +1,5 @@
 import { A } from "@solidjs/router";
+import { Phone, Mail, Camera, Globe } from "lucide-solid";
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -35,15 +36,29 @@ export default function Footer() {
             <h4>Kontak</h4>
             <ul>
               <li>
-                <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer">
-                  +62 812-3456-7890
+                <a href="https://wa.me/62895634039130" target="_blank" rel="noopener noreferrer" style={{ display: "flex", "align-items": "center", gap: "0.75rem" }}>
+                  <Phone size={18} color="white" />
+                  <span>+62 8956-3403-9130</span>
                 </a>
               </li>
-              {/* <li>
-                <a href="mailto:hello@AminahJaya.id">hello@AminahJaya.id</a>
+              <li>
+                <a href="mailto:halo@aminahjaya.com" style={{ display: "flex", "align-items": "center", gap: "0.75rem" }}>
+                  <Mail size={18} color="white" />
+                  <span>halo@aminahjaya.com</span>
+                </a>
               </li>
-              <li><a href="#">Instagram</a></li>
-              <li><a href="#">Facebook</a></li> */}
+              <li>
+                <a href="https://www.instagram.com/aminahjaya_official?igsh=em1hNnNhOHo4MHRz" target="_blank" rel="noopener noreferrer" style={{ display: "flex", "align-items": "center", gap: "0.75rem" }}>
+                  <Camera size={18} color="white" />
+                  <span>aminahjaya_official</span>
+                </a>
+              </li>
+              <li>
+                <a href="https://www.facebook.com/share/1Cqnvzgs6E/" target="_blank" rel="noopener noreferrer" style={{ display: "flex", "align-items": "center", gap: "0.75rem" }}>
+                  <Globe size={18} color="white" />
+                  <span>Siti Aminah</span>
+                </a>
+              </li>
             </ul>
           </div>
         </div>

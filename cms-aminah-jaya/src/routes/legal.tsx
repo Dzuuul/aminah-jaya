@@ -115,31 +115,31 @@ export default function LegalSettings() {
 
         {/* Content: Editor */}
         <div class="legal-content-main">
-            <div class="editor-body">
-              <div class="field-group">
-                <label>Judul Halaman</label>
-                <input
-                  type="text"
-                  class="legal-input"
-                  value={titleId()}
-                  onInput={(e) => setTitleId(e.currentTarget.value)}
-                  placeholder="Masukkan judul halaman (contoh: Syarat & Ketentuan)..."
-                />
-              </div>
-
-              <div class="field-group">
-                <div class="flex justify-between items-center mb-2">
-                  <label>Konten Dokumen</label>
-                </div>
-                <TextArea
-                  rows={20}
-                  class="legal-textarea font-sans text-sm"
-                  value={contentId()}
-                  onInput={(e) => setContentId(e.currentTarget.value)}
-                  placeholder="Masukkan isi dokumen di sini..."
-                />
-              </div>
+          <div class="editor-body">
+            <div class="field-group">
+              <label>Judul Halaman</label>
+              <input
+                type="text"
+                class="legal-input"
+                value={titleId()}
+                onInput={(e) => setTitleId(e.currentTarget.value)}
+                placeholder="Masukkan judul halaman (contoh: Syarat & Ketentuan)..."
+              />
             </div>
+
+            <div class="field-group">
+              <div class="flex justify-between items-center mb-2">
+                <label>Konten Dokumen</label>
+              </div>
+              <TextArea
+                rows={20}
+                class="legal-textarea font-sans text-sm"
+                value={contentId()}
+                onInput={(e) => setContentId(e.currentTarget.value)}
+                placeholder="Masukkan isi dokumen di sini..."
+              />
+            </div>
+          </div>
         </div>
       </div>
     </Layout>

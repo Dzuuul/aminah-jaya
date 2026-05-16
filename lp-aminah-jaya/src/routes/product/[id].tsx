@@ -63,136 +63,40 @@ type Product = {
   waText: string;
 };
 
-// --- Mock Data ---
-
-const products: Product[] = [
-  {
-    id: "waiteu-collagen-pomegranate",
-    name: "Waiteu Collagen Pomegranate",
-    subtitle: "3X Brightening Injection Formula",
-    category: "wellness",
-    price: "Rp 245.000",
-    originalPrice: "Rp 350.000",
-    discount: "–30%",
-    rating: 4.9,
-    reviewsCount: 2341,
-    soldCount: "13rb+",
-    images: [
-      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?w=900&q=85",
-      "https://images.unsplash.com/photo-1571781926291-c477ebfd024b?w=900&q=85",
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=900&q=85",
-    ],
-    certifications: ["BPOM RI", "HALAL MUI", "ISO 22000"],
-    variants: ["Pomegranate", "Strawberry", "Mango", "Original"],
-    desc: "Waiteu Collagen adalah minuman kolagen premium dengan teknologi 3X Injeksi Pencerah yang mengandung 100% kolagen peptide ikan laut. Diformulasikan khusus untuk wanita Indonesia yang menginginkan kulit cerah, glowing, dan kenyal secara alami.",
-    ingredients: [
-      { name: "Marine Collagen Peptide 5000mg", desc: "Kolagen tipe I & III dari ikan laut dalam, diserap tubuh hingga 90% lebih cepat." },
-      { name: "Pomegranate Extract 500mg", desc: "Kaya polifenol – antioksidan kuat yang mencerahkan kulit." },
-      { name: "Vitamin C 1000mg", desc: "Meningkatkan produksi kolagen alami tubuh." },
-    ],
-    howToUse: [
-      { num: 1, text: "Campurkan 1 sachet (15g) ke dalam 150–200ml air mineral dingin." },
-      { num: 2, text: "Aduk atau kocok hingga larut sempurna selama ±30 detik." },
-      { num: 3, text: "Konsumsi 1 sachet sehari sebelum tidur." },
-    ],
-    story: {
-      heading: "Glowing from the Inside Out",
-      subheading: "Kecantikan sejati berasal dari nutrisi yang tepat. Waiteu Collagen hadir untuk merawat dari dalam — setiap sachet adalah ritual kecantikan harianmu.",
-      image: "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?w=1600&q=85"
-    },
-    macro: {
-      title: "Diformulasikan dengan Presisi",
-      desc: "Setiap sachet dirancang dengan standar farmasi tertinggi — bukan sekadar suplemen, melainkan ritual pencerah kulit yang terbukti secara ilmiah.",
-      image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=900&q=85",
-      specs: [
-        { icon: "🐟", name: "Marine Collagen Peptide", desc: "Molekul kecil memastikan absorpsi optimal ke lapisan dermis." },
-        { icon: "🌱", name: "100% Natural Extract", desc: "Bebas pewarna sintetis, manis alami dari stevia." },
-        { icon: "🔬", name: "GMP & ISO Certified", desc: "Fasilitas produksi tersertifikasi internasional." },
-      ]
-    },
-    benefits: [
-      { name: "Sugar-Free", icon: "🌙" },
-      { name: "BPOM Certified", icon: "✅" },
-      { name: "Natural", icon: "🌿" },
-      { name: "Halal MUI", icon: "🕌" },
-      { name: "Joint Support", icon: "🦴" },
-      { name: "Free Shipping", icon: "🚚" },
-    ],
-    dosage: [
-      { goal: "Pencerah Awal", dose: "1 sachet", duration: "30 hari", time: "Malam" },
-      { goal: "Anti-Aging", dose: "1-2 sachet", duration: "60 hari", time: "Pagi + Malam" },
-      { goal: "Rutin", dose: "1 sachet", duration: "Setiap hari", time: "Fleksibel" },
-    ],
-    reviews: [
-      { name: "Siti Rahmawati", date: "12 Mei 2025", text: "Sudah pakai 2 box dan hasilnya luar biasa! Kulit jadi lebih cerah dan kenyal.", tag: "Pemakaian 2 bulan", avatar: "S" },
-      { name: "Fatimah Azzahra", date: "3 April 2025", text: "Packaging bagus dan aman. Sendi lutut juga terasa lebih baik.", tag: "Pemakaian 3 minggu", avatar: "F" },
-    ],
-    related: [
-      { name: "Waiteu Strawberry", price: "Rp 245.000", image: "https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=300&q=80", rating: "4.8 (1.2k)" },
-      { name: "Waiteu Serum Vit C", price: "Rp 189.000", image: "https://images.unsplash.com/photo-1571997478779-2adcbbe9ab2f?w=300&q=80", rating: "4.9 (987)" },
-    ],
-    waText: "Halo, saya ingin memesan Waiteu Collagen Pomegranate.",
-  },
-  {
-    id: "aminah-premium-kaftan",
-    name: "Aminah Premium Silk Kaftan",
-    subtitle: "Elegance in Every Drape",
-    category: "fashion",
-    price: "Rp 850.000",
-    originalPrice: "Rp 1.200.000",
-    discount: "–29%",
-    rating: 4.8,
-    reviewsCount: 452,
-    soldCount: "1.2rb+",
-    images: [
-      "https://images.unsplash.com/photo-1583394060263-f30d52627a1d?w=900&q=85",
-      "https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=900&q=85",
-    ],
-    certifications: ["PREMIUM SILK", "HANDMADE"],
-    variants: ["Emerald Green", "Midnight Blue", "Rose Gold"],
-    desc: "Kaftan Aminah Premium terbuat dari sutra satin berkualitas tinggi yang memberikan kilau mewah dan kenyamanan maksimal. Didesain dengan potongan loose yang elegan, cocok untuk acara formal maupun hari raya.",
-    ingredients: [
-      { name: "Premium Satin Silk", desc: "Bahan lembut, tidak mudah kusut, dan memiliki kilau mewah." },
-      { name: "Inner Included", desc: "Sudah termasuk furing dalam agar tidak menerawang." },
-    ],
-    howToUse: [
-      { num: 1, text: "Cuci dengan tangan (hand wash) menggunakan deterjen lembut." },
-      { num: 2, text: "Jangan gunakan pemutih." },
-      { num: 3, text: "Setrika dengan suhu rendah atau steam." },
-    ],
-    story: {
-      heading: "Graceful Movement",
-      subheading: "Terinspirasi dari siluet klasik yang timeless. Aminah Kaftan dirancang untuk merayakan keanggunan wanita dalam setiap langkahnya.",
-      image: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=85"
-    },
-    macro: {
-      title: "Craftsmanship & Detail",
-      desc: "Setiap jahitan diproses dengan ketelitian tinggi oleh pengrajin lokal untuk memastikan kualitas standar butik.",
-      image: "https://images.unsplash.com/photo-1445205174275-5157f2a15950?w=900&q=85",
-      specs: [
-        { icon: "👗", name: "Loose Fit Design", desc: "Memberikan ruang gerak yang nyaman namun tetap terlihat slim." },
-        { icon: "✨", name: "Hand-Beaded Accents", desc: "Detail payet dijahit tangan untuk sentuhan eksklusif." },
-      ]
-    },
-    benefits: [
-      { name: "Luxury Silk", icon: "✨" },
-      { name: "Breathable", icon: "💨" },
-      { name: "Exclusive", icon: "💎" },
-      { name: "Tailored Fit", icon: "✂️" },
-    ],
-    dosage: [ 
-      { goal: "All Size", dose: "115 cm", duration: "140 cm", time: "Loose Fit" },
-      { goal: "XL Size", dose: "125 cm", duration: "142 cm", time: "Loose Fit" },
-    ],
-    reviews: [
-      { name: "Aisyah", date: "15 April 2025", text: "Bahannya sangat jatuh dan mewah. Dipakai ke pesta banyak yang tanya beli dimana.", tag: "Verified Buyer", avatar: "A" },
-    ],
-    related: [
-      { name: "Scarf Silk Aminah", price: "Rp 150.000", image: "https://images.unsplash.com/photo-1601924638867-3a6de6b7a500?w=300&q=80", rating: "4.9 (120)" },
-    ],
-    waText: "Halo, saya ingin memesan Aminah Premium Silk Kaftan.",
-  }
-];
+const fetchProductBySlug = async (slug: string) => {
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  const res = await fetch(`${apiUrl}/api/products/slug/${slug}`);
+  if (!res.ok) throw new Error("Failed to fetch product");
+  const json = await res.json();
+  if (!json.success) throw new Error(json.message);
+  
+  const p = json.data;
+  return {
+    id: p.id,
+    name: p.name,
+    subtitle: p.subtitle,
+    category: p.category_name?.toLowerCase().includes("fashion") ? "fashion" : "wellness",
+    price: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(p.price),
+    originalPrice: p.price_compare ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(p.price_compare) : undefined,
+    discount: p.discount_label,
+    rating: p.rating || 4.9,
+    reviewsCount: p.reviews_count || 0,
+    soldCount: p.sold_count || "0",
+    images: p.images?.length ? p.images.map((img: any) => img.url) : (p.thumbnail_url ? [p.thumbnail_url] : []),
+    certifications: p.certifications || [],
+    variants: p.variants_chips || [],
+    desc: p.description || p.subtitle || "",
+    ingredients: p.ingredients || [],
+    howToUse: p.how_to_use || [],
+    story: p.story || { heading: "", subheading: "", image: "" },
+    macro: p.macro_detail || { title: "", desc: "", image: "", specs: [] },
+    benefits: p.benefits || [],
+    dosage: p.dosage || [],
+    reviews: [],
+    related: [],
+    waText: p.wa_message_template || `Halo, saya ingin memesan ${p.name}.`,
+  } as Product;
+};
 
 // --- Sub-Components ---
 
@@ -327,6 +231,7 @@ export default function ProductDetail() {
   const params = useParams();
   const [product, setProduct] = createSignal<Product | null>(null);
   const [loading, setLoading] = createSignal(true);
+  const [error, setError] = createSignal<string | null>(null);
   const [activeTab, setActiveTab] = createSignal("desc");
   const [showToast, setShowToast] = createSignal(false);
   const [toastMsg, setToastMsg] = createSignal("");
@@ -337,21 +242,27 @@ export default function ProductDetail() {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  onMount(() => {
-    setTimeout(() => {
-      const found = products.find((p) => p.id === params.id) || products[0];
-      setProduct(found);
+  onMount(async () => {
+    try {
+      if (!params.id) throw new Error("ID Produk tidak valid.");
+      const data = await fetchProductBySlug(params.id);
+      setProduct(data);
+    } catch (err: any) {
+      setError(err.message || "Produk tidak ditemukan.");
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   });
 
   return (
     <div class="min-h-screen bg-white">
       <Navbar />
 
-      <Show when={!loading()} fallback={
+      <Show when={!loading() && !error()} fallback={
         <div style="height: 80vh; display: flex; align-items: center; justify-content: center;">
-          <Loading message="Menyiapkan detail produk..." />
+          <Show when={error()} fallback={<Loading message="Menyiapkan detail produk..." />}>
+            <div style="text-align: center; color: var(--muted); font-size: 1.2rem;">{error()}</div>
+          </Show>
         </div>
       }>
         <main>

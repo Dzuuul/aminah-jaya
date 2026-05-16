@@ -12,6 +12,7 @@ interface Category {
 
 interface Product {
   id: string;
+  slug: string;
   name: string;
   category_name: string;
   price: number;
@@ -182,7 +183,7 @@ export default function ShopPage() {
                 </div>
               }>
                 {(product) => (
-                  <A href={`/product/${product.id}`} class="prod-card">
+                  <A href={`/product/${product.slug}`} class="prod-card">
                     <div class="prod-img">
                       <Show when={product.thumbnail_url} fallback={
                         <>

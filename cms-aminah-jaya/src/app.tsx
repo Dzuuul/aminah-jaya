@@ -61,6 +61,8 @@ function AuthGuard(props: { children: any }) {
 }
 
 import ToastContainer from "./components/ToastContainer";
+import SpotlightSearch from "./components/SpotlightSearch";
+import { isSearchOpen, setIsSearchOpen } from "./lib/searchStore";
 
 export default function App() {
   return (
@@ -76,6 +78,10 @@ export default function App() {
               {props.children}
             </AuthGuard>
           </Suspense>
+          <SpotlightSearch 
+            isOpen={isSearchOpen()} 
+            onClose={() => setIsSearchOpen(false)} 
+          />
           <ToastContainer />
         </main>
       )}

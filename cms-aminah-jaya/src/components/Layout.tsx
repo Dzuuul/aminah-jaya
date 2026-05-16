@@ -1,8 +1,9 @@
 import { createSignal, JSX } from "solid-js";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import { sidebarFolded } from "../lib/sidebarStore";
 
-export default function Layout(props: { children: JSX.Element, title?: string }) {
+export default function Layout(props: { children: JSX.Element, title?: string, onBack?: () => void }) {
   const [isSidebarOpen, setIsSidebarOpen] = createSignal(false);
 
   return (
@@ -16,8 +17,12 @@ export default function Layout(props: { children: JSX.Element, title?: string })
 
       <Sidebar isOpen={isSidebarOpen()} onClose={() => setIsSidebarOpen(false)} />
 
-      <main class="main-content">
-        <Navbar onOpenSidebar={() => setIsSidebarOpen(true)} title={props.title} />
+      <main class={`main-content ${sidebarFolded() ? 'is-folded' : ''}`}>
+        <Navbar 
+          onOpenSidebar={() => setIsSidebarOpen(true)} 
+          title={props.title} 
+          onBack={props.onBack}
+        />
         <div class="content-area">
           {props.children}
         </div>

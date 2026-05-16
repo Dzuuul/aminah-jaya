@@ -1,12 +1,42 @@
 
 import { createSignal, Show, onMount } from "solid-js";
-import { LogIn, Lock, Mail, Eye, EyeOff, Loader2 } from "lucide-solid";
-import { login } from "~/lib/api";
+import { LogIn, Lock, Mail, Eye, EyeOff, Loader2, Quote } from "lucide-solid";
+import { login, updateToken } from "../lib/api";
 import { useNavigate } from "@solidjs/router";
+
+const getHadith = () => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 11) {
+    return {
+      time: "Pagi",
+      text: "Sesungguhnya agama itu mudah. Dan tidaklah seseorang mempersulit agama melainkan ia akan dikalahkan (gagal). Maka bertindaklah lurus, mendekatlah (kepada kesempurnaan), berilah kabar gembira, dan manfaatkanlah waktu pagi, sore, serta sebagian malam (untuk beribadah/berbuat baik).",
+      ref: "(HR. Bukhari no. 39)"
+    };
+  } else if (hour >= 11 && hour < 15) {
+    return {
+      time: "Siang",
+      text: "Tidak ada seseorang yang memakan makanan yang lebih baik daripada hasil usahanya sendiri. Dan sesungguhnya Nabi Allah Daud AS dahulu makan dari hasil usahanya sendiri.",
+      ref: "(HR. Bukhari no. 2072)"
+    };
+  } else if (hour >= 15 && hour < 18) {
+    return {
+      time: "Sore",
+      text: "Lakukanlah amalan sesuai kemampuan kalian, karena sesungguhnya Allah tidak akan bosan hingga kalian sendiri yang bosan. Dan sesungguhnya amalan yang paling dicintai oleh Allah adalah yang konsisten (istiqamah) meskipun sedikit.",
+      ref: "(HR. Bukhari no. 43)"
+    };
+  } else {
+    return {
+      time: "Malam",
+      text: "Jika kamu berada di sore hari janganlah menunggu pagi, dan jika kamu berada di pagi hari janganlah menunggu sore. Gunakanlah waktu sehatmu sebelum sakitmu, dan hidupmu sebelum matimu.",
+      ref: "(HR. Bukhari no. 6416)"
+    };
+  }
+};
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [isChecking, setIsChecking] = createSignal(true);
+  const hadith = getHadith();
 
   onMount(() => {
     const token = localStorage.getItem("token");
@@ -16,13 +46,12 @@ export default function LoginPage() {
       setIsChecking(false);
     }
   });
+
   const [showPassword, setShowPassword] = createSignal(false);
   const [email, setEmail] = createSignal("");
   const [password, setPassword] = createSignal("");
   const [isLoading, setIsLoading] = createSignal(false);
   const [error, setError] = createSignal<string | null>(null);
-
-
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
@@ -32,8 +61,8 @@ export default function LoginPage() {
     try {
       const data = await login(email(), password());
 
-      // Store token and user info
-      localStorage.setItem("token", data.token);
+      // Use updateToken to sync state
+      updateToken(data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       // Use Solid router navigation after a tick to ensure owner context
@@ -131,6 +160,17 @@ export default function LoginPage() {
                 {isLoading() ? "Masuk..." : "Masuk"}
               </button>
             </form>
+          </div>
+
+          <div class="login-quote-box">
+            <div class="login-quote-icon">
+              <Quote size={20} />
+            </div>
+            <div class="login-quote-content">
+              <span class="login-quote-time">Nasihat {hadith.time}</span>
+              <p class="login-quote-text">"{hadith.text}"</p>
+              <span class="login-quote-ref">{hadith.ref}</span>
+            </div>
           </div>
 
           <p class="login-footer-text">

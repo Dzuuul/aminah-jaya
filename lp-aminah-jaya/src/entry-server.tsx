@@ -8,7 +8,7 @@ export default createHandler(() => (
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>Aminah Jaya Store — Kebutuhan Harian & Lifestyle</title>
+          <title>Aminah Jaya — Kebutuhan Harian & Lifestyle</title>
           <meta name="description" content="Toko online terpercaya untuk kebutuhan kesehatan, fashion muslim, dan kebutuhan harian. Belanja mudah langsung via WhatsApp." />
           <link rel="icon" href="/favicon.ico" />
           <link

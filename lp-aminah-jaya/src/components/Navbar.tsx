@@ -85,7 +85,7 @@ export default function Navbar() {
                         <Show when={!products.loading} fallback={<li>Loading...</li>}>
                           <For each={products()?.slice(0, 8)}>
                             {(product: any) => (
-                              <li><A href={`/product/${product.id}`}>{product.name}</A></li>
+                              <li><A href={`/product/${product.slug}`}>{product.name}</A></li>
                             )}
                           </For>
                         </Show>

@@ -27,6 +27,8 @@ pub async fn list_products(
         SELECT
             p.id,
             p.name,
+            p.slug,
+            p.description,
             p.category_id,
             COALESCE(c.name, 'Uncategorized') AS category_name,
             p.price::FLOAT8,
@@ -82,7 +84,7 @@ pub async fn get_product(
     let pool = &state.pool;
     let product: Option<Product> = sqlx::query_as(
         r#"
-        SELECT p.id, p.name, p.category_id,
+        SELECT p.id, p.name, p.slug, p.description, p.category_id,
                COALESCE(c.name, 'Uncategorized') AS category_name,
                p.price::FLOAT8, p.price_compare::FLOAT8, p.stock,
                CASE WHEN p.stock = 0 THEN 'Out of Stock'
@@ -117,6 +119,49 @@ pub async fn get_product(
     }
 }
 
+/// GET /api/products/slug/:slug
+pub async fn get_product_by_slug(
+    State(state): State<AppState>,
+    Path(slug): Path<String>,
+) -> impl IntoResponse {
+    let pool = &state.pool;
+    let product: Option<Product> = sqlx::query_as(
+        r#"
+        SELECT p.id, p.name, p.slug, p.description, p.category_id,
+               COALESCE(c.name, 'Uncategorized') AS category_name,
+               p.price::FLOAT8, p.price_compare::FLOAT8, p.stock,
+               CASE WHEN p.stock = 0 THEN 'Out of Stock'
+                    WHEN p.stock <= 15 THEN 'Low Stock'
+                    ELSE 'In Stock' END AS status,
+               p.sku,
+               (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC LIMIT 1) AS thumbnail_url,
+               p.subtitle, p.rating::FLOAT8, p.reviews_count, p.sold_count,
+               p.certifications, p.variants_chips, p.ingredients, p.how_to_use,
+               p.story, p.macro_detail, p.benefits, p.dosage, p.discount_label,
+               p.wa_message_template
+        FROM products p
+        LEFT JOIN categories c ON c.id = p.category_id
+        WHERE p.slug = $1
+        "#
+    )
+    .bind(slug)
+    .fetch_optional(pool).await.unwrap_or(None);
+
+    match product {
+        Some(mut p) => {
+            let images: Vec<crate::models::ProductImage> = sqlx::query_as(
+                "SELECT id, product_id, url, alt_text, sort_order, is_primary FROM product_images WHERE product_id = $1 ORDER BY sort_order ASC"
+            )
+            .bind(p.id)
+            .fetch_all(pool).await.unwrap_or_default();
+            
+            p.images = images;
+            (StatusCode::OK, Json(ApiResponse::success(serde_json::to_value(p).unwrap()))).into_response()
+        },
+        None => (StatusCode::NOT_FOUND, Json(ApiResponse::error("Product not found", None))).into_response(),
+    }
+}
+
 /// POST /api/products
 pub async fn create_product(
     State(state): State<AppState>,
@@ -133,11 +178,11 @@ pub async fn create_product(
     let product_id: Uuid = match sqlx::query_scalar(
         r#"INSERT INTO products (
             name, category_id, price, price_compare, stock, sku, slug,
-            subtitle, rating, reviews_count, sold_count, certifications,
+            description, subtitle, rating, reviews_count, sold_count, certifications,
             variants_chips, ingredients, how_to_use, story, macro_detail,
             benefits, dosage, discount_label, wa_message_template
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
            RETURNING id"#
     )
     .bind(&payload.name)
@@ -147,6 +192,7 @@ pub async fn create_product(
     .bind(payload.stock)
     .bind(&payload.sku)
     .bind(&slug)
+    .bind(&payload.description)
     .bind(&payload.subtitle)
     .bind(payload.rating)
     .bind(payload.reviews_count)
@@ -219,21 +265,22 @@ pub async fn update_product(
                price_compare = COALESCE($4, price_compare),
                stock       = COALESCE($5, stock),
                sku         = COALESCE($6, sku),
-               subtitle    = COALESCE($7, subtitle),
-               rating      = COALESCE($8, rating),
-               reviews_count = COALESCE($9, reviews_count),
-               sold_count  = COALESCE($10, sold_count),
-               certifications = COALESCE($11, certifications),
-               variants_chips = COALESCE($12, variants_chips),
-               ingredients = COALESCE($13, ingredients),
-               how_to_use  = COALESCE($14, how_to_use),
-               story       = COALESCE($15, story),
-               macro_detail = COALESCE($16, macro_detail),
-               benefits    = COALESCE($17, benefits),
-               dosage      = COALESCE($18, dosage),
-               discount_label = COALESCE($19, discount_label),
-               wa_message_template = COALESCE($20, wa_message_template)
-           WHERE id = $21"#
+               description = COALESCE($7, description),
+               subtitle    = COALESCE($8, subtitle),
+               rating      = COALESCE($9, rating),
+               reviews_count = COALESCE($10, reviews_count),
+               sold_count  = COALESCE($11, sold_count),
+               certifications = COALESCE($12, certifications),
+               variants_chips = COALESCE($13, variants_chips),
+               ingredients = COALESCE($14, ingredients),
+               how_to_use  = COALESCE($15, how_to_use),
+               story       = COALESCE($16, story),
+               macro_detail = COALESCE($17, macro_detail),
+               benefits    = COALESCE($18, benefits),
+               dosage      = COALESCE($19, dosage),
+               discount_label = COALESCE($20, discount_label),
+               wa_message_template = COALESCE($21, wa_message_template)
+           WHERE id = $22"#
     )
     .bind(&payload.name)
     .bind(payload.category_id)
@@ -241,6 +288,7 @@ pub async fn update_product(
     .bind(payload.price_compare)
     .bind(payload.stock)
     .bind(&payload.sku)
+    .bind(&payload.description)
     .bind(&payload.subtitle)
     .bind(payload.rating)
     .bind(payload.reviews_count)

@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  Bell,
   ShoppingBag,
   Users,
   Settings,
@@ -11,11 +12,15 @@ import {
   LayoutGrid,
   Image,
   Ticket,
-  Shield
+  Shield,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-solid";
 
 import { A, useLocation, useNavigate } from "@solidjs/router";
-import { createMemo } from "solid-js";
+import { createMemo, Show } from "solid-js";
+import { sidebarFolded, toggleSidebarFolded } from "../lib/sidebarStore";
+import { updateToken } from "../lib/api";
 
 function SidebarLink(props: { icon: any, label: string, href: string, active?: boolean }) {
   return (
@@ -23,10 +28,13 @@ function SidebarLink(props: { icon: any, label: string, href: string, active?: b
       href={props.href}
       class={`sidebar-link ${props.active ? 'active' : ''}`}
       activeClass=""
+      title={sidebarFolded() ? props.label : ""}
     >
       <props.icon size={20} class="sidebar-link-icon" />
-      <span class="sidebar-link-label">{props.label}</span>
-      {props.active && <div class="sidebar-link-dot"></div>}
+      <Show when={!sidebarFolded()}>
+        <span class="sidebar-link-label">{props.label}</span>
+      </Show>
+      {props.active && !sidebarFolded() && <div class="sidebar-link-dot"></div>}
     </A>
   );
 }
@@ -35,32 +43,33 @@ export default function Sidebar(props: { isOpen: boolean, onClose: () => void })
   const location = useLocation();
   const navigate = useNavigate();
 
-  const user = createMemo(() => {
-    if (typeof window !== 'undefined') {
-      const storedUser = localStorage.getItem("user");
-      return storedUser ? JSON.parse(storedUser) : null;
-    }
-    return null;
-  });
-
-  const getInitials = (name: string) => {
-    return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0, 2);
-  };
-
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    updateToken(null);
     localStorage.removeItem("user");
     navigate("/login", { replace: true });
   };
 
   return (
-    <aside class={`sidebar ${props.isOpen ? 'is-open' : ''}`}>
+    <aside class={`sidebar ${props.isOpen ? 'is-open' : ''} ${sidebarFolded() ? 'is-folded' : ''}`}>
       <div class="sidebar-content">
         <div class="sidebar-header">
-          <div class="sidebar-logo">
-            <img src="/logo.png" alt="Logo" style={{ width: "3rem" }} />
-          </div>
-          <span class="sidebar-title">Aminah <span>Jaya</span></span>
+          <Show 
+            when={!sidebarFolded()} 
+            fallback={
+              <button class="sidebar-fold-btn" onClick={toggleSidebarFolded} title="Buka Sidebar">
+                <ChevronRight size={20} />
+              </button>
+            }
+          >
+            <div class="sidebar-logo">
+              <img src="/logo.png" alt="Logo" style={{ width: "2.5rem" }} />
+            </div>
+            <span class="sidebar-title">Aminah <span>Jaya</span></span>
+            <button class="sidebar-fold-btn" onClick={toggleSidebarFolded} title="Lipat Sidebar">
+              <ChevronLeft size={18} />
+            </button>
+          </Show>
+
           <button class="sidebar-close-btn" onClick={props.onClose}>
             <X size={20} />
           </button>
@@ -68,6 +77,7 @@ export default function Sidebar(props: { isOpen: boolean, onClose: () => void })
 
         <nav class="sidebar-nav">
           <SidebarLink href="/" icon={LayoutDashboard} label="Dashboard" active={location.pathname === '/'} />
+          <SidebarLink href="/notifications" icon={Bell} label="Notifikasi" active={location.pathname === '/notifications'} />
           <SidebarLink href="/products" icon={ShoppingBag} label="Produk" active={location.pathname.startsWith('/products')} />
           <SidebarLink href="/categories" icon={LayoutGrid} label="Kategori" active={location.pathname.startsWith('/categories')} />
           <SidebarLink href="/flash-sales" icon={Zap} label="Flash Sale" active={location.pathname.startsWith('/flash-sales')} />
@@ -82,21 +92,11 @@ export default function Sidebar(props: { isOpen: boolean, onClose: () => void })
         </nav>
 
         <div class="sidebar-footer">
-          <div class="sidebar-user-card">
-            <p class="sidebar-user-label">Masuk sebagai</p>
-            <div class="sidebar-user-info">
-              <div class="sidebar-user-avatar">
-                {user()?.name ? getInitials(user().name) : 'AD'}
-              </div>
-              <div class="sidebar-user-details">
-                <p class="sidebar-user-name">{user()?.name || 'Admin Aminah'}</p>
-                <p class="sidebar-user-email">{user()?.email || 'Super Admin'}</p>
-              </div>
-            </div>
-          </div>
           <button onClick={handleLogout} class="sidebar-logout-btn">
             <LogOut size={18} />
-            <span>Keluar</span>
+            <Show when={!sidebarFolded()}>
+              <span>Keluar</span>
+            </Show>
           </button>
         </div>
       </div>

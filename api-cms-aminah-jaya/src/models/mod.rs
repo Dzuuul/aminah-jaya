@@ -136,6 +136,8 @@ pub struct ProductImage {
 pub struct Product {
     pub id: Uuid,
     pub name: String,
+    pub slug: String,
+    pub description: Option<String>,
     pub category_id: Option<Uuid>,
     pub category_name: String,   // joined from categories
     pub price: f64,
@@ -171,6 +173,7 @@ pub struct CreateProductPayload {
     pub stock: i32,
     pub sku: Option<String>,
     pub image_urls: Vec<String>,
+    pub description: Option<String>,
     pub subtitle: Option<String>,
     pub rating: Option<f64>,
     pub reviews_count: Option<i32>,
@@ -196,6 +199,7 @@ pub struct UpdateProductPayload {
     pub stock: Option<i32>,
     pub sku: Option<String>,
     pub image_urls: Option<Vec<String>>,
+    pub description: Option<String>,
     pub subtitle: Option<String>,
     pub rating: Option<f64>,
     pub reviews_count: Option<i32>,
@@ -356,6 +360,7 @@ pub struct CreateBlogPayload {
     pub image_url: Option<String>,
     pub cta_product_id: Option<Uuid>,
     pub is_published: bool,
+    pub published_at: Option<DateTime<Utc>>,
 }
 
 // ── Banners ────────────────────────────────────────────────────────────────

@@ -356,6 +356,7 @@ export interface CreateBlogPayload {
   image_url?: string;
   cta_product_id?: string | null;
   is_published: boolean;
+  published_at?: string;
 }
 
 export interface CreateFlashSalePayload {

@@ -161,6 +161,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .patch(routes::products::update_product)
                 .delete(routes::products::delete_product),
         )
+        .route("/api/products/slug/:slug", get(routes::products::get_product_by_slug))
         .route(
             "/api/categories",
             get(routes::products::list_categories).post(routes::products::create_category),

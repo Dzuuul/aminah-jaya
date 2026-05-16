@@ -1,107 +1,7 @@
-import { For } from "solid-js";
+import { For, createResource, Show } from "solid-js";
 import { JSX } from "solid-js";
 import { A } from "@solidjs/router";
-
-interface Product {
-  id: string;
-  badge?: string;
-  icon: JSX.Element;
-  imgLabel: string;
-  category: string;
-  name: string;
-  desc: string;
-  price: string;
-  waText: string;
-}
-
-const products: Product[] = [
-  {
-    id: "whey-protein",
-    badge: "Terlaris",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-        <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-      </svg>
-    ),
-    imgLabel: "Whey Protein",
-    category: "Suplemen",
-    name: "Whey Protein Premium",
-    desc: "Tinggi protein untuk mendukung pembentukan otot. Berbagai rasa tersedia.",
-    price: "Rp 350.000",
-    waText: "Halo,%20saya%20mau%20pesan%20Whey%20Protein%20Premium",
-  },
-  {
-    id: "susu-kesehatan",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-        <path d="M12 3v1m0 16v1M4.22 4.22l.707.707M18.364 18.364l.707.707M1 12h1M21 12h1M4.22 19.778l.707-.707M18.364 5.636l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
-      </svg>
-    ),
-    imgLabel: "Susu Kesehatan",
-    category: "Suplemen",
-    name: "Susu Kesehatan Full Cream",
-    desc: "Susu berkualitas tinggi, kaya kalsium dan vitamin untuk nutrisi keluarga.",
-    price: "Rp 65.000",
-    waText: "Halo,%20saya%20mau%20pesan%20Susu%20Kesehatan",
-  },
-  {
-    id: "gamis-muslimah",
-    badge: "New",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-        <path d="M7.5 3.75a1.5 1.5 0 00-1.5 1.5v13.5a1.5 1.5 0 001.5 1.5h9a1.5 1.5 0 001.5-1.5V9L13.5 3.75H7.5zM13.5 3.75v4.5a.75.75 0 00.75.75h4.5" />
-      </svg>
-    ),
-    imgLabel: "Gamis Muslimah",
-    category: "Fashion Muslim",
-    name: "Gamis Syar'i Polos",
-    desc: "Gamis bahan premium, adem, dan nyaman dipakai seharian. Tersedia berbagai warna.",
-    price: "Rp 185.000",
-    waText: "Halo,%20saya%20mau%20pesan%20Gamis%20Syar'i",
-  },
-  {
-    id: "baju-koko",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-        <path d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-3a2.25 2.25 0 00-2.25 2.25V9m-3 0h13.5M6 9v10.25A1.75 1.75 0 007.75 21h8.5A1.75 1.75 0 0018 19.25V9" />
-      </svg>
-    ),
-    imgLabel: "Baju Koko",
-    category: "Fashion Muslim",
-    name: "Baju Koko Elegan",
-    desc: "Tampil rapi dan islami dengan baju koko bahan katun premium, cocok untuk keseharian.",
-    price: "Rp 120.000",
-    waText: "Halo,%20saya%20mau%20pesan%20Baju%20Koko",
-  },
-  {
-    id: "vitamin-harian",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-        <path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15M14.25 3.104c.251.023.501.05.75.082M19.8 15l-3.776 3.763A2.25 2.25 0 0114.25 21H9.75a2.25 2.25 0 01-1.774-.863L4.2 15m15.6 0l-4.2-5.5M4.2 15l4.2-5.5" />
-      </svg>
-    ),
-    imgLabel: "Vitamin Harian",
-    category: "Suplemen",
-    name: "Vitamin C & Zinc Combo",
-    desc: "Daya tahan tubuh meningkat dengan kombinasi vitamin C dosis tinggi dan zinc.",
-    price: "Rp 45.000",
-    waText: "Halo,%20saya%20mau%20pesan%20Vitamin%20C%20%26%20Zinc",
-  },
-  {
-    id: "kebutuhan-harian",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2">
-        <path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-      </svg>
-    ),
-    imgLabel: "Kebutuhan Harian",
-    category: "Kebutuhan Harian",
-    name: "Paket Sembako Hemat",
-    desc: "Paket kebutuhan dapur lengkap — beras, minyak, gula, dan lainnya dalam satu paket.",
-    price: "Rp 250.000",
-    waText: "Halo,%20saya%20mau%20pesan%20Paket%20Sembako%20Hemat",
-  },
-];
+import { getProducts, formatCurrency } from "../lib/api";
 
 const WaIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
@@ -110,7 +10,15 @@ const WaIcon = () => (
   </svg>
 );
 
+const DefaultProductIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style={{ width: "3rem", height: "3rem", color: "var(--color-green-500)" }}>
+    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+  </svg>
+);
+
 export default function Products() {
+  const [products] = createResource(getProducts);
+
   return (
     <section class="products" id="produk">
       <div class="container">
@@ -130,29 +38,48 @@ export default function Products() {
         </div>
 
         <div class="prod-grid">
-          <For each={products}>
-            {(product) => (
-              <a href={`/product/${product.id}`} class="prod-card" style={{ "text-decoration": "none", "color": "inherit", "display": "block" }}>
-                <div class="prod-img">
-                  {product.badge && <span class="prod-badge">{product.badge}</span>}
-                  {product.icon}
-                  <p>{product.imgLabel}</p>
-                </div>
-                <div class="prod-body">
-                  <div class="prod-cat">{product.category}</div>
-                  <div class="prod-name">{product.name}</div>
-                  <p class="prod-desc">{product.desc}</p>
-                  <div class="prod-footer">
-                    <span class="prod-price">{product.price}</span>
-                    <div class="btn btn-wa btn-sm">
-                      <WaIcon />
-                      Detail
+          <Show
+            when={!products.loading}
+            fallback={
+              <For each={[1, 2, 3, 4, 5, 6]}>
+                {() => (
+                  <div class="prod-card skeleton" style={{ height: "400px", "background-color": "var(--color-sand)", "border-radius": "1.5rem" }}></div>
+                )}
+              </For>
+            }
+          >
+            <For each={products()?.slice(0, 6)}>
+              {(product) => (
+                <A href={`/product/${product.slug}`} class="prod-card" style={{ "text-decoration": "none", "color": "inherit", "display": "block" }}>
+                  <div class="prod-img">
+                    <Show
+                      when={product.thumbnail_url}
+                      fallback={<DefaultProductIcon />}
+                    >
+                      <img
+                        src={product.thumbnail_url!}
+                        alt={product.name}
+                        style={{ width: "100%", height: "100%", "object-fit": "cover" }}
+                      />
+                    </Show>
+                    <p>{product.name.split(' ').slice(0, 2).join(' ')}</p>
+                  </div>
+                  <div class="prod-body">
+                    <div class="prod-cat">{product.category_name}</div>
+                    <div class="prod-name">{product.name}</div>
+                    <p class="prod-desc">{product.subtitle || "Produk berkualitas dari Aminah Jaya."}</p>
+                    <div class="prod-footer">
+                      <span class="prod-price">{formatCurrency(product.price)}</span>
+                      <div class="btn btn-wa btn-sm">
+                        <WaIcon />
+                        Detail
+                      </div>
                     </div>
                   </div>
-                </div>
-              </a>
-            )}
-          </For>
+                </A>
+              )}
+            </For>
+          </Show>
         </div>
       </div>
     </section>

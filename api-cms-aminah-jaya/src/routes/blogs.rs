@@ -68,10 +68,16 @@ pub async fn create_blog(
 ) -> Result<Json<ApiResponse<Blog>>, (StatusCode, String)> {
     let slug = payload.title.to_lowercase().replace(' ', "-");
     
+    let published_at = if payload.is_published {
+        Some(payload.published_at.unwrap_or_else(chrono::Utc::now))
+    } else {
+        payload.published_at
+    };
+
     let blog = sqlx::query_as::<_, Blog>(
         r#"
-        INSERT INTO blogs (title, slug, excerpt, content, image_url, cta_product_id, is_published)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO blogs (title, slug, excerpt, content, image_url, cta_product_id, is_published, published_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *
         "#
     )
@@ -82,6 +88,7 @@ pub async fn create_blog(
     .bind(&payload.image_url)
     .bind(payload.cta_product_id)
     .bind(payload.is_published)
+    .bind(published_at)
     .fetch_one(&state.pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
