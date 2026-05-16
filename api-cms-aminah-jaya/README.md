@@ -55,20 +55,40 @@ If you need to use the `sqlx-cli`, follow these steps:
 
 ## API Endpoints
 
-### Auth
+### Auth (Admin)
 - `POST /api/auth/login`: Authenticate and receive JWT.
+- `GET /api/auth/me`: Get current authenticated user profile.
+
+### Auth (Customer)
+- `POST /api/customer/register`: Register a new customer account.
+- `POST /api/customer/login`: Customer login to receive JWT.
+- `GET /api/customer/me`: Get current authenticated customer profile.
+
+### Cart (Customer Only)
+- `GET /api/cart`: Get current items in the shopping cart.
+- `POST /api/cart`: Add a product to the cart.
+- `PATCH /api/cart/:id`: Update item quantity in cart.
+- `DELETE /api/cart/:id`: Remove item from cart.
+- `DELETE /api/cart`: Clear entire cart.
 
 ### Dashboard
 - `GET /api/dashboard/stats`: Retrieve summary statistics.
+- `GET /api/dashboard/performance`: Get detailed performance analytics.
 - `GET /api/dashboard/recent-orders`: Get list of most recent orders.
 
-### Products & Categories
-- `GET /api/products`: List products (paginated).
+### Products
+- `GET /api/products`: List products (paginated). Includes `slug` and `weight_gram`.
 - `POST /api/products`: Create a new product.
-- `GET /api/products/:id`: Get product details.
+- `GET /api/products/:id`: Get product details by UUID.
+- `GET /api/products/slug/:slug`: Get product details by URL slug.
 - `PATCH /api/products/:id`: Update product info.
-- `DELETE /api/products/:id`: Soft-delete product.
-- `GET /api/categories`: List all categories.
+- `DELETE /api/products/:id`: Soft-delete product (sets status to inactive).
+
+### Categories
+- `GET /api/categories`: List all active categories.
+- `POST /api/categories`: Create a new category.
+- `PATCH /api/categories/:id`: Update category details.
+- `DELETE /api/categories/:id`: Soft-delete category.
 
 ### Flash Sales
 - `GET /api/flash-sales`: List all flash sale events.
@@ -79,29 +99,60 @@ If you need to use the `sqlx-cli`, follow these steps:
 
 ### Blogs
 - `GET /api/blogs`: List all articles (paginated).
-- `GET /api/blogs/latest`: Get 3 latest published articles for landing page.
-- `POST /api/blogs`: Create new article with optional product CTA.
+- `GET /api/blogs/latest`: Get 3 latest published articles.
+- `POST /api/blogs`: Create new article.
 - `GET /api/blogs/:id`: Get article details.
 - `DELETE /api/blogs/:id`: Delete an article.
 
 ### Orders
 - `GET /api/orders`: List all orders.
-- `GET /api/orders/:id`: Get order details.
-- `PATCH /api/orders/:id/status`: Update order status (Pending, Paid, etc.).
+- `GET /api/orders/:id`: Get full order details.
+- `PATCH /api/orders/:id/status`: Update order status.
 
-### Customers
-- `GET /api/customers`: List customers.
+### Customers (CMS View)
+- `GET /api/customers`: List contacts (mapped from WA contacts).
 - `GET /api/customers/stats`: Get customer-related statistics.
-- `GET /api/customers/:id`: Get customer profile.
+- `GET /api/customers/:id`: Get contact profile and order history.
+
+### Coupons
+- `GET /api/coupons`: List all discount coupons.
+- `POST /api/coupons`: Create new coupon.
+- `GET /api/coupons/validate/:code`: Validate a coupon code.
+- `GET /api/coupons/:id`: Get coupon details.
+- `PATCH /api/coupons/:id`: Update coupon.
+- `DELETE /api/coupons/:id`: Delete coupon.
+
+### Banners
+- `GET /api/banners`: List active banners.
+- `GET /api/banners/all`: List all banners (including inactive).
+- `POST /api/banners`: Create new banner.
+- `PATCH /api/banners/:id`: Update banner.
+- `DELETE /api/banners/:id`: Delete banner.
+
+### Notifications
+- `GET /api/notifications`: List admin notifications.
+- `GET /api/notifications/unread-count`: Get count of unread notifications.
+- `PATCH /api/notifications/:id/read`: Mark notification as read.
+
+### Legal & Settings
+- `GET /api/legal`: List all legal pages.
+- `GET /api/legal/:key`: Get specific legal page (Terms, Privacy, etc.).
+- `PATCH /api/legal/:key`: Update legal page content.
+- `GET /api/settings`: Get global site settings.
+- `PATCH /api/settings`: Update site settings.
 
 ### Media
-- `POST /api/upload`: Upload image/video to Cloudflare R2 (S3-compatible).
+- `POST /api/upload`: Upload image/video to Cloudflare R2.
 
 ## Technology Stack
 
-- **Axum**: High-performance web framework.
-- **SQLx**: Type-safe SQL toolkit for PostgreSQL.
-- **PostgreSQL**: Primary database.
-- **Cloudflare R2**: Media storage (S3 compatible).
-- **Serde**: Serialization/Deserialization.
-- **Chrono**: Time and date handling.
+- **Axum**: Web framework.
+- **SQLx**: Asynchronous SQL toolkit.
+- **PostgreSQL**: Database.
+- **Cloudflare R2**: S3-compatible media storage.
+- **AWS SDK for Rust**: Interacting with R2.
+- **Serde**: JSON serialization.
+- **Chrono**: DateTime handling.
+- **Tower HTTP**: CORS and tracing layers.
+- **Bcrypt**: Password hashing.
+- **JSONWebToken**: Authentication.

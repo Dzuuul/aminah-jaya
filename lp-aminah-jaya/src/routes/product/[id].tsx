@@ -142,9 +142,43 @@ const Gallery = (props: { images: string[]; certs: string[] }) => {
   );
 };
 
+import { addToCart, getMeCustomer } from "~/lib/api";
+import { setShowLoginModal } from "~/lib/auth-store";
+
 const ProductInfo = (props: { product: Product; onAction: (msg: string) => void }) => {
   const [variant, setVariant] = createSignal(props.product.variants[0]);
   const [qty, setQty] = createSignal(1);
+  const [adding, setAdding] = createSignal(false);
+
+  const handleAddToCart = async () => {
+    // Check if logged in
+    const token = localStorage.getItem("customer_token");
+    if (!token) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    try {
+      const user = await getMeCustomer();
+      if (!user) {
+        setShowLoginModal(true);
+        return;
+      }
+    } catch (e) {
+      setShowLoginModal(true);
+      return;
+    }
+
+    setAdding(true);
+    try {
+      await addToCart(props.product.id, qty());
+      props.onAction(`${props.product.name} berhasil ditambahkan ke keranjang!`);
+    } catch (e: any) {
+      props.onAction(`Gagal menambahkan ke keranjang: ${e.message}`);
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <div class="pd-info">
@@ -209,9 +243,14 @@ const ProductInfo = (props: { product: Product; onAction: (msg: string) => void 
       </div>
 
       <div class="pd-actions" style="flex-direction: row; flex-wrap: wrap;">
-        <button class="btn-buy" style="flex: 1; min-width: 180px;" onClick={() => props.onAction("Produk ditambahkan ke keranjang!")}>
-          <span class="material-symbols-outlined">shopping_cart</span>
-          Keranjang
+        <button 
+          class="btn-buy" 
+          style="flex: 1; min-width: 180px;" 
+          onClick={handleAddToCart}
+          disabled={adding()}
+        >
+          <span class="material-symbols-outlined">{adding() ? 'sync' : 'shopping_cart'}</span>
+          {adding() ? 'Menambahkan...' : 'Keranjang'}
         </button>
         <button class="btn-buy" style="flex: 1.5; min-width: 220px; background: var(--green-700);" onClick={() => props.onAction("Lanjut ke pembayaran...")}>
           <span class="material-symbols-outlined">bolt</span>
@@ -365,24 +404,26 @@ export default function ProductDetail() {
           </section>
 
           {/* Benefits Grid */}
-          <section class="pd-section" style="background: var(--green-700); color: white;">
-            <div class="pd-container">
-              <div style="text-align: center; margin-bottom: 60px;">
-                <span style="color: rgba(255,255,255,0.6); font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em;">Value & Quality</span>
-                <h2 class="pd-title" style="color: white; margin-top: 10px;">Why Choose Aminah Jaya?</h2>
+          <Show when={product()!.benefits.length > 0}>
+            <section class="pd-section" style="background: var(--green-700); color: white;">
+              <div class="pd-container">
+                <div style="text-align: center; margin-bottom: 60px;">
+                  <span style="color: rgba(255,255,255,0.6); font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em;">Keunggulan & Manfaat</span>
+                  <h2 class="pd-title" style="color: white; margin-top: 10px;">Manfaat Produk Ini</h2>
+                </div>
+                <div class="feat-grid">
+                  <For each={product()!.benefits}>
+                    {(item) => (
+                      <div class="feat-card">
+                        <div class="feat-icon">{item.icon}</div>
+                        <div class="feat-name">{item.name}</div>
+                      </div>
+                    )}
+                  </For>
+                </div>
               </div>
-              <div class="feat-grid">
-                <For each={product()!.benefits}>
-                  {(item) => (
-                    <div class="feat-card">
-                      <div class="feat-icon">{item.icon}</div>
-                      <div class="feat-name">{item.name}</div>
-                    </div>
-                  )}
-                </For>
-              </div>
-            </div>
-          </section>
+            </section>
+          </Show>
 
           {/* Dynamic Table Section (Dosage or Size Chart) */}
           <section class="pd-section">
@@ -470,30 +511,32 @@ export default function ProductDetail() {
           </section>
 
           {/* Related Products */}
-          <section class="pd-section">
-            <div class="pd-container">
-              <h2 class="pd-title" style="margin-bottom: 40px;">Produk Terkait</h2>
-              <div class="related-grid">
-                <For each={product()!.related}>
-                  {(item) => (
-                    <div class="related-card">
-                      <div class="related-img">
-                        <img src={item.image} alt={item.name} />
-                      </div>
-                      <div class="related-body">
-                        <div class="related-name">{item.name}</div>
-                        <div class="related-price">{item.price}</div>
-                        <div style="display: flex; align-items: center; gap: 5px; margin-top: 10px; font-size: 0.8rem; color: var(--muted);">
-                          <span class="material-symbols-outlined" style="color: #e8a020; font-size: 1rem; font-variation-settings: 'FILL' 1;">star</span>
-                          {item.rating}
+          <Show when={product()!.related.length > 0}>
+            <section class="pd-section">
+              <div class="pd-container">
+                <h2 class="pd-title" style="margin-bottom: 40px;">Produk Terkait</h2>
+                <div class="related-grid">
+                  <For each={product()!.related}>
+                    {(item) => (
+                      <div class="related-card">
+                        <div class="related-img">
+                          <img src={item.image} alt={item.name} />
+                        </div>
+                        <div class="related-body">
+                          <div class="related-name">{item.name}</div>
+                          <div class="related-price">{item.price}</div>
+                          <div style="display: flex; align-items: center; gap: 5px; margin-top: 10px; font-size: 0.8rem; color: var(--muted);">
+                            <span class="material-symbols-outlined" style="color: #e8a020; font-size: 1rem; font-variation-settings: 'FILL' 1;">star</span>
+                            {item.rating}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </For>
+                    )}
+                  </For>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </Show>
 
           <Footer />
         </main>

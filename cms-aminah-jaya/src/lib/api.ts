@@ -169,6 +169,8 @@ export interface Product {
   dosage: any[];
   discount_label: string | null;
   wa_message_template: string | null;
+  slug: string | null;
+  weight_gram: number | null;
 }
 
 export interface CreateProductPayload {
@@ -193,7 +195,12 @@ export interface CreateProductPayload {
   dosage?: any[];
   discount_label?: string | null;
   wa_message_template?: string | null;
+  slug?: string | null;
+  weight_gram?: number | null;
 }
+
+
+
 
 export interface Category {
   id: string;

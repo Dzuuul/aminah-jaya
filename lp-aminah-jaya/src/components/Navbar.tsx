@@ -35,14 +35,33 @@ const fetchUnreadCount = async () => {
   }
 };
 
+import { getCart, getMeCustomer } from "~/lib/api";
+import { setShowLoginModal } from "~/lib/auth-store";
+
+const fetchCartItems = async () => {
+  try {
+    const items = await getCart();
+    return items.length;
+  } catch (e) {
+    return 0;
+  }
+};
+
+const fetchUserProfile = async () => {
+  try {
+    return await getMeCustomer();
+  } catch (e) {
+    return null;
+  }
+};
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = createSignal(false);
   const [products] = createResource(fetchProducts);
   const [activeFlashSale] = createResource(fetchActiveFlashSale);
   const [unreadCount] = createResource(fetchUnreadCount);
-  
-  // Dummy cart count for now
-  const [cartCount] = createSignal(3);
+  const [cartCount] = createResource(fetchCartItems);
+  const [userProfile] = createResource(fetchUserProfile);
 
   const handleAnchorClick = (e: MouseEvent, href: string) => {
     if (href.startsWith("#")) {
@@ -174,23 +193,51 @@ export default function Navbar() {
               <Search size={22} />
             </div>
             
-            <div class="nav-icon-wrapper">
-              <Bell size={22} />
-              <Show when={unreadCount() > 0}>
-                <span class="icon-badge">{unreadCount()}</span>
-              </Show>
-            </div>
+            <Show when={userProfile()}>
+              <div class="nav-icon-wrapper">
+                <Bell size={22} />
+                <Show when={unreadCount() > 0}>
+                  <span class="icon-badge">{unreadCount()}</span>
+                </Show>
+              </div>
+            </Show>
 
-            <A href="/cart" class="nav-icon-wrapper">
+            <A 
+              href={userProfile() ? "/cart" : "#"} 
+              class="nav-icon-wrapper"
+              onClick={(e) => {
+                if (!userProfile()) {
+                  e.preventDefault();
+                  setShowLoginModal(true);
+                }
+              }}
+            >
               <ShoppingCart size={22} />
-              <Show when={cartCount() > 0}>
+              <Show when={(cartCount() || 0) > 0}>
                 <span class="icon-badge">{cartCount()}</span>
               </Show>
             </A>
 
-            <div class="nav-icon-wrapper">
-              <UserIcon size={22} />
-            </div>
+            <Show 
+              when={userProfile()} 
+              fallback={
+                <div class="nav-auth-btns">
+                  <button 
+                    class="btn-nav-login" 
+                    onClick={() => setShowLoginModal(true)}
+                    style="background: none; cursor: pointer;"
+                  >
+                    Masuk
+                  </button>
+                  <A href="/register" class="btn-nav-register">Daftar</A>
+                </div>
+              }
+            >
+              <A href="/profile" class="nav-icon-wrapper">
+                <UserIcon size={22} />
+                <span class="profile-status-dot"></span>
+              </A>
+            </Show>
           </div>
         </div>
       </div>

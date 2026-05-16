@@ -137,6 +137,7 @@ pub struct Product {
     pub id: Uuid,
     pub name: String,
     pub slug: String,
+    pub weight_gram: i32,
     pub description: Option<String>,
     pub category_id: Option<Uuid>,
     pub category_name: String,   // joined from categories
@@ -174,6 +175,8 @@ pub struct CreateProductPayload {
     pub sku: Option<String>,
     pub image_urls: Vec<String>,
     pub description: Option<String>,
+    pub slug: Option<String>,
+    pub weight_gram: Option<i32>,
     pub subtitle: Option<String>,
     pub rating: Option<f64>,
     pub reviews_count: Option<i32>,
@@ -200,6 +203,8 @@ pub struct UpdateProductPayload {
     pub sku: Option<String>,
     pub image_urls: Option<Vec<String>>,
     pub description: Option<String>,
+    pub slug: Option<String>,
+    pub weight_gram: Option<i32>,
     pub subtitle: Option<String>,
     pub rating: Option<f64>,
     pub reviews_count: Option<i32>,
@@ -470,3 +475,63 @@ pub struct UpdateLegalPagePayload {
     pub content_id: String,
 }
 
+// ── Storefront Customers ──────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct StorefrontCustomer {
+    pub id: Uuid,
+    pub email: String,
+    pub name: String,
+    pub phone: Option<String>,
+    pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct RegisterCustomerPayload {
+    pub email: String,
+    pub password: String,
+    pub name: String,
+    pub phone: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LoginCustomerPayload {
+    pub identity: String,
+    pub password: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GoogleAuthPayload {
+    pub id_token: String,
+}
+
+// ── Cart ───────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct CartItem {
+    pub id: Uuid,
+    pub customer_id: Uuid,
+    pub product_id: Uuid,
+    pub quantity: i32,
+    pub created_at: DateTime<Utc>,
+    // Joined fields
+    #[sqlx(default)]
+    pub product_name: Option<String>,
+    #[sqlx(default)]
+    pub product_price: Option<f64>,
+    #[sqlx(default)]
+    pub product_thumbnail: Option<String>,
+    #[sqlx(default)]
+    pub product_slug: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AddToCartPayload {
+    pub product_id: Uuid,
+    pub quantity: i32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCartItemPayload {
+    pub quantity: i32,
+}

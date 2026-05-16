@@ -11,3 +11,5 @@ pub mod banners;
 pub mod coupons;
 pub mod notifications;
 pub mod legal;
+pub mod customer_auth;
+pub mod cart;

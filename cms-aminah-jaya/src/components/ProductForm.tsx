@@ -19,29 +19,32 @@ export default function ProductForm(props: ProductFormProps) {
   const [activeTab, setActiveTab] = createSignal("general");
   const [isConfirmOpen, setIsConfirmOpen] = createSignal(false);
 
-  const initialFormData = {
-    name: "",
-    category_id: "" as string | null,
-    price: 0,
-    price_compare: 0 as number | null,
-    stock: 0,
-    sku: "",
-    image_urls: [] as string[],
-    subtitle: "",
-    rating: 4.9,
-    reviews_count: 0,
-    sold_count: "",
-    certifications: [] as string[],
-    variants_chips: [] as string[],
-    ingredients: [] as { name: string, desc: string }[],
-    how_to_use: [] as { num: number, text: string }[],
-    story: { heading: "", subheading: "", image: "" },
-    macro_detail: { title: "", desc: "", image: "", specs: [] as { icon: string, name: string, desc: string }[] },
-    benefits: [] as { name: string, icon: string }[],
-    dosage: [] as { goal: string, dose: string, duration: string, time: string }[],
-    discount_label: "",
-    wa_message_template: "",
-  };
+      const initialFormData = {
+      name: "",
+      category_id: "" as string | null,
+      price: 0,
+      price_compare: 0 as number | null,
+      stock: 0,
+      sku: "",
+      image_urls: [] as string[],
+      subtitle: "",
+      rating: 4.9,
+      reviews_count: 0,
+      sold_count: "",
+      certifications: [],
+      variants_chips: [],
+      ingredients: [],
+      how_to_use: [],
+      story: { heading: "", subheading: "", image: "", image_mobile: "" },
+      macro_detail: { title: "", desc: "", image: "", specs: [] as { icon: string, name: string, desc: string }[] },
+      benefits: [] as { name: string, icon: string }[],
+      dosage: [] as { goal: string, dose: string, duration: string, time: string }[],
+      discount_label: "",
+      wa_message_template: "",
+      slug: "",
+      weight_gram: 0,
+    };
+  
 
   const isVideo = (url: string) => url.match(/\.(mp4|webm|ogg|mov)$/i);
 
@@ -58,6 +61,8 @@ export default function ProductForm(props: ProductFormProps) {
         image_urls: fullProduct.images?.map((img: ProductImage) => img.url) || [],
         subtitle: fullProduct.subtitle || "",
         rating: fullProduct.rating || 4.9,
+        weight_gram: fullProduct.weight_gram || 0,
+        slug: fullProduct.slug || "",
         reviews_count: fullProduct.reviews_count || 0,
         sold_count: fullProduct.sold_count || "",
         certifications: fullProduct.certifications || [],
@@ -67,7 +72,8 @@ export default function ProductForm(props: ProductFormProps) {
         story: {
           heading: fullProduct.story?.heading || "",
           subheading: fullProduct.story?.subheading || "",
-          image: fullProduct.story?.image || ""
+          image: fullProduct.story?.image || "",
+          image_mobile: fullProduct.story?.image_mobile || ""
         },
         macro_detail: {
           title: fullProduct.macro_detail?.title || "",
@@ -206,6 +212,14 @@ export default function ProductForm(props: ProductFormProps) {
               <label class="form-label">Stok</label>
               <input type="number" required class="form-input" value={formData().stock} onInput={e => setFormData({ ...formData(), stock: parseInt(e.currentTarget.value) })} />
             </div>
+            <div class="form-group">
+              <label class="form-label">Slug</label>
+              <input type="text" class="form-input" placeholder="contoh: produk-unik" value={formData().slug || ""} onInput={e => setFormData({ ...formData(), slug: e.currentTarget.value })} />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Berat (gram)</label>
+              <input type="number" class="form-input" value={formData().weight_gram} onInput={e => setFormData({ ...formData(), weight_gram: parseInt(e.currentTarget.value) })} />
+            </div>
           </div>
         </Show>
 
@@ -310,7 +324,8 @@ export default function ProductForm(props: ProductFormProps) {
             <div class="nested-form">
               <input type="text" class="form-input" placeholder="Story Heading" value={formData().story.heading} onInput={e => setFormData({ ...formData(), story: { ...formData().story, heading: e.currentTarget.value } })} />
               <textarea class="form-input" placeholder="Story Subheading" value={formData().story.subheading} onInput={e => setFormData({ ...formData(), story: { ...formData().story, subheading: e.currentTarget.value } })} />
-              <input type="text" class="form-input" placeholder="Story Image URL" value={formData().story.image} onInput={e => setFormData({ ...formData(), story: { ...formData().story, image: e.currentTarget.value } })} />
+              <input type="text" class="form-input" placeholder="Story Image URL (Desktop)" value={formData().story.image} onInput={e => setFormData({ ...formData(), story: { ...formData().story, image: e.currentTarget.value } })} />
+              <input type="text" class="form-input" placeholder="Story Image URL (Mobile)" value={formData().story.image_mobile} onInput={e => setFormData({ ...formData(), story: { ...formData().story, image_mobile: e.currentTarget.value } })} />
             </div>
           </div>
 
@@ -319,6 +334,7 @@ export default function ProductForm(props: ProductFormProps) {
             <div class="nested-form">
               <input type="text" class="form-input" placeholder="Macro Title" value={formData().macro_detail.title} onInput={e => setFormData({ ...formData(), macro_detail: { ...formData().macro_detail, title: e.currentTarget.value } })} />
               <textarea class="form-input" placeholder="Macro Description" value={formData().macro_detail.desc} onInput={e => setFormData({ ...formData(), macro_detail: { ...formData().macro_detail, desc: e.currentTarget.value } })} />
+              <input type="text" class="form-input" placeholder="Macro Image URL" value={formData().macro_detail.image} onInput={e => setFormData({ ...formData(), macro_detail: { ...formData().macro_detail, image: e.currentTarget.value } })} />
               <div class="list-editor">
                 <For each={formData().macro_detail?.specs || []}>{(spec, i) => (
                   <div class="list-item-row">
@@ -330,6 +346,22 @@ export default function ProductForm(props: ProductFormProps) {
                 )}</For>
                 <button type="button" class="add-row-btn" onClick={() => { setFormData({ ...formData(), macro_detail: { ...formData().macro_detail, specs: [...(formData().macro_detail?.specs || []), { icon: "", name: "", desc: "" }] } }); }}><Plus size={16} /> Tambah Spec</button>
               </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <label class="form-label">Manfaat Produk (Benefits)</label>
+            <div class="list-editor">
+              <For each={formData().benefits}>{(benefit, i) => (
+                <div class="list-item-row">
+                  <input type="text" class="form-input" style={{ width: "80px" }} value={benefit.icon} placeholder="Ikon (emoji)" onInput={e => { const list = [...formData().benefits]; list[i()].icon = e.currentTarget.value; setFormData({ ...formData(), benefits: list }); }} />
+                  <input type="text" class="form-input" value={benefit.name} placeholder="Nama Manfaat" onInput={e => { const list = [...formData().benefits]; list[i()].name = e.currentTarget.value; setFormData({ ...formData(), benefits: list }); }} />
+                  <button type="button" class="remove-btn" onClick={() => removeFromList('benefits', i())}><Trash2 size={16} /></button>
+                </div>
+              )}</For>
+              <button type="button" class="add-row-btn" onClick={() => addToList('benefits', { icon: "", name: "" })}>
+                <Plus size={16} /> Tambah Manfaat
+              </button>
             </div>
           </div>
 

@@ -28,6 +28,7 @@ pub async fn list_products(
             p.id,
             p.name,
             p.slug,
+            p.weight_gram,
             p.description,
             p.category_id,
             COALESCE(c.name, 'Uncategorized') AS category_name,
@@ -84,7 +85,7 @@ pub async fn get_product(
     let pool = &state.pool;
     let product: Option<Product> = sqlx::query_as(
         r#"
-        SELECT p.id, p.name, p.slug, p.description, p.category_id,
+        SELECT p.id, p.name, p.slug, p.weight_gram, p.description, p.category_id,
                COALESCE(c.name, 'Uncategorized') AS category_name,
                p.price::FLOAT8, p.price_compare::FLOAT8, p.stock,
                CASE WHEN p.stock = 0 THEN 'Out of Stock'
@@ -127,7 +128,7 @@ pub async fn get_product_by_slug(
     let pool = &state.pool;
     let product: Option<Product> = sqlx::query_as(
         r#"
-        SELECT p.id, p.name, p.slug, p.description, p.category_id,
+        SELECT p.id, p.name, p.slug, p.weight_gram, p.description, p.category_id,
                COALESCE(c.name, 'Uncategorized') AS category_name,
                p.price::FLOAT8, p.price_compare::FLOAT8, p.stock,
                CASE WHEN p.stock = 0 THEN 'Out of Stock'
@@ -168,7 +169,7 @@ pub async fn create_product(
     Json(payload): Json<CreateProductPayload>,
 ) -> impl IntoResponse {
     let pool = &state.pool;
-    let slug = payload.name.to_lowercase().replace(' ', "-");
+    let slug = payload.slug.clone().unwrap_or_else(|| payload.name.to_lowercase().replace(' ', "-"));
     
     let mut tx = match pool.begin().await {
         Ok(t) => t,
@@ -177,12 +178,12 @@ pub async fn create_product(
 
     let product_id: Uuid = match sqlx::query_scalar(
         r#"INSERT INTO products (
-            name, category_id, price, price_compare, stock, sku, slug,
+            name, category_id, price, price_compare, stock, sku, slug, weight_gram,
             description, subtitle, rating, reviews_count, sold_count, certifications,
             variants_chips, ingredients, how_to_use, story, macro_detail,
             benefits, dosage, discount_label, wa_message_template
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
            RETURNING id"#
     )
     .bind(&payload.name)
@@ -192,6 +193,7 @@ pub async fn create_product(
     .bind(payload.stock)
     .bind(&payload.sku)
     .bind(&slug)
+    .bind(payload.weight_gram.unwrap_or(0))
     .bind(&payload.description)
     .bind(&payload.subtitle)
     .bind(payload.rating)
@@ -279,8 +281,10 @@ pub async fn update_product(
                benefits    = COALESCE($18, benefits),
                dosage      = COALESCE($19, dosage),
                discount_label = COALESCE($20, discount_label),
-               wa_message_template = COALESCE($21, wa_message_template)
-           WHERE id = $22"#
+               wa_message_template = COALESCE($21, wa_message_template),
+               slug        = COALESCE($22, slug),
+               weight_gram = COALESCE($23, weight_gram)
+           WHERE id = $24"#
     )
     .bind(&payload.name)
     .bind(payload.category_id)
@@ -303,6 +307,8 @@ pub async fn update_product(
     .bind(&payload.dosage)
     .bind(&payload.discount_label)
     .bind(&payload.wa_message_template)
+    .bind(&payload.slug)
+    .bind(payload.weight_gram)
     .bind(id)
     .execute(&mut *tx).await;
 

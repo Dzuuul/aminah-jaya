@@ -246,6 +246,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/legal/:key",
             get(routes::legal::get_legal_page).patch(routes::legal::update_legal_page),
         )
+        // Storefront Customer Auth
+        .route("/api/customer/register", post(routes::customer_auth::register))
+        .route("/api/customer/login", post(routes::customer_auth::login))
+        .route("/api/customer/auth/google", post(routes::customer_auth::google_login))
+        .route("/api/customer/me", get(routes::customer_auth::get_me))
+        // Cart
+        .route(
+            "/api/cart",
+            get(routes::cart::get_cart)
+                .post(routes::cart::add_to_cart)
+                .delete(routes::cart::clear_cart),
+        )
+        .route(
+            "/api/cart/:id",
+            patch(routes::cart::update_cart_item).delete(routes::cart::remove_from_cart),
+        )
 
         .layer(TraceLayer::new_for_http())
         .layer(cors)
