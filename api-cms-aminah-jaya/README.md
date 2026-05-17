@@ -62,7 +62,11 @@ If you need to use the `sqlx-cli`, follow these steps:
 ### Auth (Customer)
 - `POST /api/customer/register`: Register a new customer account.
 - `POST /api/customer/login`: Customer login to receive JWT.
+- `POST /api/customer/auth/google`: Customer login/registration using Google OAuth token.
 - `GET /api/customer/me`: Get current authenticated customer profile.
+- `PATCH /api/customer/profile`: Update current customer profile (name, email, phone, shipping address, or password).
+- `GET /api/customer/orders`: Get order history list for the authenticated customer.
+- `POST /api/customer/orders`: Create a new order from current cart items.
 
 ### Cart (Customer Only)
 - `GET /api/cart`: Get current items in the shopping cart.
@@ -89,6 +93,13 @@ If you need to use the `sqlx-cli`, follow these steps:
 - `POST /api/categories`: Create a new category.
 - `PATCH /api/categories/:id`: Update category details.
 - `DELETE /api/categories/:id`: Soft-delete category.
+
+### Collections
+- `GET /api/collections`: List all active collections.
+- `POST /api/collections`: Create a new collection.
+- `GET /api/collections/:id`: Get collection details by UUID.
+- `PATCH /api/collections/:id`: Update collection details.
+- `DELETE /api/collections/:id`: Delete a collection.
 
 ### Flash Sales
 - `GET /api/flash-sales`: List all flash sale events.
@@ -143,6 +154,13 @@ If you need to use the `sqlx-cli`, follow these steps:
 
 ### Media
 - `POST /api/upload`: Upload image/video to Cloudflare R2.
+
+### Favorites (Customer Only)
+- `GET /api/customer/favorites`: Get customer's wishlisted products.
+- `POST /api/customer/favorites`: Add a product to customer's wishlist.
+- `DELETE /api/customer/favorites/:id`: Remove item from wishlist by wishlist ID.
+- `DELETE /api/customer/favorites/product/:product_id`: Remove item from wishlist by product UUID.
+- `GET /api/customer/favorites/folders`: Get list of favorite folder names.
 
 ## Technology Stack
 

@@ -2,6 +2,7 @@ import { createSignal, onMount, Show } from "solid-js";
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
 import Loading from "~/components/ui/Loading";
+import { parseMarkdown } from "~/lib/markdown";
 
 export default function KebijakanPengembalian() {
   const [data, setData] = createSignal<any>(null);
@@ -30,9 +31,7 @@ export default function KebijakanPengembalian() {
               <h1 class="legal-title">
                 {data().title_id}
               </h1>
-              <div class="legal-content">
-                {data().content_id}
-              </div>
+              <div class="legal-content" innerHTML={parseMarkdown(data().content_id)} />
             </Show>
           </Show>
         </div>

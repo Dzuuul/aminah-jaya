@@ -171,6 +171,7 @@ export interface Product {
   wa_message_template: string | null;
   slug: string | null;
   weight_gram: number | null;
+  is_featured: boolean;
 }
 
 export interface CreateProductPayload {
@@ -197,6 +198,7 @@ export interface CreateProductPayload {
   wa_message_template?: string | null;
   slug?: string | null;
   weight_gram?: number | null;
+  is_featured?: boolean;
 }
 
 
@@ -222,9 +224,79 @@ export const getProducts = () => fetchApi<Product[]>("/products");
 
 export const getCategories = () => fetchApi<Category[]>("/categories");
 
+const compressImage = (file: File, quality = 0.8, maxWidth = 1200): Promise<File> => {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith("image/")) {
+      return resolve(file);
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(file);
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const format = "image/webp";
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return resolve(file);
+            
+            const originalName = file.name;
+            const lastDotIndex = originalName.lastIndexOf('.');
+            const baseName = lastDotIndex !== -1 ? originalName.substring(0, lastDotIndex) : originalName;
+            const webpName = `${baseName}.webp`;
+
+            const compressedFile = new File([blob], webpName, {
+              type: format,
+              lastModified: Date.now(),
+            });
+            
+            if (compressedFile.size < file.size) {
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          },
+          format,
+          quality
+        );
+      };
+    };
+    reader.onerror = () => resolve(file);
+  });
+};
+
 export const uploadFile = async (file: File): Promise<string> => {
+  let fileToUpload = file;
+  
+  if (file.type.startsWith("image/")) {
+    try {
+      fileToUpload = await compressImage(file);
+      console.log(`[Image Compress] Original: ${(file.size / 1024).toFixed(1)}KB, Compressed: ${(fileToUpload.size / 1024).toFixed(1)}KB`);
+    } catch (e) {
+      console.error("Failed to compress image, uploading original:", e);
+    }
+  }
+
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", fileToUpload);
 
   const response = await fetch(`${API_BASE}/upload`, {
     method: "POST",
@@ -532,4 +604,44 @@ export const updateLegalPage = (key: string, payload: UpdateLegalPagePayload) =>
     method: "PATCH",
     body: JSON.stringify(payload),
   });
+
+// ── Collections ────────────────────────────────────────────────────────────
+
+export interface Collection {
+  id: string;
+  name: string;
+  slug: string;
+  image_url: string | null;
+  description: string | null;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+  product_ids?: string[];
+}
+
+export interface CreateCollectionPayload {
+  name: string;
+  image_url?: string | null;
+  description?: string | null;
+  sort_order?: number;
+  product_ids?: string[];
+}
+
+export const getCollections = () => fetchApi<Collection[]>("/collections");
+export const getCollectionDetails = (id: string) => fetchApi<Collection>(`/collections/${id}`);
+export const createCollection = (payload: CreateCollectionPayload) =>
+  fetchApi<{ id: string, slug: string }>("/collections", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+export const updateCollection = (id: string, payload: Partial<CreateCollectionPayload>) =>
+  fetchApi<void>(`/collections/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+export const deleteCollection = (id: string) =>
+  fetchApi<void>(`/collections/${id}`, {
+    method: "DELETE"
+  });
+
 

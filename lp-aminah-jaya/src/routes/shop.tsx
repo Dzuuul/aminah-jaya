@@ -18,6 +18,7 @@ interface Product {
   price: number;
   stock: number;
   status: string;
+  is_featured?: boolean;
   sku?: string;
   thumbnail_url?: string;
 }

@@ -1,12 +1,19 @@
 import { createSignal, createResource, For, Show, Suspense } from "solid-js";
 import { A } from "@solidjs/router";
 import { getCart, updateCartItem, removeFromCart, formatCurrency, CartItem } from "~/lib/api";
+import { refetchCartCount } from "~/lib/cart-store";
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
 import Loading from "~/components/ui/Loading";
 
 export default function Cart() {
-  const [cartItems, { mutate, refetch }] = createResource(getCart);
+  const [cartItems, { mutate, refetch }] = createResource(
+    () => typeof window !== "undefined",
+    async (isClient) => {
+      if (!isClient) return [];
+      return await getCart();
+    }
+  );
   const [updating, setUpdating] = createSignal<string | null>(null);
 
   const subtotal = () => cartItems()?.reduce((acc, item) => acc + (item.product_price * item.quantity), 0) || 0;
@@ -16,6 +23,7 @@ export default function Cart() {
     setUpdating(id);
     try {
       await updateCartItem(id, newQty);
+      await refetchCartCount();
       mutate(prev => prev?.map(item => item.id === id ? { ...item, quantity: newQty } : item));
     } catch (e) {
       console.error("Failed to update quantity", e);
@@ -29,6 +37,7 @@ export default function Cart() {
     setUpdating(id);
     try {
       await removeFromCart(id);
+      await refetchCartCount();
       mutate(prev => prev?.filter(item => item.id !== id));
     } catch (e) {
       console.error("Failed to remove item", e);
@@ -115,10 +124,10 @@ export default function Cart() {
                       <span>Total Tagihan</span>
                       <span class="total-price">{formatCurrency(subtotal())}</span>
                     </div>
-                    <button class="btn-checkout-main">
+                    <A href="/checkout" class="btn-checkout-main" style={{ "text-decoration": "none", "display": "flex", "align-items": "center", "justify-content": "center", "gap": "8px", "color": "white" }}>
                       Lanjut ke Pembayaran
                       <span class="material-symbols-outlined">arrow_forward</span>
-                    </button>
+                    </A>
                     <p class="checkout-note">Aman & Terenkripsi</p>
                   </div>
                 </div>

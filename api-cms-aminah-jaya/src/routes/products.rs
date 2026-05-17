@@ -55,7 +55,8 @@ pub async fn list_products(
             p.benefits,
             p.dosage,
             p.discount_label,
-            p.wa_message_template
+            p.wa_message_template,
+            p.is_featured
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
         WHERE p.status != 'inactive'
@@ -96,7 +97,7 @@ pub async fn get_product(
                p.subtitle, p.rating::FLOAT8, p.reviews_count, p.sold_count,
                p.certifications, p.variants_chips, p.ingredients, p.how_to_use,
                p.story, p.macro_detail, p.benefits, p.dosage, p.discount_label,
-               p.wa_message_template
+               p.wa_message_template, p.is_featured
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
         WHERE p.id = $1
@@ -139,7 +140,7 @@ pub async fn get_product_by_slug(
                p.subtitle, p.rating::FLOAT8, p.reviews_count, p.sold_count,
                p.certifications, p.variants_chips, p.ingredients, p.how_to_use,
                p.story, p.macro_detail, p.benefits, p.dosage, p.discount_label,
-               p.wa_message_template
+               p.wa_message_template, p.is_featured
         FROM products p
         LEFT JOIN categories c ON c.id = p.category_id
         WHERE p.slug = $1
@@ -181,9 +182,9 @@ pub async fn create_product(
             name, category_id, price, price_compare, stock, sku, slug, weight_gram,
             description, subtitle, rating, reviews_count, sold_count, certifications,
             variants_chips, ingredients, how_to_use, story, macro_detail,
-            benefits, dosage, discount_label, wa_message_template
+            benefits, dosage, discount_label, wa_message_template, is_featured
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
            RETURNING id"#
     )
     .bind(&payload.name)
@@ -209,6 +210,7 @@ pub async fn create_product(
     .bind(&payload.dosage)
     .bind(&payload.discount_label)
     .bind(&payload.wa_message_template)
+    .bind(payload.is_featured.unwrap_or(false))
     .fetch_one(&mut *tx).await {
         Ok(id) => id,
         Err(e) => {
@@ -283,8 +285,9 @@ pub async fn update_product(
                discount_label = COALESCE($20, discount_label),
                wa_message_template = COALESCE($21, wa_message_template),
                slug        = COALESCE($22, slug),
-               weight_gram = COALESCE($23, weight_gram)
-           WHERE id = $24"#
+               weight_gram = COALESCE($23, weight_gram),
+               is_featured = COALESCE($24, is_featured)
+           WHERE id = $25"#
     )
     .bind(&payload.name)
     .bind(payload.category_id)
@@ -309,6 +312,7 @@ pub async fn update_product(
     .bind(&payload.wa_message_template)
     .bind(&payload.slug)
     .bind(payload.weight_gram)
+    .bind(payload.is_featured)
     .bind(id)
     .execute(&mut *tx).await;
 

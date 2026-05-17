@@ -14,7 +14,8 @@ import {
   Ticket,
   Shield,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Folder
 } from "lucide-solid";
 
 import { A, useLocation, useNavigate } from "@solidjs/router";
@@ -80,6 +81,7 @@ export default function Sidebar(props: { isOpen: boolean, onClose: () => void })
           <SidebarLink href="/notifications" icon={Bell} label="Notifikasi" active={location.pathname === '/notifications'} />
           <SidebarLink href="/products" icon={ShoppingBag} label="Produk" active={location.pathname.startsWith('/products')} />
           <SidebarLink href="/categories" icon={LayoutGrid} label="Kategori" active={location.pathname.startsWith('/categories')} />
+          <SidebarLink href="/collections" icon={Folder} label="Koleksi" active={location.pathname.startsWith('/collections')} />
           <SidebarLink href="/flash-sales" icon={Zap} label="Flash Sale" active={location.pathname.startsWith('/flash-sales')} />
           <SidebarLink href="/blogs" icon={FileText} label="Blog" active={location.pathname.startsWith('/blogs')} />
           <SidebarLink href="/banners" icon={Image} label="Banner" active={location.pathname.startsWith('/banners')} />

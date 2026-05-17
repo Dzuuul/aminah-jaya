@@ -19,32 +19,33 @@ export default function ProductForm(props: ProductFormProps) {
   const [activeTab, setActiveTab] = createSignal("general");
   const [isConfirmOpen, setIsConfirmOpen] = createSignal(false);
 
-      const initialFormData = {
-      name: "",
-      category_id: "" as string | null,
-      price: 0,
-      price_compare: 0 as number | null,
-      stock: 0,
-      sku: "",
-      image_urls: [] as string[],
-      subtitle: "",
-      rating: 4.9,
-      reviews_count: 0,
-      sold_count: "",
-      certifications: [],
-      variants_chips: [],
-      ingredients: [],
-      how_to_use: [],
-      story: { heading: "", subheading: "", image: "", image_mobile: "" },
-      macro_detail: { title: "", desc: "", image: "", specs: [] as { icon: string, name: string, desc: string }[] },
-      benefits: [] as { name: string, icon: string }[],
-      dosage: [] as { goal: string, dose: string, duration: string, time: string }[],
-      discount_label: "",
-      wa_message_template: "",
-      slug: "",
-      weight_gram: 0,
-    };
-  
+  const initialFormData = {
+    name: "",
+    category_id: "" as string | null,
+    price: 0,
+    price_compare: 0 as number | null,
+    stock: 0,
+    sku: "",
+    image_urls: [] as string[],
+    subtitle: "",
+    rating: 4.9,
+    reviews_count: 0,
+    sold_count: "",
+    certifications: [],
+    variants_chips: [],
+    ingredients: [],
+    how_to_use: [],
+    story: { heading: "", subheading: "", image: "", image_mobile: "" },
+    macro_detail: { title: "", desc: "", image: "", specs: [] as { icon: string, name: string, desc: string }[] },
+    benefits: [] as { name: string, icon: string }[],
+    dosage: [] as { goal: string, dose: string, duration: string, time: string }[],
+    discount_label: "",
+    wa_message_template: "",
+    slug: "",
+    weight_gram: 0,
+    is_featured: false,
+  };
+
 
   const isVideo = (url: string) => url.match(/\.(mp4|webm|ogg|mov)$/i);
 
@@ -85,13 +86,14 @@ export default function ProductForm(props: ProductFormProps) {
         dosage: fullProduct.dosage || [],
         discount_label: fullProduct.discount_label || "",
         wa_message_template: fullProduct.wa_message_template || "",
+        is_featured: fullProduct.is_featured || false,
       };
     }
     return JSON.parse(JSON.stringify(initialFormData));
   };
 
   const [formData, setFormData] = createSignal<any>(initData());
-  
+
   const initPreviews = () => {
     if (props.initialData?.images) {
       return props.initialData.images.map((img: ProductImage) => ({
@@ -102,6 +104,50 @@ export default function ProductForm(props: ProductFormProps) {
     return [];
   };
   const [previewItems, setPreviewItems] = createSignal<{ url: string, type: string, file?: File }[]>(initPreviews());
+
+  const [uploadingStory, setUploadingStory] = createSignal(false);
+  const [uploadingStoryMobile, setUploadingStoryMobile] = createSignal(false);
+  const [uploadingMacro, setUploadingMacro] = createSignal(false);
+
+  const handleInlineUpload = async (file: File, keyPath: string[]) => {
+    if (keyPath[0] === 'story') {
+      if (keyPath[1] === 'image') setUploadingStory(true);
+      else setUploadingStoryMobile(true);
+    } else {
+      setUploadingMacro(true);
+    }
+
+    try {
+      const url = await uploadFile(file);
+      if (keyPath[0] === 'story') {
+        setFormData({
+          ...formData(),
+          story: {
+            ...formData().story,
+            [keyPath[1]]: url
+          }
+        });
+      } else if (keyPath[0] === 'macro_detail') {
+        setFormData({
+          ...formData(),
+          macro_detail: {
+            ...formData().macro_detail,
+            [keyPath[1]]: url
+          }
+        });
+      }
+      toast.success("Gambar berhasil diunggah");
+    } catch (err: any) {
+      toast.error("Gagal mengunggah gambar: " + err.message);
+    } finally {
+      if (keyPath[0] === 'story') {
+        if (keyPath[1] === 'image') setUploadingStory(false);
+        else setUploadingStoryMobile(false);
+      } else {
+        setUploadingMacro(false);
+      }
+    }
+  };
 
   const handleSubmit = (e: Event) => {
     e.preventDefault();
@@ -197,6 +243,10 @@ export default function ProductForm(props: ProductFormProps) {
                 <For each={categories()}>{c => <option value={c.id}>{c.name}</option>}</For>
               </select>
             </div>
+            <div class="form-checkbox-group">
+              <input type="checkbox" id="is_featured" class="form-checkbox" checked={formData().is_featured} onChange={e => setFormData({ ...formData(), is_featured: e.currentTarget.checked })} />
+              <label for="is_featured" class="form-checkbox-label">Produk Unggulan (Tampil di Beranda)</label>
+            </div>
           </div>
 
           <div class="form-grid-3">
@@ -219,6 +269,10 @@ export default function ProductForm(props: ProductFormProps) {
             <div class="form-group">
               <label class="form-label">Berat (gram)</label>
               <input type="number" class="form-input" value={formData().weight_gram} onInput={e => setFormData({ ...formData(), weight_gram: parseInt(e.currentTarget.value) })} />
+            </div>
+            <div class="form-group">
+              <label class="form-label">SKU</label>
+              <input type="text" class="form-input" placeholder="contoh: AMN-SHI-01" value={formData().sku || ""} onInput={e => setFormData({ ...formData(), sku: e.currentTarget.value })} />
             </div>
           </div>
         </Show>
@@ -324,8 +378,80 @@ export default function ProductForm(props: ProductFormProps) {
             <div class="nested-form">
               <input type="text" class="form-input" placeholder="Story Heading" value={formData().story.heading} onInput={e => setFormData({ ...formData(), story: { ...formData().story, heading: e.currentTarget.value } })} />
               <textarea class="form-input" placeholder="Story Subheading" value={formData().story.subheading} onInput={e => setFormData({ ...formData(), story: { ...formData().story, subheading: e.currentTarget.value } })} />
-              <input type="text" class="form-input" placeholder="Story Image URL (Desktop)" value={formData().story.image} onInput={e => setFormData({ ...formData(), story: { ...formData().story, image: e.currentTarget.value } })} />
-              <input type="text" class="form-input" placeholder="Story Image URL (Mobile)" value={formData().story.image_mobile} onInput={e => setFormData({ ...formData(), story: { ...formData().story, image_mobile: e.currentTarget.value } })} />
+              
+              {/* Story Image (Desktop) */}
+              <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem", "margin-top": "0.5rem" }}>
+                <label class="form-label" style={{ "font-size": "0.85rem", color: "var(--color-muted)" }}>Story Image (Desktop)</label>
+                <div style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
+                  <div style={{ width: "80px", height: "80px", "border-radius": "12px", "background-color": "var(--color-bg)", border: "1px solid var(--color-border)", overflow: "hidden", display: "flex", "align-items": "center", "justify-content": "center", color: "var(--color-muted)", position: "relative" }}>
+                    <Show when={formData().story.image} fallback={<ImageIcon size={24} />}>
+                      <img src={formData().story.image} style={{ width: "100%", height: "100%", "object-fit": "cover" }} />
+                    </Show>
+                    <Show when={uploadingStory()}>
+                      <div style={{ position: "absolute", inset: 0, "background-color": "rgba(255,255,255,0.7)", display: "flex", "align-items": "center", "justify-content": "center" }}>
+                        <Loader2 class="animate-spin" size={20} style={{ color: "var(--color-green-500)" }} />
+                      </div>
+                    </Show>
+                  </div>
+                  <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.currentTarget.files?.[0];
+                        if (file) handleInlineUpload(file, ['story', 'image']);
+                      }}
+                      style={{ "font-size": "0.85rem" }}
+                    />
+                    <Show when={formData().story.image}>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData(), story: { ...formData().story, image: "" } })}
+                        style={{ "text-align": "left", "font-size": "0.75rem", color: "#dc2626", background: "none", border: "none", cursor: "pointer", "font-weight": "700" }}
+                      >
+                        Hapus Gambar
+                      </button>
+                    </Show>
+                  </div>
+                </div>
+              </div>
+
+              {/* Story Image (Mobile) */}
+              <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem", "margin-top": "0.5rem" }}>
+                <label class="form-label" style={{ "font-size": "0.85rem", color: "var(--color-muted)" }}>Story Image (Mobile)</label>
+                <div style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
+                  <div style={{ width: "80px", height: "80px", "border-radius": "12px", "background-color": "var(--color-bg)", border: "1px solid var(--color-border)", overflow: "hidden", display: "flex", "align-items": "center", "justify-content": "center", color: "var(--color-muted)", position: "relative" }}>
+                    <Show when={formData().story.image_mobile} fallback={<ImageIcon size={24} />}>
+                      <img src={formData().story.image_mobile} style={{ width: "100%", height: "100%", "object-fit": "cover" }} />
+                    </Show>
+                    <Show when={uploadingStoryMobile()}>
+                      <div style={{ position: "absolute", inset: 0, "background-color": "rgba(255,255,255,0.7)", display: "flex", "align-items": "center", "justify-content": "center" }}>
+                        <Loader2 class="animate-spin" size={20} style={{ color: "var(--color-green-500)" }} />
+                      </div>
+                    </Show>
+                  </div>
+                  <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.currentTarget.files?.[0];
+                        if (file) handleInlineUpload(file, ['story', 'image_mobile']);
+                      }}
+                      style={{ "font-size": "0.85rem" }}
+                    />
+                    <Show when={formData().story.image_mobile}>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData(), story: { ...formData().story, image_mobile: "" } })}
+                        style={{ "text-align": "left", "font-size": "0.75rem", color: "#dc2626", background: "none", border: "none", cursor: "pointer", "font-weight": "700" }}
+                      >
+                        Hapus Gambar
+                      </button>
+                    </Show>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -334,7 +460,44 @@ export default function ProductForm(props: ProductFormProps) {
             <div class="nested-form">
               <input type="text" class="form-input" placeholder="Macro Title" value={formData().macro_detail.title} onInput={e => setFormData({ ...formData(), macro_detail: { ...formData().macro_detail, title: e.currentTarget.value } })} />
               <textarea class="form-input" placeholder="Macro Description" value={formData().macro_detail.desc} onInput={e => setFormData({ ...formData(), macro_detail: { ...formData().macro_detail, desc: e.currentTarget.value } })} />
-              <input type="text" class="form-input" placeholder="Macro Image URL" value={formData().macro_detail.image} onInput={e => setFormData({ ...formData(), macro_detail: { ...formData().macro_detail, image: e.currentTarget.value } })} />
+              
+              {/* Macro Image */}
+              <div style={{ display: "flex", "flex-direction": "column", gap: "0.5rem", "margin-top": "0.5rem" }}>
+                <label class="form-label" style={{ "font-size": "0.85rem", color: "var(--color-muted)" }}>Macro Image</label>
+                <div style={{ display: "flex", "align-items": "center", gap: "1rem" }}>
+                  <div style={{ width: "80px", height: "80px", "border-radius": "12px", "background-color": "var(--color-bg)", border: "1px solid var(--color-border)", overflow: "hidden", display: "flex", "align-items": "center", "justify-content": "center", color: "var(--color-muted)", position: "relative" }}>
+                    <Show when={formData().macro_detail.image} fallback={<ImageIcon size={24} />}>
+                      <img src={formData().macro_detail.image} style={{ width: "100%", height: "100%", "object-fit": "cover" }} />
+                    </Show>
+                    <Show when={uploadingMacro()}>
+                      <div style={{ position: "absolute", inset: 0, "background-color": "rgba(255,255,255,0.7)", display: "flex", "align-items": "center", "justify-content": "center" }}>
+                        <Loader2 class="animate-spin" size={20} style={{ color: "var(--color-green-500)" }} />
+                      </div>
+                    </Show>
+                  </div>
+                  <div style={{ display: "flex", "flex-direction": "column", gap: "0.25rem" }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.currentTarget.files?.[0];
+                        if (file) handleInlineUpload(file, ['macro_detail', 'image']);
+                      }}
+                      style={{ "font-size": "0.85rem" }}
+                    />
+                    <Show when={formData().macro_detail.image}>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData(), macro_detail: { ...formData().macro_detail, image: "" } })}
+                        style={{ "text-align": "left", "font-size": "0.75rem", color: "#dc2626", background: "none", border: "none", cursor: "pointer", "font-weight": "700" }}
+                      >
+                        Hapus Gambar
+                      </button>
+                    </Show>
+                  </div>
+                </div>
+              </div>
+
               <div class="list-editor">
                 <For each={formData().macro_detail?.specs || []}>{(spec, i) => (
                   <div class="list-item-row">

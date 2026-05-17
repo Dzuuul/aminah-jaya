@@ -42,6 +42,15 @@ export default function Register() {
     }
   };
 
+  const handleSubmit = (e: Event) => {
+    e.preventDefault();
+    if (step() === 1) {
+      handleNext(e);
+    } else {
+      handleRegister(e);
+    }
+  };
+
   const handleGoogleSuccess = async (response: any) => {
     setLoading(true);
     setError(null);
@@ -84,6 +93,9 @@ export default function Register() {
         <div class="auth-container" style="max-width: 450px;">
           <div class="auth-card modern">
             <div class="auth-header modern">
+              <A href="/" style="display: inline-block; margin-bottom: 24px;">
+                <img src="/logo_new.png" alt="Aminah Jaya" style="height: 48px; width: auto;" />
+              </A>
               <h1 class="auth-title modern">Daftar Sekarang</h1>
               <p class="auth-subtitle modern">
                 Sudah punya akun Aminah Jaya? <A href="/login">Masuk</A>
@@ -103,7 +115,7 @@ export default function Register() {
               </div>
             </Show>
 
-            <form onSubmit={step() === 1 ? handleNext : handleRegister}>
+            <form onSubmit={handleSubmit}>
               <Show when={step() === 1}>
                 <div class="form-group modern">
                   <input

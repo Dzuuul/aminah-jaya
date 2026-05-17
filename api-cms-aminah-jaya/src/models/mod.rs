@@ -161,6 +161,7 @@ pub struct Product {
     pub dosage: Option<Value>,
     pub discount_label: Option<String>,
     pub wa_message_template: Option<String>,
+    pub is_featured: bool,
     #[sqlx(skip)]
     pub images: Vec<ProductImage>,     // Full gallery
 }
@@ -191,6 +192,7 @@ pub struct CreateProductPayload {
     pub dosage: Option<Value>,
     pub discount_label: Option<String>,
     pub wa_message_template: Option<String>,
+    pub is_featured: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -219,6 +221,7 @@ pub struct UpdateProductPayload {
     pub dosage: Option<Value>,
     pub discount_label: Option<String>,
     pub wa_message_template: Option<String>,
+    pub is_featured: Option<bool>,
 }
 
 // ── Orders ─────────────────────────────────────────────────────────────────
@@ -483,7 +486,17 @@ pub struct StorefrontCustomer {
     pub email: String,
     pub name: String,
     pub phone: Option<String>,
+    pub shipping_address: Option<String>,
     pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCustomerProfilePayload {
+    pub name: String,
+    pub phone: Option<String>,
+    pub email: String,
+    pub shipping_address: Option<String>,
+    pub password: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -535,3 +548,64 @@ pub struct AddToCartPayload {
 pub struct UpdateCartItemPayload {
     pub quantity: i32,
 }
+
+// ── Favorites ──────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct CustomerFavorite {
+    pub id: Uuid,
+    pub customer_id: Uuid,
+    pub product_id: Uuid,
+    pub folder_name: String,
+    pub created_at: DateTime<Utc>,
+    // Joined product fields
+    #[sqlx(default)]
+    pub product_name: Option<String>,
+    #[sqlx(default)]
+    pub product_price: Option<f64>,
+    #[sqlx(default)]
+    pub product_thumbnail: Option<String>,
+    #[sqlx(default)]
+    pub product_slug: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AddFavoritePayload {
+    pub product_id: Uuid,
+    pub folder_name: Option<String>,
+}
+
+// ── Collections ────────────────────────────────────────────────────────────
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct Collection {
+    pub id: Uuid,
+    pub name: String,
+    pub slug: String,
+    pub image_url: Option<String>,
+    pub description: Option<String>,
+    pub sort_order: i32,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    #[sqlx(skip)]
+    pub product_ids: Option<Vec<Uuid>>, // linked product ids
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateCollectionPayload {
+    pub name: String,
+    pub image_url: Option<String>,
+    pub description: Option<String>,
+    pub sort_order: Option<i32>,
+    pub product_ids: Option<Vec<Uuid>>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCollectionPayload {
+    pub name: Option<String>,
+    pub image_url: Option<String>,
+    pub description: Option<String>,
+    pub sort_order: Option<i32>,
+    pub product_ids: Option<Vec<Uuid>>,
+}
+

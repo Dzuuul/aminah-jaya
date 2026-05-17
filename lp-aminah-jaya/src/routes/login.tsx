@@ -1,6 +1,7 @@
 import { createSignal, Show, onMount } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { loginCustomer, googleLogin } from "~/lib/api";
+import { setCustomerProfile } from "~/lib/auth-store";
 
 export default function Login() {
   const [step, setStep] = createSignal(1);
@@ -28,11 +29,30 @@ export default function Login() {
       const data = await loginCustomer({ identity: identity(), password: password() });
       localStorage.setItem("customer_token", data.token);
       localStorage.setItem("customer_profile", JSON.stringify(data.user));
+      setCustomerProfile(data.user);
       navigate("/profile");
     } catch (err: any) {
-      setError(err.message || "Gagal masuk. Periksa kembali email/nomor telepon dan kata sandi Anda.");
+      const errMsg = err.message || "";
+      if (
+        errMsg.includes("401") ||
+        errMsg.toLowerCase().includes("unauthorized") ||
+        errMsg.toLowerCase().includes("invalid credentials")
+      ) {
+        setError("Nomor telepon/email atau password salah");
+      } else {
+        setError(err.message || "Gagal masuk. Periksa kembali email/nomor telepon dan kata sandi Anda.");
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubmit = (e: Event) => {
+    e.preventDefault();
+    if (step() === 1) {
+      handleNext(e);
+    } else {
+      handleLogin(e);
     }
   };
 
@@ -43,6 +63,7 @@ export default function Login() {
       const data = await googleLogin(response.credential);
       localStorage.setItem("customer_token", data.token);
       localStorage.setItem("customer_profile", JSON.stringify(data.user));
+      setCustomerProfile(data.user);
       navigate("/profile");
     } catch (err: any) {
       setError(err.message || "Gagal masuk dengan Google.");
@@ -78,6 +99,9 @@ export default function Login() {
         <div class="auth-container" style="max-width: 450px;">
           <div class="auth-card modern">
             <div class="auth-header modern">
+              <A href="/" style="display: inline-block; margin-bottom: 24px;">
+                <img src="/logo_new.png" alt="Aminah Jaya" style="height: 48px; width: auto;" />
+              </A>
               <h1 class="auth-title modern">Masuk</h1>
               <p class="auth-subtitle modern">
                 Belum punya akun Aminah Jaya? <A href="/register">Daftar</A>
@@ -97,7 +121,7 @@ export default function Login() {
               </div>
             </Show>
 
-            <form class="auth-form" onSubmit={step() === 1 ? handleNext : handleLogin}>
+            <form class="auth-form" onSubmit={handleSubmit}>
               <Show when={step() === 1}>
                 <div class="form-group modern">
                   <input
@@ -111,8 +135,8 @@ export default function Login() {
                     autofocus
                   />
                 </div>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   class={`auth-btn-modern ${identity().length > 0 ? 'active' : ''}`}
                   disabled={identity().length === 0}
                 >
@@ -144,8 +168,8 @@ export default function Login() {
                   />
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   class={`auth-btn-modern active`}
                   disabled={loading()}
                 >

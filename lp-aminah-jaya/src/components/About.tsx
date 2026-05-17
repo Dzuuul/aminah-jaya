@@ -31,7 +31,7 @@ export default function About() {
               Solusi Kebutuhan Keluarga dengan Kualitas Terkurasi
             </h2>
             <p class="section-sub">
-              Aminah Jaya hadir untuk menjawab kebutuhan Anda akan produk kesehatan, fashion muslim, dan perlengkapan harian berkualitas. Kami percaya bahwa setiap pelanggan layak mendapatkan produk terbaik tanpa proses yang rumit.
+              Aminah Jaya hadir untuk menjawab kebutuhan Anda akan produk kesehatan, fashion keluarga muslim, dan perlengkapan harian berkualitas. Kami percaya bahwa setiap pelanggan layak mendapatkan produk terbaik tanpa proses yang rumit.
             </p>
             <p class="section-sub" style={{ "margin-top": "12px" }}>
               Setiap item yang kami sediakan telah melalui proses pemilihan yang ketat untuk memastikan keaslian dan manfaatnya bagi Anda. Kami tidak hanya sekadar menjual, tapi ingin menjadi bagian dari perjalanan gaya hidup sehat dan nyaman keluarga Anda.

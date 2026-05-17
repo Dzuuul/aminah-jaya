@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, patch, post},
+    routing::{get, patch, post, delete},
     Router,
 };
 use dotenvy::dotenv;
@@ -170,6 +170,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/categories/:id",
             patch(routes::products::update_category).delete(routes::products::delete_category),
         )
+        // Collections
+        .route(
+            "/api/collections",
+            get(routes::collections::list_collections).post(routes::collections::create_collection),
+        )
+        .route(
+            "/api/collections/:id",
+            get(routes::collections::get_collection)
+                .patch(routes::collections::update_collection)
+                .delete(routes::collections::delete_collection),
+        )
         // Upload
         .route("/api/upload", post(routes::upload::upload_file))
         // Orders
@@ -251,6 +262,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/api/customer/login", post(routes::customer_auth::login))
         .route("/api/customer/auth/google", post(routes::customer_auth::google_login))
         .route("/api/customer/me", get(routes::customer_auth::get_me))
+        .route("/api/customer/profile", patch(routes::customer_auth::update_profile))
+        .route(
+            "/api/customer/orders",
+            get(routes::customer_auth::get_orders).post(routes::customer_auth::create_order),
+        )
         // Cart
         .route(
             "/api/cart",
@@ -261,6 +277,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/cart/:id",
             patch(routes::cart::update_cart_item).delete(routes::cart::remove_from_cart),
+        )
+        // Favorites
+        .route(
+            "/api/customer/favorites",
+            get(routes::favorites::get_favorites)
+                .post(routes::favorites::add_favorite),
+        )
+        .route(
+            "/api/customer/favorites/:id",
+            delete(routes::favorites::remove_favorite),
+        )
+        .route(
+            "/api/customer/favorites/product/:product_id",
+            delete(routes::favorites::remove_favorite_by_product),
+        )
+        .route(
+            "/api/customer/favorites/folders",
+            get(routes::favorites::get_favorite_folders),
         )
 
         .layer(TraceLayer::new_for_http())

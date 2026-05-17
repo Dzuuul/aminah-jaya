@@ -48,7 +48,7 @@ export default function Products() {
               </For>
             }
           >
-            <For each={products()?.slice(0, 6)}>
+            <For each={products()?.filter((p: any) => p.is_featured).slice(0, 6)}>
               {(product) => (
                 <A href={`/product/${product.slug}`} class="prod-card" style={{ "text-decoration": "none", "color": "inherit", "display": "block" }}>
                   <div class="prod-img">

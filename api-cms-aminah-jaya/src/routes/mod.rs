@@ -13,3 +13,6 @@ pub mod notifications;
 pub mod legal;
 pub mod customer_auth;
 pub mod cart;
+pub mod favorites;
+pub mod collections;
+

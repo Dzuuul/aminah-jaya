@@ -178,6 +178,151 @@
 							]
 						}
 					}
+				},
+				{
+					"name": "Google Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.token) {",
+									"    pm.collectionVariables.set(\"customer_token\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id_token\": \"YOUR_GOOGLE_ID_TOKEN\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/customer/auth/google",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customer",
+								"auth",
+								"google"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe Updated\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"08123456789\",\n  \"shipping_address\": \"Jl. Sudirman No. 1, Jakarta\",\n  \"password\": \"newpassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/customer/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customer",
+								"profile"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Customer Orders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/customer/orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customer",
+								"orders"
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Customer Order",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"shipping_address\": \"Jl. Merdeka No. 10\",\n  \"shipping_city\": \"Bandung\",\n  \"shipping_province\": \"Jawa Barat\",\n  \"shipping_cost\": 0,\n  \"payment_method\": \"transfer\",\n  \"notes\": \"Mohon dikirim sore hari\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/customer/orders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customer",
+								"orders"
+							]
+						}
+					}
 				}
 			]
 		},
@@ -347,6 +492,182 @@
 							"path": [
 								"api",
 								"cart"
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Favorites",
+			"item": [
+				{
+					"name": "Get Favorites",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/customer/favorites",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customer",
+								"favorites"
+							]
+						}
+					}
+				},
+				{
+					"name": "Add Favorite",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"product_id\": \"YOUR_PRODUCT_UUID\",\n  \"folder_name\": \"Utama\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/customer/favorites",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customer",
+								"favorites"
+							]
+						}
+					}
+				},
+				{
+					"name": "Remove Favorite by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/customer/favorites/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customer",
+								"favorites",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_FAVORITE_UUID"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Remove Favorite by Product ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/customer/favorites/product/:product_id?folder_name=Utama",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customer",
+								"favorites",
+								"product",
+								":product_id"
+							],
+							"query": [
+								{
+									"key": "folder_name",
+									"value": "Utama"
+								}
+							],
+							"variable": [
+								{
+									"key": "product_id",
+									"value": "YOUR_PRODUCT_UUID"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Favorite Folders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{customer_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/customer/favorites/folders",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"customer",
+								"favorites",
+								"folders"
 							]
 						}
 					}
@@ -804,6 +1125,165 @@
 								{
 									"key": "id",
 									"value": "YOUR_CATEGORY_UUID"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Collections",
+			"item": [
+				{
+					"name": "List Collections",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/collections",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"collections"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Collection by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/collections/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"collections",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_COLLECTION_UUID"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Collection",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Ramadan Specials\",\n  \"slug\": \"ramadan-specials\",\n  \"description\": \"Special collection for Ramadan\",\n  \"image_url\": null,\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/collections",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"collections"
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Collection",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Ramadan Specials Updated\",\n  \"is_active\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/collections/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"collections",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_COLLECTION_UUID"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Collection",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/collections/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"collections",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_COLLECTION_UUID"
 								}
 							]
 						}

@@ -773,8 +773,15 @@ h6 {
 }
 
 @keyframes dropdownIn {
-  from { opacity: 0; transform: translateY(-10px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .notif-header {
@@ -2142,6 +2149,27 @@ h6 {
   gap: 0.25rem;
 }
 
+.form-checkbox-group {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.form-checkbox {
+  width: 1.125rem;
+  height: 1.125rem;
+  cursor: pointer;
+  accent-color: var(--color-green-500);
+}
+
+.form-checkbox-label {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-ink-light);
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
 .tag-input-wrap {
   display: flex;
   flex-wrap: wrap;
@@ -2315,4 +2343,5 @@ h6 {
   border-radius: 1rem;
   border: 1px solid #fee2e2;
 }
+
 /* Spotlight Search removed - moved to SpotlightSearch.css */

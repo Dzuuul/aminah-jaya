@@ -1,7 +1,7 @@
 import { createSignal, Show, onMount, createEffect } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { loginCustomer, googleLogin } from "~/lib/api";
-import { showLoginModal, setShowLoginModal } from "~/lib/auth-store";
+import { showLoginModal, setShowLoginModal, setCustomerProfile } from "~/lib/auth-store";
 
 export default function LoginModal() {
   const [step, setStep] = createSignal(1);
@@ -29,13 +29,30 @@ export default function LoginModal() {
       const data = await loginCustomer({ identity: identity(), password: password() });
       localStorage.setItem("customer_token", data.token);
       localStorage.setItem("customer_profile", JSON.stringify(data.user));
+      setCustomerProfile(data.user);
       setShowLoginModal(false);
-      // Optional: reload or trigger a global user state update
-      window.location.reload(); 
     } catch (err: any) {
-      setError(err.message || "Gagal masuk. Periksa kembali email/nomor telepon dan kata sandi Anda.");
+      const errMsg = err.message || "";
+      if (
+        errMsg.includes("401") ||
+        errMsg.toLowerCase().includes("unauthorized") ||
+        errMsg.toLowerCase().includes("invalid credentials")
+      ) {
+        setError("No. Telp/Email atau password salah");
+      } else {
+        setError(err.message || "Gagal masuk. Periksa kembali email/nomor telepon dan kata sandi Anda.");
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubmit = (e: Event) => {
+    e.preventDefault();
+    if (step() === 1) {
+      handleNext(e);
+    } else {
+      handleLogin(e);
     }
   };
 
@@ -46,8 +63,8 @@ export default function LoginModal() {
       const data = await googleLogin(response.credential);
       localStorage.setItem("customer_token", data.token);
       localStorage.setItem("customer_profile", JSON.stringify(data.user));
+      setCustomerProfile(data.user);
       setShowLoginModal(false);
-      window.location.reload();
     } catch (err: any) {
       setError(err.message || "Gagal masuk dengan Google.");
     } finally {
@@ -119,7 +136,7 @@ export default function LoginModal() {
             </div>
           </Show>
 
-          <form class="auth-form" onSubmit={step() === 1 ? handleNext : handleLogin}>
+          <form class="auth-form" onSubmit={handleSubmit}>
             <Show when={step() === 1}>
               <div class="form-group modern">
                 <input

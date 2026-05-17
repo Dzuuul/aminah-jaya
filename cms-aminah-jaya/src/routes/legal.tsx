@@ -129,7 +129,7 @@ export default function LegalSettings() {
 
             <div class="field-group">
               <div class="flex justify-between items-center mb-2">
-                <label>Konten Dokumen</label>
+                <label>Konten Dokumen (Markdown)</label>
               </div>
               <TextArea
                 rows={20}

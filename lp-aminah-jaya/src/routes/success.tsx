@@ -1,9 +1,22 @@
 import { For } from "solid-js";
+import { useSearchParams } from "@solidjs/router";
+import { formatCurrency } from "~/lib/api";
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
 
 export default function SuccessPage() {
-  const orderId = "AJ-" + Math.floor(Math.random() * 900000 + 100000);
+  const [searchParams] = useSearchParams();
+  
+  const orderNumber = () => searchParams.order_number || "AJ-ORDER";
+  const paymentMethodName = () => {
+    const pm = searchParams.payment_method;
+    if (pm === "cod") return "Cash on Delivery (COD)";
+    if (pm === "qris") return "QRIS / E-Wallet";
+    if (pm === "transfer") return "Bank Transfer";
+    return "Metode Pembayaran";
+  };
+  const grandTotal = () => formatCurrency(Number(searchParams.amount || 0));
+  const shippingType = () => searchParams.shipping === "exp" ? "1-2 Hari Kerja (Ekspres)" : "2-5 Hari Kerja (Standar)";
   
   return (
     <>
@@ -24,7 +37,7 @@ export default function SuccessPage() {
             <div class="step-line"></div>
             <div class="step active">
               <span class="step-num">3</span>
-              <span>Ulasan</span>
+              <span>Selesai</span>
             </div>
           </div>
 
@@ -52,20 +65,20 @@ export default function SuccessPage() {
 
             <div class="order-details-card">
               <div class="order-details-row">
-                <span class="order-details-label">ID Pesanan</span>
-                <span class="order-details-value">{orderId}</span>
+                <span class="order-details-label">Nomor Pesanan</span>
+                <span class="order-details-value">{orderNumber()}</span>
               </div>
               <div class="order-details-row">
                 <span class="order-details-label">Metode Pembayaran</span>
-                <span class="order-details-value">BCA Virtual Account</span>
+                <span class="order-details-value">{paymentMethodName()}</span>
               </div>
               <div class="order-details-row">
                 <span class="order-details-label">Total Pembayaran</span>
-                <span class="order-details-value">Rp 2.999.000</span>
+                <span class="order-details-value">{grandTotal()}</span>
               </div>
               <div class="order-details-row">
                 <span class="order-details-label">Estimasi Pengiriman</span>
-                <span class="order-details-value">2-5 Hari Kerja</span>
+                <span class="order-details-value">{shippingType()}</span>
               </div>
             </div>
 
@@ -73,7 +86,7 @@ export default function SuccessPage() {
               <a href="/" class="btn btn-primary">
                 Beranda
               </a>
-              <a href="#produk" class="btn btn-outline">
+              <a href="/shop" class="btn btn-outline">
                 Lihat Produk Lain
               </a>
             </div>
