@@ -12,9 +12,14 @@ if [ -f .env ]; then
 fi
 
 # Default values
-APP_NAME="storefront-aminah-jaya"
+APP_NAME="api-cms-aminah-jaya"
 IMAGE_TAG="latest"
-HOST_PORT=${HOST_PORT:-3002} # Default to 3002 if not set
+
+# Handle variable mapping from Rust .env to VPS config
+VPS_IP=${VPS_IP:-$SSH_HOST}
+VPS_USER=${VPS_USER:-$SSH_USER}
+VPS_PATH=${VPS_PATH:-"/home/ubuntu24/projects/aminah-jaya/api-cms-aminah-jaya"}
+HOST_PORT=${PORT:-8001} # Default to 8001 if not set
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -36,7 +41,12 @@ done
 
 # Check required variables
 if [ -z "$VPS_IP" ]; then
-  echo "❌ Error: VPS_IP tidak ditemukan di .env"
+  echo "❌ Error: VPS_IP atau SSH_HOST tidak ditemukan di .env"
+  exit 1
+fi
+
+if [ -z "$VPS_USER" ]; then
+  echo "❌ Error: VPS_USER atau SSH_USER tidak ditemukan di .env"
   exit 1
 fi
 
@@ -77,16 +87,21 @@ ssh $SSH_OPTS "$VPS_USER@$VPS_IP" bash << EOF
   # Jalankan aplikasi menggunakan Docker Compose
   cd "$VPS_PATH"
   
-  # Update HOST_PORT di .env sementara untuk docker-compose
-  if grep -q "HOST_PORT=" .env; then
-    sed -i "s/HOST_PORT=.*/HOST_PORT=$HOST_PORT/" .env
+  # Update PORT di .env sementara untuk docker-compose
+  if grep -q "PORT=" .env; then
+    sed -i "s/PORT=.*/PORT=$HOST_PORT/" .env
   else
-    echo "HOST_PORT=$HOST_PORT" >> .env
+    echo "PORT=$HOST_PORT" >> .env
   fi
 
-  # Hapus container lama jika ada yang bentrok (karena sebelumnya mungkin dijalankan via docker run)
+  # Matikan SSH tunnel pada VPS karena terkoneksi langsung ke localhost database
+  if grep -q "USE_SSH_TUNNEL=" .env; then
+    sed -i "s/USE_SSH_TUNNEL=.*/USE_SSH_TUNNEL=false/" .env
+  fi
+
+  # Hapus container lama jika ada yang bentrok
   echo "Cleaning up existing container if any..."
-  docker rm -f storefront-aminah-jaya || true
+  docker rm -f $APP_NAME || true
 
   echo "Starting application with Docker Compose..."
   docker compose up -d --force-recreate
@@ -100,4 +115,4 @@ echo "🧹 Membersihkan file lokal..."
 rm "$TAR_FILE"
 
 echo "✨ Deployment Selesai! Aplikasi berhasil diupdate di VPS pada port $HOST_PORT."
-echo "Akses di: http://$VPS_IP:$HOST_PORT"
+echo "Akses API di: http://$VPS_IP:$HOST_PORT"

@@ -1,19 +1,18 @@
 # Multi-stage Dockerfile for SolidStart v1
 # Builder stage
-FROM node:22-alpine AS builder
-RUN apk add --no-cache libc6-compat
+FROM oven/bun:alpine AS builder
 WORKDIR /app
 
 # Install dependencies
-COPY package.json package-lock.json* ./
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
 # Build the project
 ENV NITRO_PRESET=node-server
-RUN npm run build
+RUN bun run build
 
 # Production stage
 FROM node:22-alpine
@@ -26,8 +25,8 @@ RUN npm install --production
 # Copy build outputs
 COPY --from=builder /app/.output ./.output
 
-ENV PORT=3002
+ENV PORT=3001
 ENV HOST=0.0.0.0
 ENV NODE_ENV=production
-EXPOSE 3002
+EXPOSE 3001
 CMD ["node", ".output/server/index.mjs"]

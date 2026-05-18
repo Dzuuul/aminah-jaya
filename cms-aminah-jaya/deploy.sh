@@ -12,9 +12,9 @@ if [ -f .env ]; then
 fi
 
 # Default values
-APP_NAME="storefront-aminah-jaya"
+APP_NAME="cms-aminah-jaya"
 IMAGE_TAG="latest"
-HOST_PORT=${HOST_PORT:-3002} # Default to 3002 if not set
+HOST_PORT=${HOST_PORT:-3001} # Default to 3001 if not set
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -84,9 +84,9 @@ ssh $SSH_OPTS "$VPS_USER@$VPS_IP" bash << EOF
     echo "HOST_PORT=$HOST_PORT" >> .env
   fi
 
-  # Hapus container lama jika ada yang bentrok (karena sebelumnya mungkin dijalankan via docker run)
+  # Hapus container lama jika ada yang bentrok
   echo "Cleaning up existing container if any..."
-  docker rm -f storefront-aminah-jaya || true
+  docker rm -f $APP_NAME || true
 
   echo "Starting application with Docker Compose..."
   docker compose up -d --force-recreate

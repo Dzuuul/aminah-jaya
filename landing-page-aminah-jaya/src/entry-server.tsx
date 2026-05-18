@@ -9,6 +9,12 @@ export default createHandler(() => (
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <link rel="icon" href="/favicon.ico" />
+          <meta name="robots" content="index, follow" />
+          
+          {/* Default social share fallbacks */}
+          <meta property="og:type" content="website" />
+          <meta property="og:site_name" content="Aminah Jaya" />
+          <meta name="twitter:card" content="summary_large_image" />
           {assets}
         </head>
         <body>

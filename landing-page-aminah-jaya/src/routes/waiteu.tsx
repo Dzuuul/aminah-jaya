@@ -1,5 +1,5 @@
 import { onMount } from "solid-js";
-import { Title, Link } from "@solidjs/meta";
+import { Title, Link, Meta } from "@solidjs/meta";
 import "./waiteu.css";
 
 export default function WaiteuLandingPage() {
@@ -28,7 +28,28 @@ export default function WaiteuLandingPage() {
 
     return (
         <>
-            <Title>Laili WAITEU – Whitening Injection in One Drink</Title>
+            <Title>Laili WAITEU – Whitening Injection in One Drink | Kulit Putih, Glowing & Kenyal Tanpa Suntik</Title>
+
+            {/* SEO & Standard Meta Tags */}
+            <Meta name="description" content="Dapatkan kulit putih, glowing, kenyal, dan sehat secara alami dengan Laili WAITEU. Setara 3x whitening injection di klinik, 100% original, BPOM, Halal MUI, dan bersertifikasi ISO 22000. Hubungi reseller resmi kami sekarang!" />
+            <Meta name="keywords" content="laili waiteu, waiteu collagen, collagen drink, minuman kolagen, pemutih kulit alami, suntik putih klinik, suplemen pemutih BPOM, waiteu original, reseller waiteu" />
+            <Meta name="author" content="Aminah Jaya - Reseller Resmi Laili WAITEU" />
+            <Meta name="theme-color" content="#C9A96E" />
+
+            {/* Open Graph (Facebook / WA / Telegram) */}
+            <Meta property="og:title" content="Laili WAITEU – Kulit Putih, Glowing & Kenyal Tanpa Suntik" />
+            <Meta property="og:description" content="Minuman kolagen premium setara 3x whitening injection di klinik kecantikan. Praktis, terjangkau, BPOM, dan Halal MUI. Dapatkan dari reseller resmi sekarang!" />
+            <Meta property="og:image" content="/whaiteu_colagen1.png" />
+            <Meta property="og:type" content="website" />
+            <Meta property="og:url" content="https://promo.aminahjaya.com/waiteu" />
+            <Meta property="og:site_name" content="Aminah Jaya Laili WAITEU" />
+
+            {/* Twitter Card */}
+            <Meta name="twitter:card" content="summary_large_image" />
+            <Meta name="twitter:title" content="Laili WAITEU – Kulit Putih, Glowing & Kenyal Tanpa Suntik" />
+            <Meta name="twitter:description" content="Dapatkan kulit putih setara 3x whitening injection secara alami & praktis dengan Laili WAITEU. 100% BPOM & Halal." />
+            <Meta name="twitter:image" content="/whaiteu_colagen1.png" />
+
             <Link
                 href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=Cormorant+Garamond:ital,wght@0,300;0,600;1,300&display=swap"
                 rel="stylesheet"
@@ -58,7 +79,7 @@ export default function WaiteuLandingPage() {
                         <div class="hero-cta">
                             <a href="https://api.whatsapp.com/send?phone=62895634039130&text=Halo Kak, Saya dapat info dari Landing Page, saya mau order Laili Waiteu agar kulit saya licin, kinclong and sehat. Tolong segera balas chat ini ya Kak 🙏😊"
                                 class="btn-primary" target="_blank">
-                                <span class="btn-wa-icon">💬</span>
+                                <span class="btn-wa-icon"><img src="/icons8-whatsapp-96.png" alt="WhatsApp" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle;" /></span>
                                 ORDER SEKARANG
                             </a>
                             <span class="hero-note">✓ BPOM Terdaftar (Brand) · ✓ Halal MUI (Brand) · ✓
@@ -145,8 +166,8 @@ export default function WaiteuLandingPage() {
                         style="max-width:320px;margin:0 auto;display:block;" />
                 </div>
                 <a href="https://api.whatsapp.com/send?phone=62895634039130&text=Halo Kak, Saya dapat info dari Landing Page, saya mau order Laili Waiteu agar kulit saya licin, kinclong and sehat. Tolong segera balas chat ini ya Kak 🙏😊"
-                    class="btn-primary" target="_blank" style="margin:0 auto;display:inline-flex;">
-                    💬 {" "}ORDER SEKARANG
+                    class="btn-primary" target="_blank" style="margin:0 auto;display:inline-flex;align-items:center;gap:8px;">
+                    <img src="/icons8-whatsapp-96.png" alt="WhatsApp" style="width: 24px; height: 24px; display: inline-block; vertical-align: middle;" /> ORDER SEKARANG
                 </a>
             </section>
 
@@ -447,7 +468,7 @@ export default function WaiteuLandingPage() {
 
                     <a href="https://api.whatsapp.com/send?phone=62895634039130&text=Halo Kak, Saya dapat info dari Landing Page, saya mau order Laili Waiteu agar kulit saya licin, kinclong and sehat. Tolong segera balas chat ini ya Kak 🙏😊"
                         class="btn-wa" target="_blank">
-                        <span style="font-size:24px;">💬</span>
+                        <span><img src="/icons8-whatsapp-96.png" alt="WhatsApp" style="width: 32px; height: 32px; display: inline-block; vertical-align: middle;" /></span>
                         <div class="btn-wa-text">
                             ORDER VIA WHATSAPP
                             <small>Reseller Resmi · Produk Original Brand</small>
@@ -473,11 +494,13 @@ export default function WaiteuLandingPage() {
                 </div>
 
                 <div class="footer-bottom">
-                    © 2024 Laili WAITEU · Halaman ini dikelola oleh <strong style="color:rgba(250,246,239,0.4)">Reseller Resmi
+                    © 2026 Laili WAITEU · Halaman ini dikelola oleh <strong style="color:rgba(250,246,239,0.4)">Reseller Resmi
                         Laili WAITEU</strong> — bukan website resmi brand.<br />
                     Sertifikasi BPOM, Halal MUI, ISO 22000, penghargaan, dan data penjualan adalah milik PT/Brand Laili WAITEU
                     resmi.<br />
                     Data statistik (30 juta box, 13 juta pengguna) bersumber dari materi resmi brand Laili WAITEU.
+                    <br />
+                    <a target="_blank" href="https://icons8.com/icon/QkXeKixybttw/whatsapp">WhatsApp</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a>
                 </div>
             </footer>
 
@@ -487,7 +510,7 @@ export default function WaiteuLandingPage() {
                     class="floating-btn" target="_blank">
                     <div class="floating-dot"></div>
                     <span class="text">ORDER SEKARANG</span>
-                    <span>💬</span>
+                    <span><img src="/icons8-whatsapp-96.png" alt="WhatsApp" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle;" /></span>
                 </a>
             </div>
         </>
