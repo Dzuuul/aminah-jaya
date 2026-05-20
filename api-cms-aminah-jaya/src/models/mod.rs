@@ -487,6 +487,8 @@ pub struct StorefrontCustomer {
     pub name: String,
     pub phone: Option<String>,
     pub shipping_address: Option<String>,
+    pub shipping_lat: Option<f64>,
+    pub shipping_lng: Option<f64>,
     pub created_at: DateTime<Utc>,
 }
 
@@ -496,6 +498,8 @@ pub struct UpdateCustomerProfilePayload {
     pub phone: Option<String>,
     pub email: String,
     pub shipping_address: Option<String>,
+    pub shipping_lat: Option<f64>,
+    pub shipping_lng: Option<f64>,
     pub password: Option<String>,
 }
 

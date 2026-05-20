@@ -63,8 +63,8 @@ If you need to use the `sqlx-cli`, follow these steps:
 - `POST /api/customer/register`: Register a new customer account.
 - `POST /api/customer/login`: Customer login to receive JWT.
 - `POST /api/customer/auth/google`: Customer login/registration using Google OAuth token.
-- `GET /api/customer/me`: Get current authenticated customer profile.
-- `PATCH /api/customer/profile`: Update current customer profile (name, email, phone, shipping address, or password).
+- `GET /api/customer/me`: Get current authenticated customer profile (includes shipping coordinates).
+- `PATCH /api/customer/profile`: Update current customer profile (name, email, phone, shipping address with GPS coordinates, or password).
 - `GET /api/customer/orders`: Get order history list for the authenticated customer.
 - `POST /api/customer/orders`: Create a new order from current cart items.
 
@@ -161,6 +161,23 @@ If you need to use the `sqlx-cli`, follow these steps:
 - `DELETE /api/customer/favorites/:id`: Remove item from wishlist by wishlist ID.
 - `DELETE /api/customer/favorites/product/:product_id`: Remove item from wishlist by product UUID.
 - `GET /api/customer/favorites/folders`: Get list of favorite folder names.
+
+## Features
+
+### GPS-Enabled Shipping Address
+Customer shipping addresses now include GPS coordinates (latitude & longitude) for precise delivery tracking and geolocation services. Coordinates are stored with 6-decimal precision (±1.1 meter accuracy).
+
+**Sample Request:**
+```json
+PATCH /api/customer/profile
+{
+  "shipping_address": "Jl. Sudirman No. 1, Jakarta Pusat",
+  "shipping_lat": -6.2088,
+  "shipping_lng": 106.8456
+}
+```
+
+See [BACKEND_COORDINATES_IMPLEMENTATION.md](./BACKEND_COORDINATES_IMPLEMENTATION.md) for detailed documentation.
 
 ## Technology Stack
 

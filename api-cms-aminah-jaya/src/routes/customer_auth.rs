@@ -47,7 +47,7 @@ pub async fn register(
     let result = sqlx::query_as::<_, StorefrontCustomer>(
         r#"INSERT INTO storefront_customers (email, password_hash, name, phone)
            VALUES ($1, $2, $3, $4)
-           RETURNING id, email, name, phone, shipping_address, created_at"#
+           RETURNING id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at"#
     )
     .bind(&email)
     .bind(password_hash)
@@ -133,7 +133,7 @@ pub async fn get_me(
 
     let pool = &state.pool;
     let customer: Option<StorefrontCustomer> = sqlx::query_as(
-        "SELECT id, email, name, phone, shipping_address, created_at FROM storefront_customers WHERE id = $1 LIMIT 1"
+        "SELECT id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at FROM storefront_customers WHERE id = $1 LIMIT 1"
     )
     .bind(customer_id)
     .fetch_optional(pool)
@@ -280,14 +280,16 @@ pub async fn update_profile(
 
     let result = sqlx::query_as::<_, StorefrontCustomer>(
         r#"UPDATE storefront_customers 
-           SET name = $1, phone = $2, email = $3, shipping_address = $4
-           WHERE id = $5
-           RETURNING id, email, name, phone, shipping_address, created_at"#
+           SET name = $1, phone = $2, email = $3, shipping_address = $4, shipping_lat = $5, shipping_lng = $6
+           WHERE id = $7
+           RETURNING id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at"#
     )
     .bind(&payload.name)
     .bind(&payload.phone)
     .bind(&payload.email)
     .bind(&payload.shipping_address)
+    .bind(payload.shipping_lat)
+    .bind(payload.shipping_lng)
     .bind(customer_id)
     .fetch_one(pool)
     .await;
@@ -416,7 +418,7 @@ pub async fn create_order(
 
     // 1. Fetch customer details
     let customer: Option<StorefrontCustomer> = match sqlx::query_as(
-        "SELECT id, email, name, phone, shipping_address, created_at FROM storefront_customers WHERE id = $1 LIMIT 1"
+        "SELECT id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at FROM storefront_customers WHERE id = $1 LIMIT 1"
     )
     .bind(customer_id)
     .fetch_optional(&mut *tx)

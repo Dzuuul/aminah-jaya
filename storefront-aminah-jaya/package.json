@@ -12,6 +12,7 @@
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.0.0",
     "lucide-solid": "^1.16.0",
+    "maplibre-gl": "^5.24.0",
     "solid-js": "^1.9.5",
     "solid-markdown": "^2.1.1"
   },

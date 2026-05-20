@@ -243,7 +243,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"name\": \"John Doe Updated\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"08123456789\",\n  \"shipping_address\": \"Jl. Sudirman No. 1, Jakarta\",\n  \"password\": \"newpassword123\"\n}"
+							"raw": "{\n  \"name\": \"John Doe Updated\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"08123456789\",\n  \"shipping_address\": \"Jl. Sudirman No. 1, Jakarta\",\n  \"shipping_lat\": -6.2088,\n  \"shipping_lng\": 106.8456,\n  \"password\": \"newpassword123\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/customer/profile",
@@ -1901,6 +1901,117 @@
 							"path": [
 								"api",
 								"coupons"
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Coupon by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/coupons/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"coupons",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_COUPON_UUID"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Coupon",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"NEWUSER15\",\n  \"discount_value\": 15.0\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/coupons/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"coupons",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_COUPON_UUID"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Coupon",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/coupons/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"coupons",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "YOUR_COUPON_UUID"
+								}
 							]
 						}
 					}
