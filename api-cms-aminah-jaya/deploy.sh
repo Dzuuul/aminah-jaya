@@ -21,6 +21,10 @@ VPS_USER=${VPS_USER:-$SSH_USER}
 VPS_PATH=${VPS_PATH:-"/home/ubuntu24/projects/aminah-jaya/api-cms-aminah-jaya"}
 HOST_PORT=${PORT:-8001} # Default to 8001 if not set
 
+# Ensure script runs from project root for Git status checks
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # Parse arguments
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -53,6 +57,14 @@ fi
 FULL_IMAGE="${APP_NAME}:${IMAGE_TAG}"
 TAR_FILE="${APP_NAME}.tar.gz"
 
+# Detect migration changes and clean local cargo build cache if needed
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  if git status --porcelain -- migrations | grep -q .; then
+    echo "⚠️ Perubahan migrasi terdeteksi, menjalankan cargo clean sebelum build..."
+    cargo clean
+  fi
+fi
+
 echo "🏗️  Membangun image secara lokal..."
 docker build -t "$FULL_IMAGE" .
 
@@ -65,6 +77,14 @@ if [ -n "${SSH_KEY_PATH:-}" ]; then
   # Expand ~ to home directory if present
   REAL_KEY_PATH="${SSH_KEY_PATH/#\~/$HOME}"
   SSH_OPTS="-i $REAL_KEY_PATH"
+fi
+
+# Detect migration changes and clean local cargo build cache if needed
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  if git status --porcelain -- migrations | grep -q .; then
+    echo "⚠️ Perubahan migrasi terdeteksi, menjalankan cargo clean sebelum build..."
+    cargo clean
+  fi
 fi
 
 echo "🚀 Mengirim image dan konfigurasi ke VPS ($VPS_IP)..."

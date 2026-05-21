@@ -52,6 +52,7 @@ export default function MapPicker(rawProps: MapPickerProps) {
   const [dropdownOptions, setDropdownOptions] = createSignal<AreaOption[]>([]);
 
   const [isLoading, setIsLoading] = createSignal(false);
+  const [isUsingCurrentLocation, setIsUsingCurrentLocation] = createSignal(false);
 
   const [loadError, setLoadError] = createSignal<string | null>(null);
 
@@ -278,6 +279,66 @@ export default function MapPicker(rawProps: MapPickerProps) {
     }
   };
 
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+      );
+
+      if (!response.ok) {
+        return "Lokasi saat ini";
+      }
+
+      const data = await response.json();
+      return data.display_name || "Lokasi saat ini";
+    } catch (error) {
+      console.error("Reverse geocode error", error);
+      return "Lokasi saat ini";
+    }
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setLoadError("Browser tidak mendukung lokasi saat ini");
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadError(null);
+    setIsUsingCurrentLocation(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const address = await reverseGeocode(lat, lng);
+
+        setSelectedLocation({ lat, lng, address });
+        updateMarker(lng, lat, address);
+
+        map()?.flyTo({
+          center: [lng, lat],
+          zoom: 16,
+          speed: 1.2,
+          essential: true,
+        });
+
+        setIsLoading(false);
+        setIsUsingCurrentLocation(false);
+      },
+      (error) => {
+        console.error(error);
+        setLoadError("Gagal mengambil lokasi saat ini. Pastikan izin lokasi diberikan.");
+        setIsLoading(false);
+        setIsUsingCurrentLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+      },
+    );
+  };
+
   const handleSearchInput = (value: string) => {
     if (debounceTimer) {
       clearTimeout(debounceTimer);
@@ -348,13 +409,13 @@ return (
 
         <div class="map-picker-search-section">
           <p class="map-picker-description">
-            Cari area atau pilih langsung pada peta.
+            Cari lokasi tujuan pengiriman atau gunakan lokasi saat ini.
           </p>
 
           <div class="map-picker-input-wrapper">
             <input
               type="text"
-              placeholder="Cari area..."
+              placeholder="Tulis nama jalan / gedung / perumahan"
               class="map-picker-input"
               onInput={(e) =>
                 handleSearchInput(
@@ -362,6 +423,17 @@ return (
                 )
               }
             />
+          </div>
+
+          <div class="map-picker-actions-row">
+            <button
+              type="button"
+              class="map-picker-current-btn"
+              onClick={handleUseCurrentLocation}
+              disabled={isLoading()}
+            >
+              {isUsingCurrentLocation() ? "Mencari lokasi..." : "Gunakan Lokasi Saat Ini"}
+            </button>
           </div>
 
           <Show when={isLoading()}>
@@ -405,6 +477,30 @@ return (
             ref={(el) => setMapContainer(el)}
             class="map-picker-map"
           />
+        </div>
+
+        <div class="map-picker-steps">
+          <div class="map-picker-step active">
+            <div class="map-picker-step-number">1</div>
+            <div>
+              <div class="map-picker-step-title">Cari lokasi</div>
+              <div class="map-picker-step-desc">Pilih atau gunakan lokasi saat ini</div>
+            </div>
+          </div>
+          <div class="map-picker-step">
+            <div class="map-picker-step-number">2</div>
+            <div>
+              <div class="map-picker-step-title">Tentukan pinpoint</div>
+              <div class="map-picker-step-desc">Tarik pin pada peta</div>
+            </div>
+          </div>
+          <div class="map-picker-step">
+            <div class="map-picker-step-number">3</div>
+            <div>
+              <div class="map-picker-step-title">Lengkapi detail</div>
+              <div class="map-picker-step-desc">Simpan alamatnya</div>
+            </div>
+          </div>
         </div>
 
         <div class="map-picker-footer">

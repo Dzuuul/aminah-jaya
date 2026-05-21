@@ -177,6 +177,7 @@ export default function Profile() {
     setShippingError("");
     setShippingSuccess("");
     setIsEditingShipping(true);
+    setIsMapPickerOpen(true);
   };
 
   const handleSaveShipping = async (e: Event) => {

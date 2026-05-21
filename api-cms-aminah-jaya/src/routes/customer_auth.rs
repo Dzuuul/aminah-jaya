@@ -178,7 +178,7 @@ pub async fn google_login(
 
     // 2. Find or Create customer
     let mut customer = sqlx::query_as::<_, StorefrontCustomer>(
-        "SELECT id, email, name, phone, shipping_address, created_at FROM storefront_customers WHERE email = $1 LIMIT 1"
+        "SELECT id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at FROM storefront_customers WHERE email = $1 LIMIT 1"
     )
     .bind(email)
     .fetch_optional(pool)
@@ -186,11 +186,13 @@ pub async fn google_login(
     .unwrap_or(None);
 
     if customer.is_none() {
-        // Auto-register
+        // Auto-register using UPSERT to avoid race conditions
         let result = sqlx::query_as::<_, StorefrontCustomer>(
             r#"INSERT INTO storefront_customers (email, password_hash, name, phone)
                VALUES ($1, $2, $3, $4)
-               RETURNING id, email, name, phone, shipping_address, created_at"#
+               ON CONFLICT (email) DO UPDATE
+                 SET name = COALESCE(storefront_customers.name, EXCLUDED.name)
+               RETURNING id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at"#
         )
         .bind(email)
         .bind("") // No password for OAuth users
