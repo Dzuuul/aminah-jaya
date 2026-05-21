@@ -45,6 +45,12 @@ export default function MapPicker(rawProps: MapPickerProps) {
     null,
   );
 
+  const [addressLabel, setAddressLabel] = createSignal("");
+  const [fullAddress, setFullAddress] = createSignal("");
+  const [courierNote, setCourierNote] = createSignal("");
+  const [recipientName, setRecipientName] = createSignal("");
+  const [recipientPhone, setRecipientPhone] = createSignal("");
+
   const [map, setMap] = createSignal<maplibregl.Map | null>(null);
 
   const [marker, setMarker] = createSignal<maplibregl.Marker | null>(null);
@@ -60,7 +66,73 @@ export default function MapPicker(rawProps: MapPickerProps) {
     null,
   );
 
+  const [step, setStep] = createSignal(1);
+
+  const currentStep = () => step();
+
+  const getHeaderTitle = () => {
+    if (step() === 2) return "Tentukan Pinpoint Lokasi";
+    if (step() === 3) return "Lengkapi Detail Alamat";
+    return "Pilih Lokasi Pengiriman";
+  };
+
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const initializeMap = () => {
+    if (map() || !mapContainer()) {
+      return;
+    }
+
+    const mapInstance = new maplibregl.Map({
+      container: mapContainer()!,
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: "raster",
+            tiles: [
+              "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+              "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+              "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
+            ],
+            tileSize: 256,
+            attribution: "&copy; OpenStreetMap Contributors",
+          },
+        },
+        layers: [
+          {
+            id: "osm-tiles",
+            type: "raster",
+            source: "osm",
+          },
+        ],
+      },
+      center: [props.initialLng, props.initialLat],
+      zoom: 13,
+    });
+
+    mapInstance.on("load", () => {
+      mapInstance.resize();
+
+      const location = selectedLocation();
+
+      if (location) {
+        updateMarker(location.lng, location.lat, location.address);
+      }
+    });
+
+    mapInstance.on("click", (e) => {
+      const { lng, lat } = e.lngLat;
+
+      setSelectedLocation({
+        lat,
+        lng,
+        address: selectedLocation()?.address || "Lokasi dipilih dari peta",
+      });
+    });
+
+    setMap(mapInstance);
+  };
 
   createEffect(() => {
     if (!props.isOpen) {
@@ -68,67 +140,18 @@ export default function MapPicker(rawProps: MapPickerProps) {
       return;
     }
 
+    setStep(1);
     setSelectedLocation({
       lat: props.initialLat,
       lng: props.initialLng,
       address: props.initialAddress,
     });
 
-    if (!map() && mapContainer()) {
-      const mapInstance = new maplibregl.Map({
-        container: mapContainer()!,
-        style: {
-          version: 8,
-          sources: {
-            osm: {
-              type: "raster",
-              tiles: [
-                "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
-                "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
-              ],
-              tileSize: 256,
-              attribution: "&copy; OpenStreetMap Contributors",
-            },
-          },
-          layers: [
-            {
-              id: "osm-tiles",
-              type: "raster",
-              source: "osm",
-            },
-          ],
-        },
-        center: [props.initialLng, props.initialLat],
-        zoom: 13,
-      });
+    setFullAddress(props.initialAddress || "");
+  });
 
-      mapInstance.on("load", () => {
-        mapInstance.resize();
-
-        const location = selectedLocation();
-
-        if (location) {
-          updateMarker(location.lng, location.lat, location.address);
-        }
-      });
-
-      mapInstance.on("click", (e) => {
-        const { lng, lat } = e.lngLat;
-
-        setSelectedLocation({
-          lat,
-          lng,
-          address: selectedLocation()?.address || "Lokasi dipilih dari peta",
-        });
-      });
-
-      setMap(mapInstance);
-    }
-
-    if (map()) {
-      map()?.resize();
-    }
+  createEffect(() => {
+    initializeMap();
   });
 
   createEffect(() => {
@@ -136,6 +159,14 @@ export default function MapPicker(rawProps: MapPickerProps) {
 
     if (location && map()) {
       updateMarker(location.lng, location.lat, location.address);
+    }
+  });
+
+  createEffect(() => {
+    if (step() === 2 && map()) {
+      setTimeout(() => {
+        map()?.resize();
+      }, 50);
     }
   });
 
@@ -314,14 +345,23 @@ export default function MapPicker(rawProps: MapPickerProps) {
         const address = await reverseGeocode(lat, lng);
 
         setSelectedLocation({ lat, lng, address });
+
+        if (step() === 1) {
+          setStep(2);
+        }
+
         updateMarker(lng, lat, address);
 
-        map()?.flyTo({
-          center: [lng, lat],
-          zoom: 16,
-          speed: 1.2,
-          essential: true,
-        });
+        setTimeout(() => {
+          map()?.resize();
+          updateMarker(lng, lat, address);
+          map()?.flyTo({
+            center: [lng, lat],
+            zoom: 16,
+            speed: 1.2,
+            essential: true,
+          });
+        }, 120);
 
         setIsLoading(false);
         setIsUsingCurrentLocation(false);
@@ -374,6 +414,10 @@ export default function MapPicker(rawProps: MapPickerProps) {
     // update marker
     updateMarker(lng, lat, selected.label);
 
+    if (step() === 1) {
+      setStep(2);
+    }
+
     // auto geser map
     map()?.flyTo({
       center: [lng, lat],
@@ -383,12 +427,63 @@ export default function MapPicker(rawProps: MapPickerProps) {
     });
   };
 
+  const getCombinedAddress = () => {
+    const locationText = fullAddress().trim() || selectedLocation()?.address || "";
+    const details: string[] = [];
+
+    if (addressLabel().trim()) {
+      details.push(addressLabel().trim());
+    }
+
+    if (locationText) {
+      details.push(locationText);
+    }
+
+    if (courierNote().trim()) {
+      details.push(`Catatan untuk kurir: ${courierNote().trim()}`);
+    }
+
+    if (recipientName().trim()) {
+      details.push(`Nama penerima: ${recipientName().trim()}`);
+    }
+
+    if (recipientPhone().trim()) {
+      details.push(`Nomor HP: ${recipientPhone().trim()}`);
+    }
+
+    return details.join("\n");
+  };
+
+  const handlePrevious = () => {
+    if (step() > 1) {
+      setStep(step() - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (step() === 1 && !selectedLocation()) {
+      setLoadError("Pilih lokasi terlebih dahulu sebelum lanjut.");
+      return;
+    }
+
+    if (step() < 3) {
+      setStep(step() + 1);
+      setLoadError(null);
+    }
+  };
+
   const handleConfirm = () => {
     const location = selectedLocation();
 
     if (!location) return;
 
-    props.onLocationSelect(location);
+    const combinedAddress = getCombinedAddress();
+
+    props.onLocationSelect({
+      lat: location.lat,
+      lng: location.lng,
+      address: combinedAddress || location.address,
+    });
     props.onClose();
   };
 
@@ -397,7 +492,17 @@ return (
     <div class="map-picker-overlay">
       <div class="map-picker-modal">
         <div class="map-picker-header">
-          <h2>Pilih Lokasi Pengiriman</h2>
+          <button
+            type="button"
+            class="map-picker-back-mobile"
+            onClick={() =>
+              currentStep() === 1 ? props.onClose() : handlePrevious()
+            }
+          >
+            ←
+          </button>
+
+          <h2>{getHeaderTitle()}</h2>
 
           <button
             onClick={props.onClose}
@@ -407,129 +512,217 @@ return (
           </button>
         </div>
 
-        <div class="map-picker-search-section">
-          <p class="map-picker-description">
-            Cari lokasi tujuan pengiriman atau gunakan lokasi saat ini.
-          </p>
-
-          <div class="map-picker-input-wrapper">
-            <input
-              type="text"
-              placeholder="Tulis nama jalan / gedung / perumahan"
-              class="map-picker-input"
-              onInput={(e) =>
-                handleSearchInput(
-                  e.currentTarget.value
-                )
-              }
-            />
+        <div class="map-picker-body">
+          <div class="map-picker-steps">
+            <div class={`map-picker-step ${currentStep() === 1 ? "active" : ""}`}>
+              <div class="map-picker-step-number">1</div>
+              <div>
+                <div class="map-picker-step-title">Cari lokasi</div>
+                <div class="map-picker-step-desc">Pilih atau gunakan lokasi saat ini</div>
+              </div>
+            </div>
+            <div class={`map-picker-step ${currentStep() === 2 ? "active" : ""}`}>
+              <div class="map-picker-step-number">2</div>
+              <div>
+                <div class="map-picker-step-title">Tentukan pinpoint</div>
+                <div class="map-picker-step-desc">Tarik pin pada peta</div>
+              </div>
+            </div>
+            <div class={`map-picker-step ${currentStep() === 3 ? "active" : ""}`}>
+              <div class="map-picker-step-number">3</div>
+              <div>
+                <div class="map-picker-step-title">Lengkapi detail</div>
+                <div class="map-picker-step-desc">Simpan informasi alamat</div>
+              </div>
+            </div>
           </div>
 
-          <div class="map-picker-actions-row">
-            <button
-              type="button"
-              class="map-picker-current-btn"
-              onClick={handleUseCurrentLocation}
-              disabled={isLoading()}
-            >
-              {isUsingCurrentLocation() ? "Mencari lokasi..." : "Gunakan Lokasi Saat Ini"}
-            </button>
-          </div>
+          <Show when={currentStep() === 1}>
+            <div class="map-picker-search-section">
+              <p class="map-picker-description">
+                Cari lokasi tujuan pengiriman atau gunakan lokasi saat ini.
+              </p>
 
-          <Show when={isLoading()}>
-            <div class="map-picker-loading">
-              Mencari area...
+              <div class="map-picker-input-wrapper">
+                <input
+                  type="text"
+                  placeholder="Tulis nama kecamatan"
+                  class="map-picker-input"
+                  onInput={(e) =>
+                    handleSearchInput(
+                      e.currentTarget.value
+                    )
+                  }
+                />
+              </div>
+
+              <Show when={dropdownOptions().length > 0}>
+                <div class="map-picker-select-wrapper">
+                  <select
+                    class="map-picker-select"
+                    onChange={(e) =>
+                      handleDropdownSelect(
+                        e.currentTarget.value
+                      )
+                    }
+                  >
+                    <option value="">
+                      Pilih area
+                    </option>
+
+                    {dropdownOptions().map((option) => (
+                      <option value={option.label}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </Show>
+
+              <div class="map-picker-actions-row">
+                <button
+                  type="button"
+                  class="map-picker-current-btn"
+                  onClick={handleUseCurrentLocation}
+                  disabled={isLoading()}
+                >
+                  {isUsingCurrentLocation() ? "Mencari lokasi..." : "Gunakan Lokasi Saat Ini"}
+                </button>
+              </div>
+
+              <Show when={isLoading()}>
+                <div class="map-picker-loading">
+                  Mencari area...
+                </div>
+              </Show>
+
+              <Show when={loadError()}>
+                <div class="map-picker-error">
+                  {loadError()}
+                </div>
+              </Show>
             </div>
           </Show>
 
-          <Show when={dropdownOptions().length > 0}>
-            <div class="map-picker-select-wrapper">
-              <select
-                class="map-picker-select"
-                onChange={(e) =>
-                  handleDropdownSelect(
-                    e.currentTarget.value
-                  )
-                }
-              >
-                <option value="">
-                  Pilih area
-                </option>
-
-                {dropdownOptions().map((option) => (
-                  <option value={option.label}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </Show>
-
-          <Show when={loadError()}>
-            <div class="map-picker-error">
-              {loadError()}
-            </div>
-          </Show>
-        </div>
-
-        <div class="map-picker-map-wrapper">
           <div
-            ref={(el) => setMapContainer(el)}
-            class="map-picker-map"
-          />
-        </div>
+            class="map-picker-map-section"
+            classList={{ "map-picker-hidden": currentStep() !== 2 }}
+          >
+            <div class="map-picker-map-wrapper">
+              <div
+                ref={(el) => setMapContainer(el)}
+                class="map-picker-map"
+              />
+            </div>
 
-        <div class="map-picker-steps">
-          <div class="map-picker-step active">
-            <div class="map-picker-step-number">1</div>
-            <div>
-              <div class="map-picker-step-title">Cari lokasi</div>
-              <div class="map-picker-step-desc">Pilih atau gunakan lokasi saat ini</div>
+            <div class="map-picker-location-preview">
+              <p class="map-picker-section-header">Tentukan pinpoint</p>
+              <p class="map-picker-description">
+                Klik peta atau tarik pin untuk menyesuaikan titik lokasi.
+              </p>
+              <p class="map-picker-location-text">
+                {selectedLocation()
+                  ? `${selectedLocation()?.address || "Lokasi dipilih"}`
+                  : "Belum ada lokasi dipilih"}
+              </p>
             </div>
           </div>
-          <div class="map-picker-step">
-            <div class="map-picker-step-number">2</div>
-            <div>
-              <div class="map-picker-step-title">Tentukan pinpoint</div>
-              <div class="map-picker-step-desc">Tarik pin pada peta</div>
+
+          <Show when={currentStep() === 3}>
+            <div class="map-picker-detail-section">
+              <div class="map-picker-section-header">
+                Lengkapi detail alamat
+              </div>
+
+              <div class="map-picker-form-grid">
+                <div class="map-picker-field">
+                  <label>Label Alamat</label>
+                  <input
+                    type="text"
+                    class="map-picker-input"
+                    value={addressLabel()}
+                    onInput={(e) => setAddressLabel(e.currentTarget.value)}
+                    placeholder="Contoh: Rumah, Kantor, Orang Tua"
+                  />
+                </div>
+
+                <div class="map-picker-field map-picker-fullwidth">
+                  <label>Alamat Lengkap</label>
+                  <textarea
+                    class="map-picker-textarea"
+                    value={fullAddress()}
+                    onInput={(e) => setFullAddress(e.currentTarget.value)}
+                    placeholder="Nama jalan, RT/RW, kelurahan, kecamatan, kota, provinsi, kode pos"
+                  />
+                </div>
+
+                <div class="map-picker-field map-picker-fullwidth">
+                  <label>Catatan untuk Kurir (Opsional)</label>
+                  <textarea
+                    class="map-picker-textarea"
+                    value={courierNote()}
+                    onInput={(e) => setCourierNote(e.currentTarget.value)}
+                    placeholder="Warna rumah, patokan, pesan khusus, dll."
+                  />
+                </div>
+
+                <div class="map-picker-field">
+                  <label>Nama Penerima</label>
+                  <input
+                    type="text"
+                    class="map-picker-input"
+                    value={recipientName()}
+                    onInput={(e) => setRecipientName(e.currentTarget.value)}
+                    placeholder="Nama penerima"
+                  />
+                </div>
+
+                <div class="map-picker-field">
+                  <label>Nomor HP</label>
+                  <input
+                    type="tel"
+                    class="map-picker-input"
+                    value={recipientPhone()}
+                    onInput={(e) => setRecipientPhone(e.currentTarget.value)}
+                    placeholder="628xxxxxxxxxx"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="map-picker-step">
-            <div class="map-picker-step-number">3</div>
-            <div>
-              <div class="map-picker-step-title">Lengkapi detail</div>
-              <div class="map-picker-step-desc">Simpan alamatnya</div>
-            </div>
-          </div>
+          </Show>
         </div>
 
         <div class="map-picker-footer">
-          <div class="map-picker-location-info">
-            <p class="map-picker-location-title">
-              Lokasi terpilih:
-            </p>
+          <div class="map-picker-footer-actions">
+            <button
+              type="button"
+              class="map-picker-back-btn"
+              onClick={handlePrevious}
+              disabled={currentStep() === 1}
+            >
+              Kembali
+            </button>
 
-            <p class="map-picker-location-text">
-              {selectedLocation()
-                ? `${
-                    selectedLocation()?.address ||
-                    "Lokasi dipilih"
-                  } — ${selectedLocation()?.lat.toFixed(
-                    5
-                  )}, ${selectedLocation()?.lng.toFixed(
-                    5
-                  )}`
-                : "Belum ada lokasi dipilih"}
-            </p>
+            {currentStep() < 3 ? (
+              <button
+                type="button"
+                class="map-picker-next-btn"
+                onClick={handleNext}
+                disabled={currentStep() === 1 && !selectedLocation()}
+              >
+                Lanjut
+              </button>
+            ) : (
+              <button
+                type="button"
+                class="map-picker-confirm-btn"
+                onClick={handleConfirm}
+                disabled={!selectedLocation()}
+              >
+                Pilih Lokasi
+              </button>
+            )}
           </div>
-
-          <button
-            onClick={handleConfirm}
-            disabled={!selectedLocation()}
-            class="map-picker-confirm-btn"
-          >
-            Pilih Lokasi
-          </button>
         </div>
       </div>
     </div>
