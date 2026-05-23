@@ -16,4 +16,6 @@ pub mod cart;
 pub mod favorites;
 pub mod collections;
 pub mod customer_addresses;
+pub mod customer_coupons;
+pub mod shipping;
 

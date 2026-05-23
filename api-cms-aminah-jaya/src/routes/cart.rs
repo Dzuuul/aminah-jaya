@@ -35,6 +35,7 @@ pub async fn get_cart(
         r#"SELECT 
             ci.id, ci.customer_id, ci.product_id, ci.quantity, ci.created_at,
             p.name AS product_name, p.price::FLOAT8 AS product_price, p.slug AS product_slug,
+            p.weight_gram AS product_weight_gram,
             (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC LIMIT 1) AS product_thumbnail
            FROM cart_items ci
            JOIN products p ON p.id = ci.product_id

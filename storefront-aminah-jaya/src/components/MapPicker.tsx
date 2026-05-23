@@ -289,20 +289,19 @@ export default function MapPicker(rawProps: MapPickerProps) {
     try {
       setIsLoading(true);
 
-      const apiKey = import.meta.env.VITE_BITESHIP_API_KEY;
-
-      if (!apiKey) {
-        throw new Error("VITE_BITESHIP_API_KEY belum diset");
-      }
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("customer_token")
+          : null;
+      const apiBase =
+        import.meta.env.VITE_API_BASE || "http://localhost:8001/api";
 
       const response = await fetch(
-        `https://api.biteship.com/v1/maps/areas?countries=ID&input=${encodeURIComponent(
-          trimmedQuery,
-        )}&type=all`,
+        `${apiBase}/shipping/maps/areas?input=${encodeURIComponent(trimmedQuery)}`,
         {
           method: "GET",
           headers: {
-            Authorization: apiKey.trim(),
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         },
       );
@@ -311,9 +310,12 @@ export default function MapPicker(rawProps: MapPickerProps) {
         throw new Error("Gagal mengambil area dari Biteship");
       }
 
-      const data = await response.json();
+      const json = await response.json();
+      if (!json?.success) {
+        throw new Error(json?.message || "Gagal mengambil area");
+      }
 
-      const areas = Array.isArray(data?.areas) ? data.areas : [];
+      const areas = Array.isArray(json?.data) ? json.data : [];
 
       const options: AreaOption[] = await Promise.all(
         areas.map(async (item: any) => {

@@ -21,3 +21,4 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 aws-sdk-s3 = "1.131.0"
 aws-config = "1.8.16"
 aws-credential-types = "1.2.14"
+urlencoding = "2.1"

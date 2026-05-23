@@ -1,5 +1,7 @@
 use axum::{Json, response::IntoResponse, http::{StatusCode, HeaderMap}, extract::State};
 use crate::models::{ApiResponse, StorefrontCustomer, RegisterCustomerPayload, LoginCustomerPayload, LoginResponse, UserProfile, GoogleAuthPayload, CartItem, Coupon};
+use crate::biteship::{build_rate_items, BiteshipClient};
+use serde_json::json;
 use crate::auth::{create_jwt, verify_jwt};
 use crate::state::AppState;
 use uuid::Uuid;
@@ -386,6 +388,15 @@ pub struct CreateOrderPayload {
     pub payment_method: String, // "cod", "transfer", "qris", "other"
     pub notes: Option<String>,
     pub coupon_code: Option<String>,
+    pub courier_company: Option<String>,
+    pub courier_type: Option<String>,
+    pub destination_lat: Option<f64>,
+    pub destination_lng: Option<f64>,
+    pub destination_postal_code: Option<String>,
+    pub destination_area_id: Option<String>,
+    pub destination_contact_name: Option<String>,
+    pub destination_contact_phone: Option<String>,
+    pub biteship_draft_order_id: Option<String>,
 }
 
 pub async fn create_order(
@@ -437,7 +448,8 @@ pub async fn create_order(
         r#"SELECT 
             ci.id, ci.customer_id, ci.product_id, ci.quantity, ci.created_at,
             p.name AS product_name, p.price::FLOAT8 AS product_price, p.slug AS product_slug,
-            NULL::TEXT AS product_thumbnail
+            p.weight_gram AS product_weight_gram,
+            (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC LIMIT 1) AS product_thumbnail
            FROM cart_items ci
            JOIN products p ON p.id = ci.product_id
            WHERE ci.customer_id = $1"#
@@ -618,13 +630,24 @@ pub async fn create_order(
         "transfer".to_string()
     };
 
+    let courier_company = payload.courier_company.clone().filter(|s| !s.trim().is_empty());
+    let courier_type = payload.courier_type.clone().filter(|s| !s.trim().is_empty());
+    let biteship_enabled = BiteshipClient::from_env().is_ok();
+
+    if biteship_enabled && (courier_company.is_none() || courier_type.is_none()) {
+        return (StatusCode::BAD_REQUEST, Json(ApiResponse::error("Pilih metode pengiriman terlebih dahulu", None))).into_response();
+    }
+
     // 4. Create Order
     let order_id: Uuid = match sqlx::query_scalar(
         r#"INSERT INTO orders (
             contact_id, customer_id, total_amount, shipping_cost, discount_amount, coupon_id, coupon_code, grand_total,
-            payment_method, payment_status, shipping_address, shipping_city, shipping_province, notes, status
+            payment_method, payment_status, shipping_address, shipping_city, shipping_province, notes, status,
+            shipping_lat, shipping_lng, shipping_postal_code, shipping_area_id,
+            courier_company, courier_service, courier
            )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::payment_method, 'unpaid', $10, $11, $12, $13, 'pending'::order_status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::payment_method, 'unpaid', $10, $11, $12, $13, 'pending'::order_status,
+            $14, $15, $16, $17, $18, $19, $20)
            RETURNING id"#
     )
     .bind(contact_id)
@@ -640,6 +663,13 @@ pub async fn create_order(
     .bind(&payload.shipping_city)
     .bind(&payload.shipping_province)
     .bind(&payload.notes)
+    .bind(payload.destination_lat)
+    .bind(payload.destination_lng)
+    .bind(&payload.destination_postal_code)
+    .bind(&payload.destination_area_id)
+    .bind(&courier_company)
+    .bind(&courier_type)
+    .bind(courier_company.as_deref())
     .fetch_one(&mut *tx)
     .await {
         Ok(id) => id,
@@ -691,6 +721,109 @@ pub async fn create_order(
 
     if let Err(e) = clear_cart_result {
         return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e.to_string(), None))).into_response();
+    }
+
+    // 7. Create Biteship shipment
+    let mut biteship_draft_order_id = payload.biteship_draft_order_id.clone();
+
+    if let Ok(biteship) = BiteshipClient::from_env() {
+        let cfg = biteship.config();
+        let items = build_rate_items(&cart_items);
+        let company = courier_company.clone().unwrap_or_default();
+        let service = courier_type.clone().unwrap_or_default();
+
+        let biteship_result = if let Some(draft_id) = payload.biteship_draft_order_id.clone().filter(|d| !d.is_empty()) {
+            biteship_draft_order_id = Some(draft_id.clone());
+            biteship.confirm_draft_order(&draft_id).await
+        } else {
+            let dest_phone = payload
+                .destination_contact_phone
+                .clone()
+                .or_else(|| customer.phone.clone())
+                .unwrap_or_else(|| "081234567890".into());
+            let dest_name = payload
+                .destination_contact_name
+                .clone()
+                .unwrap_or_else(|| customer.name.clone());
+            let mut body = json!({
+                "shipper_contact_name": cfg.origin_contact_name,
+                "shipper_contact_phone": cfg.origin_contact_phone,
+                "origin_contact_name": cfg.origin_contact_name,
+                "origin_contact_phone": cfg.origin_contact_phone,
+                "origin_address": cfg.origin_address,
+                "destination_contact_name": dest_name,
+                "destination_contact_phone": dest_phone,
+                "destination_address": payload.shipping_address,
+                "destination_note": payload.notes,
+                "courier_company": company,
+                "courier_type": service,
+                "delivery_type": "now",
+                "reference_id": order_id.to_string(),
+                "order_note": payload.notes,
+                "items": items,
+            });
+
+            if let (Some(lat), Some(lng)) = (payload.destination_lat, payload.destination_lng) {
+                body["origin_coordinate"] = json!({ "latitude": cfg.origin_lat, "longitude": cfg.origin_lng });
+                body["destination_coordinate"] = json!({ "latitude": lat, "longitude": lng });
+            }
+            if let Some(area_id) = &payload.destination_area_id {
+                body["destination_area_id"] = json!(area_id);
+            }
+            if let Some(postal) = &payload.destination_postal_code {
+                if let Ok(code) = postal.parse::<i64>() {
+                    body["destination_postal_code"] = json!(code);
+                }
+            }
+            if let Some(area_id) = &cfg.origin_area_id {
+                body["origin_area_id"] = json!(area_id);
+            }
+            if let Some(postal) = cfg.origin_postal_code {
+                body["origin_postal_code"] = json!(postal);
+            }
+
+            biteship.create_order(body).await
+        };
+
+        match biteship_result {
+            Ok(data) => {
+                let biteship_order_id =
+                    data.get("id").and_then(|v| v.as_str()).map(str::to_string);
+                let biteship_tracking_id = data
+                    .pointer("/courier/tracking_id")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string);
+                let tracking_number = data
+                    .pointer("/courier/waybill_id")
+                    .and_then(|v| v.as_str())
+                    .map(str::to_string);
+
+                let _ = sqlx::query(
+                    r#"UPDATE orders SET
+                        biteship_order_id = $1,
+                        biteship_tracking_id = $2,
+                        biteship_draft_order_id = $3,
+                        tracking_number = COALESCE($4, tracking_number)
+                       WHERE id = $5"#,
+                )
+                .bind(&biteship_order_id)
+                .bind(&biteship_tracking_id)
+                .bind(&biteship_draft_order_id)
+                .bind(&tracking_number)
+                .bind(order_id)
+                .execute(&mut *tx)
+                .await;
+            }
+            Err(e) => {
+                tracing::error!("Biteship order failed: {}", e.message);
+                return (StatusCode::BAD_GATEWAY, Json(ApiResponse::error(
+                    &format!("Gagal membuat pengiriman Biteship: {}", e.message),
+                    None,
+                ))).into_response();
+            }
+        }
+    } else {
+        tracing::warn!("BITESHIP_API_KEY not configured; order saved without Biteship shipment");
     }
 
     // Commit Transaction

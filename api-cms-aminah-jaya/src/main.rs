@@ -12,6 +12,7 @@ use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 pub mod auth;
+pub mod biteship;
 pub mod models;
 pub mod routes;
 pub mod state;
@@ -314,6 +315,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/customer/orders",
             get(routes::customer_auth::get_orders).post(routes::customer_auth::create_order),
+        )
+        // Customer Coupons / Vouchers
+        .route(
+            "/api/customer/coupons",
+            get(routes::customer_coupons::list_available_coupons),
+        )
+        .route(
+            "/api/customer/coupons/validate/:code",
+            get(routes::customer_coupons::validate_customer_coupon),
+        )
+        // Shipping / Biteship
+        .route("/api/shipping/couriers", get(routes::shipping::list_couriers))
+        .route(
+            "/api/shipping/maps/areas",
+            get(routes::shipping::search_maps_areas),
+        )
+        .route(
+            "/api/shipping/rates",
+            post(routes::shipping::get_shipping_rates),
+        )
+        .route(
+            "/api/shipping/draft-orders",
+            post(routes::shipping::create_draft_order),
+        )
+        .route(
+            "/api/shipping/draft-orders/:id/rates",
+            get(routes::shipping::get_draft_order_rates),
+        )
+        .route(
+            "/api/shipping/draft-orders/:id/confirm",
+            post(routes::shipping::confirm_draft_order),
+        )
+        .route(
+            "/api/customer/orders/:id/tracking",
+            get(routes::shipping::get_customer_order_tracking),
         )
         // Cart
         .route(

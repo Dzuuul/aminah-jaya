@@ -5,6 +5,10 @@ import {
   Show,
   Suspense,
   onMount,
+  onCleanup,
+  createEffect,
+  createMemo,
+  type Component,
 } from "solid-js";
 import { A } from "@solidjs/router";
 import {
@@ -14,19 +18,79 @@ import {
   createOrder,
   formatCurrency,
   updateCustomerProfile,
+  getAvailableCoupons,
+  getShippingRates,
   type CustomerAddress,
+  type CustomerCoupon,
+  type ShippingRateOption,
 } from "~/lib/api";
 import { refetchCartCount } from "~/lib/cart-store";
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
 import Loading from "~/components/ui/Loading";
 import "~/styles/checkout.css";
-import { ChevronRight } from "lucide-solid";
+import { ChevronRight, X } from "lucide-solid";
+import {
+  SHIPPING_SPEED_GROUPS,
+  courierLogoUrl,
+  formatShipmentDuration,
+  resolveSpeedGroup,
+  type ShippingSpeedGroup,
+} from "~/lib/shipping-couriers";
 
-const shippingMethods = [
-  { id: "std", name: "Standar", desc: "Estimasi 2-5 hari kerja", price: 0 },
-  { id: "exp", name: "Ekspres", desc: "Estimasi 1-2 hari kerja", price: 25000 },
-];
+const SHIPPING_RATES_CACHE_PREFIX = "aminah_shipping_rates:";
+const SHIPPING_RATES_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const SHIPPING_RATES_DEBOUNCE_MS = 600;
+const DEFAULT_ITEM_WEIGHT_GRAM = 500;
+
+const CourierLogo: Component<{
+  code: string;
+  name: string;
+  logoUrl?: string | null;
+}> = (props) => {
+  const [imgSrc, setImgSrc] = createSignal(
+    courierLogoUrl(props.code, props.logoUrl),
+  );
+  const [failed, setFailed] = createSignal(false);
+
+  const handleError = () => {
+    if (failed()) return;
+    const fallback = courierLogoUrl(props.code, null);
+    if (imgSrc() !== fallback) {
+      setImgSrc(fallback);
+      return;
+    }
+    setFailed(true);
+  };
+
+  return (
+    <Show
+      when={!failed()}
+      fallback={
+        <div class="checkout-courier-logo checkout-courier-logo--fallback">
+          {props.code.slice(0, 2).toUpperCase()}
+        </div>
+      }
+    >
+      <img
+        class="checkout-courier-logo"
+        src={imgSrc()}
+        alt={props.name}
+        loading="lazy"
+        onError={handleError}
+      />
+    </Show>
+  );
+};
+
+const normalizeLocationPart = (value: string) =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .join(" ");
 
 const paymentMethods = [
   {
@@ -66,8 +130,24 @@ export default function CheckoutPage() {
 
   const [ready, setReady] = createSignal(false);
   const [customer, setCustomer] = createSignal<any>(null);
-  const [selectedShipping, setSelectedShipping] = createSignal("std");
   const [selectedPayment, setSelectedPayment] = createSignal("bca");
+  const [shippingRates, setShippingRates] = createSignal<ShippingRateOption[]>(
+    [],
+  );
+  const [selectedShippingRate, setSelectedShippingRate] =
+    createSignal<ShippingRateOption | null>(null);
+  const [loadingShippingRates, setLoadingShippingRates] = createSignal(false);
+  const [shippingRatesError, setShippingRatesError] = createSignal<string | null>(
+    null,
+  );
+  const [destinationLat, setDestinationLat] = createSignal<number | null>(null);
+  const [destinationLng, setDestinationLng] = createSignal<number | null>(null);
+  const [destinationPostalCode, setDestinationPostalCode] = createSignal<
+    string | null
+  >(null);
+  const [destinationAreaId, setDestinationAreaId] = createSignal<string | null>(
+    null,
+  );
 
   // Form fields
   const [receiverName, setReceiverName] = createSignal("");
@@ -99,7 +179,249 @@ export default function CheckoutPage() {
     setAddress(addr.address);
     setProvince(addr.province || "");
     setCity(addr.city || "");
+    setDestinationLat(addr.lat ?? null);
+    setDestinationLng(addr.lng ?? null);
+    setDestinationPostalCode(addr.postal_code ?? null);
+    setDestinationAreaId(null);
+    setSelectedShippingRate(null);
   };
+
+  const canFetchShippingRates = () => {
+    const hasCoords = destinationLat() != null && destinationLng() != null;
+    const hasPostal = !!destinationPostalCode()?.trim();
+    const hasArea = !!destinationAreaId()?.trim();
+    return hasCoords || hasPostal || hasArea;
+  };
+
+  const cartTotalWeightGram = createMemo(() => {
+    const items = cartItems() || [];
+    return items.reduce((sum, item) => {
+      const unit =
+        item.product_weight_gram && item.product_weight_gram > 0
+          ? item.product_weight_gram
+          : DEFAULT_ITEM_WEIGHT_GRAM;
+      return sum + unit * item.quantity;
+    }, 0);
+  });
+
+  const cartWeightKg = createMemo(() =>
+    Math.max(1, Math.ceil(Math.max(1, cartTotalWeightGram()) / 1000)),
+  );
+
+  const shippingFetchKey = createMemo(() => {
+    if (!canFetchShippingRates()) return null;
+
+    const weightKg = cartWeightKg();
+    const area = destinationAreaId()?.trim();
+    if (area) return `area:${area}|${weightKg}kg`;
+
+    const postal = destinationPostalCode()?.trim();
+    const cityNorm = normalizeLocationPart(city());
+    const provinceNorm = normalizeLocationPart(province());
+    if (postal) {
+      return cityNorm
+        ? `postal:${postal}|${cityNorm}|${provinceNorm}|${weightKg}kg`
+        : `postal:${postal}|${weightKg}kg`;
+    }
+
+    const lat = destinationLat();
+    const lng = destinationLng();
+    if (lat != null && lng != null) {
+      return `coord:${lat.toFixed(3)},${lng.toFixed(3)}|${weightKg}kg`;
+    }
+
+    return null;
+  });
+
+  let shippingFetchGeneration = 0;
+  let shippingDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const readSessionShippingCache = (key: string) => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = sessionStorage.getItem(SHIPPING_RATES_CACHE_PREFIX + key);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as {
+        expires: number;
+        rates: ShippingRateOption[];
+      };
+      if (!parsed.expires || parsed.expires <= Date.now()) {
+        sessionStorage.removeItem(SHIPPING_RATES_CACHE_PREFIX + key);
+        return null;
+      }
+      return parsed.rates;
+    } catch {
+      return null;
+    }
+  };
+
+  const writeSessionShippingCache = (
+    key: string,
+    rates: ShippingRateOption[],
+  ) => {
+    if (typeof window === "undefined") return;
+    try {
+      sessionStorage.setItem(
+        SHIPPING_RATES_CACHE_PREFIX + key,
+        JSON.stringify({
+          expires: Date.now() + SHIPPING_RATES_CACHE_TTL_MS,
+          rates,
+        }),
+      );
+    } catch {
+      // quota / private mode — abaikan
+    }
+  };
+
+  const sortRatesByPrice = (rates: ShippingRateOption[]) =>
+    [...rates].sort((a, b) => a.price - b.price);
+
+  const groupedShippingRates = createMemo(() => {
+    const buckets: Record<ShippingSpeedGroup, ShippingRateOption[]> = {
+      next_day: [],
+      reguler: [],
+    };
+
+    for (const rate of shippingRates()) {
+      const group = resolveSpeedGroup(
+        rate.speed_group,
+        rate.shipment_duration_range,
+        rate.shipment_duration_unit,
+      );
+      buckets[group].push(rate);
+    }
+
+    return SHIPPING_SPEED_GROUPS.map((meta) => ({
+      ...meta,
+      rates: sortRatesByPrice(buckets[meta.id]),
+    })).filter((group) => group.rates.length > 0);
+  });
+
+  const applyShippingRates = (rates: ShippingRateOption[]) => {
+    const sorted = sortRatesByPrice(rates);
+    setShippingRates(sorted);
+    if (sorted.length > 0) {
+      const current = selectedShippingRate();
+      const stillValid =
+        current && sorted.some((rate) => rate.id === current.id);
+      if (!stillValid) {
+        const nextDay = sorted.filter(
+          (r) =>
+            resolveSpeedGroup(
+              r.speed_group,
+              r.shipment_duration_range,
+              r.shipment_duration_unit,
+            ) === "next_day",
+        );
+        setSelectedShippingRate(
+          nextDay.length > 0 ? nextDay[0] : sorted[0],
+        );
+      }
+      setShippingRatesError(null);
+    } else {
+      setSelectedShippingRate(null);
+      setShippingRatesError("Tidak ada kurir tersedia untuk alamat ini.");
+    }
+  };
+
+  const fetchShippingRates = async (
+    fetchKey: string,
+    options?: { skipSessionCache?: boolean },
+  ) => {
+    const generation = ++shippingFetchGeneration;
+
+    if (!canFetchShippingRates()) {
+      setShippingRates([]);
+      setSelectedShippingRate(null);
+      setShippingRatesError(
+        "Lengkapi lokasi pengiriman (koordinat dari peta di profil atau kode pos) untuk menghitung ongkir.",
+      );
+      return;
+    }
+
+    if (!options?.skipSessionCache) {
+      const cached = readSessionShippingCache(fetchKey);
+      if (cached) {
+        applyShippingRates(cached);
+        setLoadingShippingRates(false);
+        return;
+      }
+    }
+
+    setLoadingShippingRates(true);
+    setShippingRatesError(null);
+
+    try {
+      const res = await getShippingRates({
+        destination_lat: destinationLat() ?? undefined,
+        destination_lng: destinationLng() ?? undefined,
+        destination_postal_code: destinationPostalCode() ?? undefined,
+        destination_area_id: destinationAreaId() ?? undefined,
+        destination_city: city() || undefined,
+        destination_province: province() || undefined,
+      });
+
+      if (generation !== shippingFetchGeneration) return;
+
+      const rates = res.rates || [];
+      applyShippingRates(rates);
+      if (rates.length > 0) {
+        writeSessionShippingCache(fetchKey, rates);
+      }
+    } catch (err: any) {
+      if (generation !== shippingFetchGeneration) return;
+      setShippingRates([]);
+      setSelectedShippingRate(null);
+      setShippingRatesError(
+        err.message || "Gagal memuat tarif pengiriman Biteship",
+      );
+    } finally {
+      if (generation === shippingFetchGeneration) {
+        setLoadingShippingRates(false);
+      }
+    }
+  };
+
+  const scheduleShippingRatesFetch = (delayMs = SHIPPING_RATES_DEBOUNCE_MS) => {
+    const key = shippingFetchKey();
+    if (!key) {
+      setShippingRates([]);
+      setSelectedShippingRate(null);
+      if (ready()) {
+        setShippingRatesError(
+          "Lengkapi lokasi pengiriman (koordinat dari peta di profil atau kode pos) untuk menghitung ongkir.",
+        );
+      }
+      return;
+    }
+
+    if (delayMs <= 0) {
+      clearTimeout(shippingDebounceTimer);
+      void fetchShippingRates(key);
+      return;
+    }
+
+    clearTimeout(shippingDebounceTimer);
+    shippingDebounceTimer = setTimeout(() => {
+      void fetchShippingRates(key);
+    }, delayMs);
+  };
+
+  createEffect(() => {
+    if (!ready()) return;
+    const key = shippingFetchKey();
+    if (!key) {
+      setShippingRates([]);
+      setSelectedShippingRate(null);
+      return;
+    }
+    scheduleShippingRatesFetch();
+  });
+
+  onCleanup(() => {
+    clearTimeout(shippingDebounceTimer);
+    shippingFetchGeneration += 1;
+  });
 
   const selectSavedAddress = (addressId: string) => {
     const addr = savedAddresses().find((item) => item.id === addressId);
@@ -134,36 +456,92 @@ export default function CheckoutPage() {
   const hasSavedAddresses = () => savedAddresses().length > 0;
 
   const showAddressSummary = () =>
-    !isEditingAddress() &&
-    !!receiverName().trim() &&
-    !!address().trim();
+    !isEditingAddress() && !!receiverName().trim() && !!address().trim();
 
-  // Voucher + extra fees (UI-only preview)
-  const vouchers = [
-    { id: "none", label: "Pilih Voucher" },
-    { id: "PROMO10", label: "PROMO10 — Diskon 10%" },
-  ];
-  const [selectedVoucher, setSelectedVoucher] = createSignal<string>("none");
-  const insuranceFee = () => 700; // preview only
-  const otherFees = () => ({ service: 1000, app: 1000 }); // preview only
-  const discount = () =>
-    selectedVoucher() === "PROMO10"
-      ? Math.round(
-          (subtotal() +
-            shippingPrice() +
-            insuranceFee() +
-            otherFees().service +
-            otherFees().app) *
-            0.1,
-        )
-      : 0;
+  const [showVoucherModal, setShowVoucherModal] = createSignal(false);
+  const [availableCoupons, setAvailableCoupons] = createSignal<CustomerCoupon[]>(
+    [],
+  );
+  const [selectedCoupon, setSelectedCoupon] =
+    createSignal<CustomerCoupon | null>(null);
+  const [loadingCoupons, setLoadingCoupons] = createSignal(false);
+  const [voucherError, setVoucherError] = createSignal<string | null>(null);
+
+  const otherFees = () => ({ service: 1000, app: 1000 });
+
+  const computeDiscount = (coupon: CustomerCoupon) => {
+    const base = subtotal() + shippingPrice();
+    let amount = 0;
+    if (coupon.discount_type.toLowerCase() === "percentage") {
+      amount = base * (coupon.discount_value / 100);
+      if (coupon.max_discount != null && amount > coupon.max_discount) {
+        amount = coupon.max_discount;
+      }
+    } else {
+      amount = coupon.discount_value;
+    }
+    if (amount > base) amount = base;
+    return Math.round(amount);
+  };
+
+  const discount = () => {
+    const coupon = selectedCoupon();
+    if (!coupon || !coupon.can_use) return 0;
+    if (subtotal() < coupon.min_purchase) return 0;
+    return computeDiscount(coupon);
+  };
+
   const displayedTotal = () =>
-    subtotal() +
-    shippingPrice() +
-    insuranceFee() +
-    otherFees().service +
-    otherFees().app -
-    discount();
+    subtotal() + shippingPrice() - discount();
+
+  const formatCouponLabel = (coupon: CustomerCoupon) => {
+    if (coupon.discount_type.toLowerCase() === "percentage") {
+      const max =
+        coupon.max_discount != null
+          ? ` (maks. ${formatCurrency(coupon.max_discount)})`
+          : "";
+      return `Diskon ${coupon.discount_value}%${max}`;
+    }
+    return `Potongan ${formatCurrency(coupon.discount_value)}`;
+  };
+
+  const formatCouponExpiry = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const openVoucherModal = async () => {
+    setShowVoucherModal(true);
+    setVoucherError(null);
+    setLoadingCoupons(true);
+    try {
+      const coupons = await getAvailableCoupons(
+        subtotal(),
+        shippingPrice(),
+      );
+      setAvailableCoupons(coupons);
+    } catch (err: any) {
+      setVoucherError(err.message || "Gagal memuat voucher");
+      setAvailableCoupons([]);
+    } finally {
+      setLoadingCoupons(false);
+    }
+  };
+
+  const applyVoucher = (coupon: CustomerCoupon) => {
+    if (!coupon.can_use) return;
+    setSelectedCoupon(coupon);
+    setShowVoucherModal(false);
+    setVoucherError(null);
+  };
+
+  const removeVoucher = () => {
+    setSelectedCoupon(null);
+  };
 
   onMount(async () => {
     try {
@@ -191,9 +569,7 @@ export default function CheckoutPage() {
           addresses.find((item) => item.is_default) || addresses[0];
         setSelectedAddressId(defaultAddress.id);
         applySavedAddress(defaultAddress);
-        setIsEditingAddress(
-          !defaultAddress.province || !defaultAddress.city,
-        );
+        setIsEditingAddress(!defaultAddress.province || !defaultAddress.city);
       } else {
         setReceiverName(data.name || "");
         setPhone(data.phone || "");
@@ -216,15 +592,49 @@ export default function CheckoutPage() {
       0,
     ) || 0;
 
-  const shippingPrice = () =>
-    shippingMethods.find((m) => m.id === selectedShipping())?.price || 0;
+  const shippingPrice = () => selectedShippingRate()?.price || 0;
 
   const total = () => subtotal() + shippingPrice();
+
+  const isAddressComplete = () =>
+    !!receiverName().trim() &&
+    !!phone().trim() &&
+    !!address().trim() &&
+    !!city().trim() &&
+    !!province().trim();
+
+  const isPaymentSelected = () =>
+    !!selectedPayment() &&
+    paymentMethods.some((method) => method.id === selectedPayment());
+
+  const isShippingSelected = () => selectedShippingRate() != null;
+
+  const canSubmitCheckout = () =>
+    isAddressComplete() && isShippingSelected() && isPaymentSelected();
+
+  const checkoutDisabledHint = () => {
+    if (!isAddressComplete()) {
+      return "Lengkapi alamat pengiriman terlebih dahulu";
+    }
+    if (!isShippingSelected()) {
+      return "Pilih metode pengiriman terlebih dahulu";
+    }
+    if (!isPaymentSelected()) {
+      return "Pilih metode pembayaran terlebih dahulu";
+    }
+    return "";
+  };
 
   const handleCheckout = async (e: Event) => {
     e.preventDefault();
     if (!address() || !city() || !province() || !receiverName() || !phone()) {
       setErrorMessage("Mohon lengkapi semua kolom alamat pengiriman");
+      return;
+    }
+
+    const rate = selectedShippingRate();
+    if (!rate) {
+      setErrorMessage("Pilih metode pengiriman terlebih dahulu");
       return;
     }
 
@@ -251,13 +661,20 @@ export default function CheckoutPage() {
         shipping_cost: shippingPrice(),
         payment_method: dbMethod,
         notes: notes() || undefined,
-        coupon_code:
-          selectedVoucher() !== "none" ? selectedVoucher() : undefined,
+        coupon_code: selectedCoupon()?.code,
+        courier_company: rate.courier_company,
+        courier_type: rate.courier_type,
+        destination_lat: destinationLat() ?? undefined,
+        destination_lng: destinationLng() ?? undefined,
+        destination_postal_code: destinationPostalCode() ?? undefined,
+        destination_area_id: destinationAreaId() ?? undefined,
+        destination_contact_name: receiverName(),
+        destination_contact_phone: phone(),
       });
 
       await refetchCartCount();
 
-      window.location.href = `/success?order_number=${res.order_number}&amount=${res.grand_total}&payment_method=${dbMethod}&shipping=${selectedShipping()}`;
+      window.location.href = `/success?order_number=${res.order_number}&amount=${res.grand_total}&payment_method=${dbMethod}&shipping=${encodeURIComponent(rate.name)}`;
     } catch (err: any) {
       setErrorMessage(
         err.message || "Gagal memproses pesanan, silakan coba lagi.",
@@ -353,23 +770,18 @@ export default function CheckoutPage() {
                               <label
                                 class="checkout-address-option"
                                 classList={{
-                                  active:
-                                    selectedAddressId() === addr.id,
+                                  active: selectedAddressId() === addr.id,
                                 }}
                               >
                                 <input
                                   type="radio"
                                   name="checkout-saved-address"
                                   checked={selectedAddressId() === addr.id}
-                                  onChange={() =>
-                                    selectSavedAddress(addr.id)
-                                  }
+                                  onChange={() => selectSavedAddress(addr.id)}
                                 />
                                 <div class="checkout-address-option-body">
                                   <div class="checkout-address-option-head">
-                                    <strong>
-                                      {addr.label || "Alamat"}
-                                    </strong>
+                                    <strong>{addr.label || "Alamat"}</strong>
                                     <Show when={addr.is_default}>
                                       <span class="checkout-address-default-badge">
                                         Utama
@@ -380,9 +792,7 @@ export default function CheckoutPage() {
                                     {addr.recipient_name} ·{" "}
                                     {addr.recipient_phone}
                                   </p>
-                                  <Show
-                                    when={addr.city || addr.province}
-                                  >
+                                  <Show when={addr.city || addr.province}>
                                     <p class="checkout-address-option-region">
                                       {[addr.city, addr.province]
                                         .filter(Boolean)
@@ -405,9 +815,7 @@ export default function CheckoutPage() {
                         </A>
                       </Show>
 
-                      <Show
-                        when={!hasSavedAddresses()}
-                      >
+                      <Show when={!hasSavedAddresses()}>
                         <p class="checkout-address-hint">
                           Belum ada alamat tersimpan.{" "}
                           <A href="/profile?tab=shipping">
@@ -469,6 +877,21 @@ export default function CheckoutPage() {
                                 onInput={(e) => setCity(e.currentTarget.value)}
                               />
                             </div>
+                            <div class="profile-form-group">
+                              <label>Kode Pos</label>
+                              <input
+                                type="text"
+                                placeholder="Contoh: 40132"
+                                class="profile-input"
+                                value={destinationPostalCode() || ""}
+                                onInput={(e) => {
+                                  setDestinationPostalCode(
+                                    e.currentTarget.value || null,
+                                  );
+                                  setSelectedShippingRate(null);
+                                }}
+                              />
+                            </div>
                             <div class="profile-form-group full-width">
                               <label>Alamat Lengkap</label>
                               <textarea
@@ -484,7 +907,8 @@ export default function CheckoutPage() {
                             </div>
                             <Show
                               when={
-                                hasSavedAddresses() || customer()?.shipping_address
+                                hasSavedAddresses() ||
+                                customer()?.shipping_address
                               }
                             >
                               <div class="full-width actions-right">
@@ -517,9 +941,7 @@ export default function CheckoutPage() {
                           <div class="address-info">
                             <h4>{receiverName()}</h4>
                             <p class="muted">{phone()}</p>
-                            <Show
-                              when={province() && city()}
-                            >
+                            <Show when={province() && city()}>
                               <p class="muted">
                                 {city()}, {province()}
                               </p>
@@ -530,43 +952,129 @@ export default function CheckoutPage() {
                       </Show>
                     </div>
 
-                    {/* Metode Pengiriman */}
+                    {/* Metode Pengiriman — Biteship */}
                     <div class="checkout-section">
                       <div class="checkout-section-title">
-                        Metode Pengiriman
+                        <span>Metode Pengiriman</span>
+                        <Show when={canFetchShippingRates()}>
+                          <button
+                            type="button"
+                            class="edit"
+                            onClick={() => {
+                              const key = shippingFetchKey();
+                              if (key) {
+                                void fetchShippingRates(key, {
+                                  skipSessionCache: true,
+                                });
+                              }
+                            }}
+                            disabled={loadingShippingRates()}
+                          >
+                            {loadingShippingRates() ? "Memuat..." : "Refresh"}
+                          </button>
+                        </Show>
                       </div>
-                      <div class="checkout-option-list">
-                        <For each={shippingMethods}>
-                          {(method) => (
-                            <div
-                              class="checkout-option"
-                              classList={{
-                                active: selectedShipping() === method.id,
-                              }}
-                              onClick={() => setSelectedShipping(method.id)}
-                            >
-                              <div class="cart-item-checkbox">
-                                <Show when={selectedShipping() === method.id}>
-                                  <div class="cart-item-checkbox-inner" />
-                                </Show>
-                              </div>
-                              <div class="checkout-option-info">
-                                <div class="checkout-option-name">
-                                  {method.name}
+                      <p class="checkout-address-hint">
+                        Ongkir dihitung otomatis via Biteship. Pastikan alamat
+                        memiliki koordinat (pilih di peta saat simpan alamat di
+                        profil) atau kode pos.
+                      </p>
+                      <Show when={loadingShippingRates()}>
+                        <Loading message="Menghitung ongkir..." />
+                      </Show>
+                      <Show when={!loadingShippingRates() && shippingRatesError()}>
+                        <div class="error-message">{shippingRatesError()}</div>
+                      </Show>
+                      <Show
+                        when={
+                          !loadingShippingRates() &&
+                          !shippingRatesError() &&
+                          shippingRates().length > 0
+                        }
+                      >
+                        <div class="checkout-shipping-groups">
+                          <For each={groupedShippingRates()}>
+                            {(group) => (
+                              <div class="checkout-shipping-group">
+                                <div class="checkout-shipping-group-header">
+                                  <span class="checkout-shipping-group-title">
+                                    {group.label}
+                                  </span>
+                                  <span class="checkout-shipping-group-hint">
+                                    {group.hint}
+                                  </span>
                                 </div>
-                                <div class="checkout-option-desc">
-                                  {method.desc}
+                                <div class="checkout-option-list">
+                                  <For each={group.rates}>
+                                    {(method) => (
+                                      <div
+                                        class="checkout-option checkout-shipping-option"
+                                        classList={{
+                                          active:
+                                            selectedShippingRate()?.id ===
+                                            method.id,
+                                        }}
+                                        onClick={() =>
+                                          setSelectedShippingRate(method)
+                                        }
+                                      >
+                                        <CourierLogo
+                                          code={method.courier_company}
+                                          name={method.name}
+                                          logoUrl={method.courier_logo}
+                                        />
+                                        <div class="cart-item-checkbox">
+                                          <Show
+                                            when={
+                                              selectedShippingRate()?.id ===
+                                              method.id
+                                            }
+                                          >
+                                            <div class="cart-item-checkbox-inner" />
+                                          </Show>
+                                        </div>
+                                        <div class="checkout-option-info">
+                                          <div class="checkout-option-name">
+                                            {method.name}
+                                          </div>
+                                          <div class="checkout-option-desc">
+                                            <span class="checkout-courier-badge">
+                                              {method.courier_company.toUpperCase()}
+                                            </span>
+                                            <Show when={method.description}>
+                                              <span> · {method.description}</span>
+                                            </Show>
+                                            <Show
+                                              when={formatShipmentDuration(
+                                                method.shipment_duration_range,
+                                                method.shipment_duration_unit,
+                                                method.duration,
+                                              )}
+                                            >
+                                              <span>
+                                                {" "}
+                                                · Estimasi{" "}
+                                                {formatShipmentDuration(
+                                                  method.shipment_duration_range,
+                                                  method.shipment_duration_unit,
+                                                  method.duration,
+                                                )}
+                                              </span>
+                                            </Show>
+                                          </div>
+                                        </div>
+                                        <div class="checkout-option-price">
+                                          {formatCurrency(method.price)}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </For>
                                 </div>
                               </div>
-                              <div class="checkout-option-price">
-                                {method.price === 0
-                                  ? "Gratis"
-                                  : formatCurrency(method.price)}
-                              </div>
-                            </div>
-                          )}
-                        </For>
-                      </div>
+                            )}
+                          </For>
+                        </div>
+                      </Show>
                     </div>
 
                     {/* Metode Pembayaran */}
@@ -641,24 +1149,66 @@ export default function CheckoutPage() {
                       <h2 class="summary-title">Ringkasan Pesanan</h2>
 
                       {/* Promo / voucher banner */}
-                      <div class="promo-banner">
+                      <div
+                        class="promo-banner"
+                        classList={{ applied: !!selectedCoupon() }}
+                        onClick={openVoucherModal}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            openVoucherModal();
+                          }
+                        }}
+                      >
                         <div class="promo-content">
                           <div class="promo-icon">🏷️</div>
                           <div>
-                            <div class="promo-title">
-                              Pakai promo biar makin hemat!
-                            </div>
-                            <div class="promo-sub">
-                              Pilih voucher yang tersedia untuk mendapatkan
-                              diskon.
-                            </div>
+                            <Show
+                              when={selectedCoupon()}
+                              fallback={
+                                <>
+                                  <div class="promo-title">
+                                    Pakai promo biar makin hemat!
+                                  </div>
+                                  <div class="promo-sub">
+                                    Pilih voucher yang tersedia untuk
+                                    mendapatkan diskon.
+                                  </div>
+                                </>
+                              }
+                            >
+                              {(coupon) => (
+                                <>
+                                  <div class="promo-title">{coupon().code}</div>
+                                  <div class="promo-sub">
+                                    {formatCouponLabel(coupon())}
+                                  </div>
+                                  <div class="promo-applied-badge">
+                                    Hemat {formatCurrency(discount())}
+                                  </div>
+                                </>
+                              )}
+                            </Show>
                           </div>
                         </div>
                         <div class="promo-action">
-                          {/* <select class="profile-input promo-select" value={selectedVoucher()} onChange={(e) => setSelectedVoucher((e.target as HTMLSelectElement).value)}>
-                          <For each={vouchers}>{(v) => <option value={v.id}>{v.label}</option>}</For>
-                        </select> */}
-                          <ChevronRight size={20} color="#6b7280" />
+                          <Show
+                            when={selectedCoupon()}
+                            fallback={<ChevronRight size={20} color="#6b7280" />}
+                          >
+                            <button
+                              type="button"
+                              class="voucher-remove-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeVoucher();
+                              }}
+                            >
+                              Hapus
+                            </button>
+                          </Show>
                         </div>
                       </div>
 
@@ -677,21 +1227,70 @@ export default function CheckoutPage() {
                               : formatCurrency(shippingPrice())}
                           </span>
                         </div>
-                        <div class="summary-row">
-                          <span>Total Asuransi Pengiriman</span>
-                          <span>{formatCurrency(insuranceFee())}</span>
-                        </div>
-
+                        <Show when={selectedCoupon() && discount() > 0}>
+                          <div class="summary-row discount">
+                            <span>
+                              Diskon ({selectedCoupon()!.code})
+                            </span>
+                            <span>-{formatCurrency(discount())}</span>
+                          </div>
+                        </Show>
                         <div class="summary-others">
                           <div class="summary-others-title">Total Lainnya</div>
                           <div class="summary-others-values">
-                            <div>
-                              Biaya Layanan ·{" "}
-                              {formatCurrency(otherFees().service)}
+                            <div
+                              style={{
+                                display: "flex",
+                                "justify-content": "space-between",
+                                "align-items": "center",
+                              }}
+                            >
+                              <span>Biaya Layanan</span>
+                              <span>
+                                <s
+                                  style={{
+                                    color: "#aaa",
+                                    "margin-right": "4px",
+                                  }}
+                                >
+                                  {formatCurrency(otherFees().service)}
+                                </s>
+                                <span
+                                  style={{
+                                    color: "#16a34a",
+                                    "font-weight": "600",
+                                  }}
+                                >
+                                  Gratis
+                                </span>
+                              </span>
                             </div>
-                            <div>
-                              Biaya Jasa Aplikasi ·{" "}
-                              {formatCurrency(otherFees().app)}
+                            <div
+                              style={{
+                                display: "flex",
+                                "justify-content": "space-between",
+                                "align-items": "center",
+                              }}
+                            >
+                              <span>Biaya Jasa Aplikasi</span>
+                              <span>
+                                <s
+                                  style={{
+                                    color: "#aaa",
+                                    "margin-right": "4px",
+                                  }}
+                                >
+                                  {formatCurrency(otherFees().app)}
+                                </s>
+                                <span
+                                  style={{
+                                    color: "#16a34a",
+                                    "font-weight": "600",
+                                  }}
+                                >
+                                  Gratis
+                                </span>
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -709,7 +1308,9 @@ export default function CheckoutPage() {
                         <button
                           type="submit"
                           class="checkout-btn primary"
-                          disabled={submitting()}
+                          disabled={submitting() || !canSubmitCheckout()}
+                          title={checkoutDisabledHint() || undefined}
+                          aria-disabled={submitting() || !canSubmitCheckout()}
                         >
                           <Show
                             when={submitting()}
@@ -718,6 +1319,9 @@ export default function CheckoutPage() {
                             <span>Memproses Pesanan...</span>
                           </Show>
                         </button>
+                        <Show when={!canSubmitCheckout() && !submitting()}>
+                          <p class="checkout-submit-hint">{checkoutDisabledHint()}</p>
+                        </Show>
                         <div class="mini-note">
                           Dengan melanjutkan pembayaran, kamu menyetujui S&K
                         </div>
@@ -753,6 +1357,115 @@ export default function CheckoutPage() {
           </div>
         </main>
         <Footer />
+
+        {/* Voucher picker modal */}
+        <Show when={showVoucherModal()}>
+          <div
+            class="voucher-modal-overlay"
+            onClick={() => setShowVoucherModal(false)}
+          >
+            <div
+              class="voucher-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div class="voucher-modal-header">
+                <h3>Pilih Voucher</h3>
+                <button
+                  type="button"
+                  class="voucher-modal-close"
+                  onClick={() => setShowVoucherModal(false)}
+                  aria-label="Tutup"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div class="voucher-modal-body">
+                <Show when={loadingCoupons()}>
+                  <Loading message="Memuat voucher..." />
+                </Show>
+                <Show when={!loadingCoupons() && voucherError()}>
+                  <div class="error-message">{voucherError()}</div>
+                </Show>
+                <Show
+                  when={
+                    !loadingCoupons() &&
+                    !voucherError() &&
+                    availableCoupons().length === 0
+                  }
+                >
+                  <div class="voucher-empty">
+                    <div class="voucher-empty-icon">🎟️</div>
+                    <p>Belum ada voucher tersedia untuk akun Anda.</p>
+                  </div>
+                </Show>
+                <Show
+                  when={
+                    !loadingCoupons() &&
+                    !voucherError() &&
+                    availableCoupons().length > 0
+                  }
+                >
+                  <div class="voucher-list">
+                    <For each={availableCoupons()}>
+                      {(coupon) => (
+                        <div
+                          class="voucher-item"
+                          classList={{
+                            active: selectedCoupon()?.id === coupon.id,
+                            disabled: !coupon.can_use,
+                          }}
+                        >
+                          <div class="voucher-item-main">
+                            <div class="voucher-code">{coupon.code}</div>
+                            <div class="voucher-desc">
+                              {formatCouponLabel(coupon)}
+                            </div>
+                            <div class="voucher-meta">
+                              Min. belanja{" "}
+                              {formatCurrency(coupon.min_purchase)} · Berlaku
+                              s/d {formatCouponExpiry(coupon.end_at)}
+                            </div>
+                            <Show when={coupon.disabled_reason}>
+                              <div
+                                class="voucher-meta"
+                                style={{ color: "#dc2626" }}
+                              >
+                                {coupon.disabled_reason}
+                              </div>
+                            </Show>
+                          </div>
+                          <div class="voucher-item-action">
+                            <Show
+                              when={selectedCoupon()?.id === coupon.id}
+                              fallback={
+                                <button
+                                  type="button"
+                                  class="voucher-use-btn"
+                                  disabled={!coupon.can_use}
+                                  onClick={() => applyVoucher(coupon)}
+                                >
+                                  Pakai
+                                </button>
+                              }
+                            >
+                              <button
+                                type="button"
+                                class="voucher-remove-btn"
+                                onClick={removeVoucher}
+                              >
+                                Hapus
+                              </button>
+                            </Show>
+                          </div>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              </div>
+            </div>
+          </div>
+        </Show>
       </Show>
     </>
   );

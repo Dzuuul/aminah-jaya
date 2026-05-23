@@ -115,6 +115,93 @@ export const setDefaultAddress = (id: string) =>
     body: JSON.stringify({}),
   });
 export const getCustomerOrders = () => fetchApi<any>("/customer/orders");
+export interface CustomerCoupon {
+  id: string;
+  code: string;
+  discount_type: string;
+  discount_value: number;
+  min_purchase: number;
+  max_discount: number | null;
+  start_at: string;
+  end_at: string;
+  can_use: boolean;
+  disabled_reason: string | null;
+  estimated_discount: number | null;
+}
+
+export const getAvailableCoupons = (subtotal?: number, shippingCost?: number) => {
+  const params = new URLSearchParams();
+  if (subtotal !== undefined) params.set("subtotal", String(subtotal));
+  if (shippingCost !== undefined) params.set("shipping_cost", String(shippingCost));
+  const query = params.toString();
+  return fetchApi<CustomerCoupon[]>(
+    `/customer/coupons${query ? `?${query}` : ""}`,
+  );
+};
+
+export const validateCustomerCoupon = (
+  code: string,
+  subtotal: number,
+  shippingCost: number,
+) =>
+  fetchApi<CustomerCoupon>(
+    `/customer/coupons/validate/${encodeURIComponent(code)}?subtotal=${subtotal}&shipping_cost=${shippingCost}`,
+  );
+
+export interface ShippingRateOption {
+  id: string;
+  courier_company: string;
+  courier_type: string;
+  name: string;
+  description: string;
+  price: number;
+  duration: string;
+  shipment_duration_range?: string;
+  shipment_duration_unit?: string;
+  speed_group?: "next_day" | "reguler";
+  courier_logo?: string;
+  available_collection_method?: string[];
+  available_for_cash_on_delivery?: boolean;
+}
+
+export const getShippingCouriers = () => fetchApi<any[]>("/shipping/couriers");
+
+export const searchShippingAreas = (input: string) =>
+  fetchApi<any[]>(`/shipping/maps/areas?input=${encodeURIComponent(input)}`);
+
+export const getShippingRates = (payload: {
+  destination_lat?: number;
+  destination_lng?: number;
+  destination_postal_code?: string;
+  destination_area_id?: string;
+  destination_city?: string;
+  destination_province?: string;
+  couriers?: string;
+}) =>
+  fetchApi<{
+    rates: ShippingRateOption[];
+    cached?: boolean;
+    cache_key?: string;
+    weight_kg?: number;
+  }>("/shipping/rates", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const createShippingDraftOrder = (payload: Record<string, unknown>) =>
+  fetchApi<any>("/shipping/draft-orders", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const getShippingDraftRates = (draftId: string) =>
+  fetchApi<{ rates: ShippingRateOption[] }>(
+    `/shipping/draft-orders/${draftId}/rates`,
+  );
+
+export const getOrderTracking = (orderId: string) =>
+  fetchApi<any>(`/customer/orders/${orderId}/tracking`);
+
 export const createOrder = (payload: {
   shipping_address: string;
   shipping_city: string;
@@ -123,6 +210,15 @@ export const createOrder = (payload: {
   payment_method: string;
   notes?: string;
   coupon_code?: string;
+  courier_company?: string;
+  courier_type?: string;
+  destination_lat?: number;
+  destination_lng?: number;
+  destination_postal_code?: string;
+  destination_area_id?: string;
+  destination_contact_name?: string;
+  destination_contact_phone?: string;
+  biteship_draft_order_id?: string;
 }) => fetchApi<any>("/customer/orders", { method: "POST", body: JSON.stringify(payload) });
 
 // --- Favorites ---
@@ -157,6 +253,7 @@ export interface CartItem {
   product_price: number;
   product_thumbnail: string | null;
   product_slug: string;
+  product_weight_gram?: number;
 }
 
 export const getCart = () => fetchApi<CartItem[]>("/cart");

@@ -115,10 +115,6 @@ export default function Cart() {
                       <span>Total Harga ({cartItems()?.length} barang)</span>
                       <span>{formatCurrency(subtotal())}</span>
                     </div>
-                    <div class="summary-row">
-                      <span>Pengiriman</span>
-                      <span class="text-green-600">Gratis</span>
-                    </div>
                     <div class="summary-divider"></div>
                     <div class="summary-row total">
                       <span>Total Tagihan</span>

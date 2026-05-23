@@ -67,19 +67,32 @@ export default function FlashSale() {
     }).format(amount);
   };
 
+  const remainingStock = (prod: FlashSaleItem) =>
+    Math.max(0, prod.stock_limit - prod.sold_count);
+
+  const stockPercent = (prod: FlashSaleItem) => {
+    if (prod.stock_limit <= 0) return 0;
+    const remaining = remainingStock(prod);
+    return Math.round((remaining / prod.stock_limit) * 100);
+  };
+
+  const discountPercent = (prod: FlashSaleItem) => {
+    if (!prod.original_price || prod.original_price <= 0) return 0;
+    return Math.round((1 - prod.sale_price / prod.original_price) * 100);
+  };
+
   const scroll = (direction: "left" | "right") => {
-    if (scrollContainer) {
-      const scrollAmount = 300;
-      scrollContainer.scrollBy({
-        left: direction === "left" ? -scrollAmount : scrollAmount,
-        behavior: "smooth",
-      });
-    }
+    if (!scrollContainer) return;
+    const amount = Math.max(scrollContainer.clientWidth * 0.75, 200);
+    scrollContainer.scrollBy({
+      left: direction === "left" ? -amount : amount,
+      behavior: "smooth",
+    });
   };
 
   return (
     <Show when={data()}>
-      <section class="flash-sale-section" style={{ padding: "40px 0" }}>
+      <section class="flash-sale-section">
         <div class="container">
           <div class="flash-sale-box">
             <div class="flash-sale-header">
@@ -96,25 +109,59 @@ export default function FlashSale() {
             </div>
 
             <div class="flash-products-wrapper">
-              <button class="flash-arrow prev" onClick={() => scroll("left")}>
+              <button
+                type="button"
+                class="flash-arrow prev"
+                aria-label="Geser produk ke kiri"
+                onClick={() => scroll("left")}
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
               </button>
-              
-              <div class="flash-products-container" ref={scrollContainer}>
+
+              <div
+                class="flash-products-container"
+                ref={scrollContainer}
+              >
                 <div class="flash-products-grid">
                   <For each={data()?.items}>
                     {(prod) => (
                       <div class="flash-prod-card">
                         <div class="flash-prod-img">
                           <img src={prod.product_thumbnail || "https://placehold.co/200x200/white/black?text=No+Image"} alt={prod.product_name} />
-                          <div class="flash-prod-discount">
-                            DISKON {Math.round((1 - prod.sale_price / prod.original_price) * 100)}%
-                          </div>
+                          <Show when={discountPercent(prod) > 0}>
+                            <div class="flash-prod-discount">
+                              DISKON {discountPercent(prod)}%
+                            </div>
+                          </Show>
                         </div>
                         <div class="flash-prod-info">
                           <div class="flash-prod-name">{prod.product_name}</div>
                           <div class="flash-prod-price">{formatCurrency(prod.sale_price)}</div>
                           <div class="flash-prod-old">{formatCurrency(prod.original_price)}</div>
+                          <Show
+                            when={remainingStock(prod) > 0}
+                            fallback={
+                              <div class="flash-prod-stock flash-prod-stock--soldout">
+                                Stok habis
+                              </div>
+                            }
+                          >
+                            <div class="flash-prod-stock">
+                              <span>Sisa {remainingStock(prod)}</span>
+                              <div
+                                class="flash-prod-stock-bar"
+                                role="progressbar"
+                                aria-valuenow={stockPercent(prod)}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                              >
+                                <div
+                                  class="flash-prod-stock-fill"
+                                  style={{ width: `${stockPercent(prod)}%` }}
+                                />
+                              </div>
+                            </div>
+                          </Show>
                         </div>
                       </div>
                     )}
@@ -122,7 +169,12 @@ export default function FlashSale() {
                 </div>
               </div>
 
-              <button class="flash-arrow next" onClick={() => scroll("right")}>
+              <button
+                type="button"
+                class="flash-arrow next"
+                aria-label="Geser produk ke kanan"
+                onClick={() => scroll("right")}
+              >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
               </button>
             </div>

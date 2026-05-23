@@ -434,6 +434,21 @@ pub struct CreateCouponPayload {
     pub is_active: Option<bool>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct CustomerAvailableCoupon {
+    pub id: Uuid,
+    pub code: String,
+    pub discount_type: String,
+    pub discount_value: f64,
+    pub min_purchase: f64,
+    pub max_discount: Option<f64>,
+    pub start_at: DateTime<Utc>,
+    pub end_at: DateTime<Utc>,
+    pub can_use: bool,
+    pub disabled_reason: Option<String>,
+    pub estimated_discount: Option<f64>,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct UpdateCouponPayload {
     pub code: Option<String>,
@@ -552,6 +567,8 @@ pub struct CartItem {
     pub product_thumbnail: Option<String>,
     #[sqlx(default)]
     pub product_slug: Option<String>,
+    #[sqlx(default)]
+    pub product_weight_gram: Option<i32>,
 }
 
 #[derive(Debug, Deserialize)]
