@@ -1,5 +1,5 @@
 use axum::{Json, response::IntoResponse, http::{StatusCode, HeaderMap}, extract::State};
-use crate::models::{ApiResponse, StorefrontCustomer, RegisterCustomerPayload, LoginCustomerPayload, LoginResponse, UserProfile, GoogleAuthPayload, CartItem};
+use crate::models::{ApiResponse, StorefrontCustomer, RegisterCustomerPayload, LoginCustomerPayload, LoginResponse, UserProfile, GoogleAuthPayload, CartItem, Coupon};
 use crate::auth::{create_jwt, verify_jwt};
 use crate::state::AppState;
 use uuid::Uuid;
@@ -47,7 +47,7 @@ pub async fn register(
     let result = sqlx::query_as::<_, StorefrontCustomer>(
         r#"INSERT INTO storefront_customers (email, password_hash, name, phone)
            VALUES ($1, $2, $3, $4)
-           RETURNING id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at"#
+           RETURNING id, email, name, phone, created_at"#
     )
     .bind(&email)
     .bind(password_hash)
@@ -133,7 +133,7 @@ pub async fn get_me(
 
     let pool = &state.pool;
     let customer: Option<StorefrontCustomer> = sqlx::query_as(
-        "SELECT id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at FROM storefront_customers WHERE id = $1 LIMIT 1"
+        "SELECT id, email, name, phone, created_at FROM storefront_customers WHERE id = $1 LIMIT 1"
     )
     .bind(customer_id)
     .fetch_optional(pool)
@@ -178,7 +178,7 @@ pub async fn google_login(
 
     // 2. Find or Create customer
     let mut customer = sqlx::query_as::<_, StorefrontCustomer>(
-        "SELECT id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at FROM storefront_customers WHERE email = $1 LIMIT 1"
+        "SELECT id, email, name, phone, created_at FROM storefront_customers WHERE email = $1 LIMIT 1"
     )
     .bind(email)
     .fetch_optional(pool)
@@ -192,7 +192,7 @@ pub async fn google_login(
                VALUES ($1, $2, $3, $4)
                ON CONFLICT (email) DO UPDATE
                  SET name = COALESCE(storefront_customers.name, EXCLUDED.name)
-               RETURNING id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at"#
+               RETURNING id, email, name, phone, created_at"#
         )
         .bind(email)
         .bind("") // No password for OAuth users
@@ -282,16 +282,13 @@ pub async fn update_profile(
 
     let result = sqlx::query_as::<_, StorefrontCustomer>(
         r#"UPDATE storefront_customers 
-           SET name = $1, phone = $2, email = $3, shipping_address = $4, shipping_lat = $5, shipping_lng = $6
-           WHERE id = $7
-           RETURNING id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at"#
+           SET name = $1, phone = $2, email = $3
+           WHERE id = $4
+           RETURNING id, email, name, phone, created_at"#
     )
     .bind(&payload.name)
     .bind(&payload.phone)
     .bind(&payload.email)
-    .bind(&payload.shipping_address)
-    .bind(payload.shipping_lat)
-    .bind(payload.shipping_lng)
     .bind(customer_id)
     .fetch_one(pool)
     .await;
@@ -388,6 +385,7 @@ pub struct CreateOrderPayload {
     pub shipping_cost: f64,
     pub payment_method: String, // "cod", "transfer", "qris", "other"
     pub notes: Option<String>,
+    pub coupon_code: Option<String>,
 }
 
 pub async fn create_order(
@@ -420,7 +418,7 @@ pub async fn create_order(
 
     // 1. Fetch customer details
     let customer: Option<StorefrontCustomer> = match sqlx::query_as(
-        "SELECT id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at FROM storefront_customers WHERE id = $1 LIMIT 1"
+        "SELECT id, email, name, phone, created_at FROM storefront_customers WHERE id = $1 LIMIT 1"
     )
     .bind(customer_id)
     .fetch_optional(&mut *tx)
@@ -560,7 +558,56 @@ pub async fn create_order(
     for item in &cart_items {
         total_amount += item.product_price.unwrap_or(0.0) * item.quantity as f64;
     }
-    let grand_total = total_amount + payload.shipping_cost;
+
+    let mut coupon_id: Option<Uuid> = None;
+    let mut coupon_code: Option<String> = None;
+    let mut discount_amount = 0.0;
+
+    if let Some(code) = payload.coupon_code.clone().filter(|c| !c.trim().is_empty()) {
+        let coupon: Coupon = match sqlx::query_as(
+            "SELECT * FROM coupons WHERE UPPER(code) = UPPER($1) AND is_active = true AND start_at <= NOW() AND end_at >= NOW()"
+        )
+        .bind(code.trim())
+        .fetch_one(&mut *tx)
+        .await {
+            Ok(c) => c,
+            Err(_) => return (StatusCode::BAD_REQUEST, Json(ApiResponse::error("Voucher tidak valid atau sudah tidak aktif", None))).into_response(),
+        };
+
+        if let Some(limit) = coupon.usage_limit {
+            if coupon.used_count >= limit {
+                return (StatusCode::BAD_REQUEST, Json(ApiResponse::error("Voucher sudah tidak bisa digunakan", None))).into_response();
+            }
+        }
+
+        if total_amount < coupon.min_purchase {
+            return (StatusCode::BAD_REQUEST, Json(ApiResponse::error("Total pembelanjaan belum memenuhi syarat voucher", None))).into_response();
+        }
+
+        let mut computed_discount = match coupon.discount_type.to_lowercase().as_str() {
+            "percentage" => {
+                let mut amount = (total_amount + payload.shipping_cost) * (coupon.discount_value / 100.0);
+                if let Some(max_discount) = coupon.max_discount {
+                    if amount > max_discount {
+                        amount = max_discount;
+                    }
+                }
+                amount
+            }
+            "fixed" => coupon.discount_value,
+            _ => 0.0,
+        };
+
+        if computed_discount > total_amount + payload.shipping_cost {
+            computed_discount = total_amount + payload.shipping_cost;
+        }
+
+        coupon_id = Some(coupon.id);
+        coupon_code = Some(code.trim().to_string());
+        discount_amount = computed_discount;
+    }
+
+    let grand_total = total_amount + payload.shipping_cost - discount_amount;
 
     // Validate payment method
     let valid_pm = ["cod", "transfer", "qris", "other"];
@@ -574,17 +621,19 @@ pub async fn create_order(
     // 4. Create Order
     let order_id: Uuid = match sqlx::query_scalar(
         r#"INSERT INTO orders (
-            contact_id, customer_id, total_amount, shipping_cost, grand_total, 
-            payment_method, payment_status, shipping_address, shipping_city, 
-            shipping_province, notes, status
+            contact_id, customer_id, total_amount, shipping_cost, discount_amount, coupon_id, coupon_code, grand_total,
+            payment_method, payment_status, shipping_address, shipping_city, shipping_province, notes, status
            )
-           VALUES ($1, $2, $3, $4, $5, $6::payment_method, 'unpaid', $7, $8, $9, $10, 'pending'::order_status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::payment_method, 'unpaid', $10, $11, $12, $13, 'pending'::order_status)
            RETURNING id"#
     )
     .bind(contact_id)
     .bind(customer_id)
     .bind(total_amount)
     .bind(payload.shipping_cost)
+    .bind(discount_amount)
+    .bind(coupon_id)
+    .bind(&coupon_code)
     .bind(grand_total)
     .bind(pm)
     .bind(&payload.shipping_address)
@@ -596,6 +645,17 @@ pub async fn create_order(
         Ok(id) => id,
         Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e.to_string(), None))).into_response(),
     };
+
+    if let Some(coupon_id) = coupon_id {
+        let update_result = sqlx::query("UPDATE coupons SET used_count = used_count + 1 WHERE id = $1")
+            .bind(coupon_id)
+            .execute(&mut *tx)
+            .await;
+
+        if let Err(e) = update_result {
+            return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::error(&e.to_string(), None))).into_response();
+        }
+    }
 
     // 5. Insert Order Items
     for item in &cart_items {

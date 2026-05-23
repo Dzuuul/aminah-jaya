@@ -67,6 +67,7 @@ export default function Navbar() {
   const [mobileShopOpen, setMobileShopOpen] = createSignal(false);
   const [mobileCollectionsOpen, setMobileCollectionsOpen] = createSignal(false);
   const [mobileJournalOpen, setMobileJournalOpen] = createSignal(false);
+  const [isHydrated, setIsHydrated] = createSignal(false);
   const [products] = createResource(fetchProducts);
   const [categories] = createResource(fetchCategories);
   const [collections] = createResource(fetchCollections);
@@ -84,6 +85,9 @@ export default function Navbar() {
   };
 
   onMount(async () => {
+    // Mark as hydrated to prevent hydration mismatch
+    setIsHydrated(true);
+
     // 1. Restore stored profile from localStorage synchronously on mount (client-only)
     const stored = localStorage.getItem("customer_profile");
     if (stored) {

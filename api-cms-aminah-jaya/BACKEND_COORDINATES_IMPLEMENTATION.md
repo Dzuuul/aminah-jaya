@@ -60,12 +60,12 @@ pub struct UpdateCustomerProfilePayload {
 
 #### a. `register()` - Updated SELECT clause
 ```rust
-RETURNING id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at
+RETURNING id, email, name, phone, created_at
 ```
 
 #### b. `get_me()` - Updated SELECT clause
 ```rust
-"SELECT id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at 
+"SELECT id, email, name, phone, created_at 
  FROM storefront_customers WHERE id = $1 LIMIT 1"
 ```
 
@@ -75,7 +75,7 @@ UPDATE storefront_customers
 SET name = $1, phone = $2, email = $3, shipping_address = $4, 
     shipping_lat = $5, shipping_lng = $6
 WHERE id = $7
-RETURNING id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at
+RETURNING id, email, name, phone, created_at
 ```
 
 **Parameter mapping:**
@@ -89,7 +89,7 @@ RETURNING id, email, name, phone, shipping_address, shipping_lat, shipping_lng, 
 
 #### d. `create_order()` - Updated SELECT clause
 ```rust
-"SELECT id, email, name, phone, shipping_address, shipping_lat, shipping_lng, created_at 
+"SELECT id, email, name, phone, created_at 
  FROM storefront_customers WHERE id = $1 LIMIT 1"
 ```
 

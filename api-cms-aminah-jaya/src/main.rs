@@ -1,15 +1,15 @@
 use axum::{
-    routing::{get, patch, post, delete},
+    routing::{delete, get, patch, post},
     Router,
 };
 use dotenvy::dotenv;
 use sqlx::postgres::PgPoolOptions;
 use std::net::SocketAddr;
+use std::process::Stdio;
+use tokio::time::{sleep, Duration};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use std::process::Stdio;
-use tokio::time::{sleep, Duration};
 
 pub mod auth;
 pub mod models;
@@ -38,8 +38,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let remote_host = std::env::var("DB_REMOTE_HOST").unwrap_or_else(|_| "127.0.0.1".into());
         let remote_port = std::env::var("DB_REMOTE_PORT").unwrap_or_else(|_| "5432".into());
 
-        tracing::info!("🔗 Starting SSH tunnel: localhost:{} -> {}:{} via {}@{}", 
-            local_port, remote_host, remote_port, ssh_user, ssh_host);
+        tracing::info!(
+            "🔗 Starting SSH tunnel: localhost:{} -> {}:{} via {}@{}",
+            local_port,
+            remote_host,
+            remote_port,
+            ssh_user,
+            ssh_host
+        );
 
         let child = tokio::process::Command::new("ssh")
             .args([
@@ -72,10 +78,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         if let Some(at_idx) = database_url.find('@') {
             if let Some(slash_idx) = database_url[at_idx..].find('/') {
                 let actual_slash_idx = at_idx + slash_idx;
-                database_url.replace_range(at_idx + 1..actual_slash_idx, &format!("localhost:{}", local_port));
+                database_url.replace_range(
+                    at_idx + 1..actual_slash_idx,
+                    &format!("localhost:{}", local_port),
+                );
             }
         }
-        
+
         Some(child)
     } else {
         None
@@ -161,7 +170,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .patch(routes::products::update_product)
                 .delete(routes::products::delete_product),
         )
-        .route("/api/products/slug/:slug", get(routes::products::get_product_by_slug))
+        .route(
+            "/api/products/slug/:slug",
+            get(routes::products::get_product_by_slug),
+        )
         .route(
             "/api/categories",
             get(routes::products::list_categories).post(routes::products::create_category),
@@ -228,7 +240,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/coupons",
             get(routes::coupons::list_coupons).post(routes::coupons::create_coupon),
         )
-        .route("/api/coupons/validate/:code", get(routes::coupons::validate_coupon))
+        .route(
+            "/api/coupons/validate/:code",
+            get(routes::coupons::validate_coupon),
+        )
         .route(
             "/api/coupons/:id",
             get(routes::coupons::get_coupon)
@@ -248,9 +263,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             get(routes::settings::get_settings).patch(routes::settings::update_settings),
         )
         // Notifications
-        .route("/api/notifications", get(routes::notifications::list_notifications))
-        .route("/api/notifications/unread-count", get(routes::notifications::get_unread_count))
-        .route("/api/notifications/:id/read", patch(routes::notifications::mark_as_read))
+        .route(
+            "/api/notifications",
+            get(routes::notifications::list_notifications),
+        )
+        .route(
+            "/api/notifications/unread-count",
+            get(routes::notifications::get_unread_count),
+        )
+        .route(
+            "/api/notifications/:id/read",
+            patch(routes::notifications::mark_as_read),
+        )
         // Legal
         .route("/api/legal", get(routes::legal::list_legal_pages))
         .route(
@@ -258,11 +282,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             get(routes::legal::get_legal_page).patch(routes::legal::update_legal_page),
         )
         // Storefront Customer Auth
-        .route("/api/customer/register", post(routes::customer_auth::register))
+        .route(
+            "/api/customer/register",
+            post(routes::customer_auth::register),
+        )
         .route("/api/customer/login", post(routes::customer_auth::login))
-        .route("/api/customer/auth/google", post(routes::customer_auth::google_login))
+        .route(
+            "/api/customer/auth/google",
+            post(routes::customer_auth::google_login),
+        )
         .route("/api/customer/me", get(routes::customer_auth::get_me))
-        .route("/api/customer/profile", patch(routes::customer_auth::update_profile))
+        .route(
+            "/api/customer/profile",
+            patch(routes::customer_auth::update_profile),
+        )
+        // Customer Addresses
+        .route(
+            "/api/customer/addresses",
+            get(routes::customer_addresses::list_addresses)
+                .post(routes::customer_addresses::create_address),
+        )
+        .route(
+            "/api/customer/addresses/:id",
+            patch(routes::customer_addresses::update_address)
+                .delete(routes::customer_addresses::delete_address),
+        )
+        .route(
+            "/api/customer/addresses/:id/default",
+            patch(routes::customer_addresses::set_default_address),
+        )
         .route(
             "/api/customer/orders",
             get(routes::customer_auth::get_orders).post(routes::customer_auth::create_order),
@@ -281,8 +329,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Favorites
         .route(
             "/api/customer/favorites",
-            get(routes::favorites::get_favorites)
-                .post(routes::favorites::add_favorite),
+            get(routes::favorites::get_favorites).post(routes::favorites::add_favorite),
         )
         .route(
             "/api/customer/favorites/:id",
@@ -296,7 +343,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/customer/favorites/folders",
             get(routes::favorites::get_favorite_folders),
         )
-
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .layer(axum::extract::DefaultBodyLimit::max(10 * 1024 * 1024))

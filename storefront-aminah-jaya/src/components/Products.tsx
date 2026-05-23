@@ -16,6 +16,35 @@ const DefaultProductIcon = () => (
   </svg>
 );
 
+const StarIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ color: "#fbbf24" }}>
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </svg>
+);
+
+const calculateDiscount = (price: number, priceCompare?: number) => {
+  if (!priceCompare || priceCompare <= price) return null;
+  return Math.round(((priceCompare - price) / priceCompare) * 100);
+};
+
+const renderStars = (rating?: number, count?: number) => {
+  if (!rating || rating === 0) return null;
+  return (
+    <div style={{ "display": "flex", "align-items": "center", "gap": "6px", "font-size": "0.75rem", "color": "var(--muted)" }}>
+      <div style={{ "display": "flex", "gap": "2px" }}>
+        <For each={Array(5).fill(0)}>
+          {(_, i) => (
+            <div style={{ "opacity": i() < Math.round(rating) ? "1" : "0.3" }}>
+              <StarIcon />
+            </div>
+          )}
+        </For>
+      </div>
+      <span>{rating.toFixed(1)} {count && `(${count})`}</span>
+    </div>
+  );
+};
+
 export default function Products() {
   const [products] = createResource(getProducts);
 
@@ -49,35 +78,57 @@ export default function Products() {
             }
           >
             <For each={products()?.filter((p: any) => p.is_featured).slice(0, 6)}>
-              {(product) => (
-                <A href={`/product/${product.slug}`} class="prod-card" style={{ "text-decoration": "none", "color": "inherit", "display": "block" }}>
-                  <div class="prod-img">
-                    <Show
-                      when={product.thumbnail_url}
-                      fallback={<DefaultProductIcon />}
-                    >
-                      <img
-                        src={product.thumbnail_url!}
-                        alt={product.name}
-                        style={{ width: "100%", height: "100%", "object-fit": "cover" }}
-                      />
-                    </Show>
-                    <p>{product.name.split(' ').slice(0, 2).join(' ')}</p>
-                  </div>
-                  <div class="prod-body">
-                    <div class="prod-cat">{product.category_name}</div>
-                    <div class="prod-name">{product.name}</div>
-                    <p class="prod-desc">{product.subtitle || "Produk berkualitas dari Aminah Jaya."}</p>
-                    <div class="prod-footer">
-                      <span class="prod-price">{formatCurrency(product.price)}</span>
-                      <div class="btn btn-wa btn-sm">
-                        <WaIcon />
-                        Detail
+              {(product) => {
+                const discount = calculateDiscount(product.price, product.price_compare);
+                return (
+                  <A href={`/product/${product.slug}`} class="prod-card" style={{ "text-decoration": "none", "color": "inherit", "display": "block" }}>
+                    <div class="prod-img">
+                      <Show
+                        when={product.thumbnail_url}
+                        fallback={<DefaultProductIcon />}
+                      >
+                        <img
+                          src={product.thumbnail_url!}
+                          alt={product.name}
+                          style={{ width: "100%", height: "100%", "object-fit": "cover" }}
+                        />
+                      </Show>
+                      <Show when={discount}>
+                        <div class="prod-badge" style={{ background: "var(--red-sale)" }}>
+                          -{discount}%
+                        </div>
+                      </Show>
+                      <p>{product.name.split(' ').slice(0, 2).join(' ')}</p>
+                    </div>
+                    <div class="prod-body">
+                      <div class="prod-cat">{product.category_name}</div>
+                      <div class="prod-name">{product.name}</div>
+                      <p class="prod-desc">{product.subtitle || "Produk berkualitas dari Aminah Jaya."}</p>
+                      
+                      <Show when={product.average_rating && product.average_rating > 0}>
+                        <div style={{ "margin-bottom": "12px" }}>
+                          {renderStars(product.average_rating, product.total_reviews)}
+                        </div>
+                      </Show>
+
+                      <div class="prod-footer">
+                        <div>
+                          <span class="prod-price">{formatCurrency(product.price)}</span>
+                          <Show when={product.price_compare != null && product.price_compare > product.price}>
+                            <div style={{ "font-size": "0.75rem", "color": "var(--muted)", "text-decoration": "line-through" }}>
+                              {formatCurrency(product.price_compare!)}
+                            </div>
+                          </Show>
+                        </div>
+                        <div class="btn btn-wa btn-sm">
+                          <WaIcon />
+                          Detail
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </A>
-              )}
+                  </A>
+                );
+              }}
             </For>
           </Show>
         </div>

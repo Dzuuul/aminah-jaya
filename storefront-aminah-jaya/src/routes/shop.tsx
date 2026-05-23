@@ -16,11 +16,14 @@ interface Product {
   name: string;
   category_name: string;
   price: number;
+  price_compare?: number;  // harga coret
   stock: number;
   status: string;
   is_featured?: boolean;
   sku?: string;
   thumbnail_url?: string;
+  average_rating?: number;  // rata-rata rating (0-5)
+  total_reviews?: number;   // jumlah review
 }
 
 const fetchProducts = async () => {
@@ -47,6 +50,35 @@ const fetchCategories = async () => {
   }
 };
 
+const StarIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ color: "#fbbf24" }}>
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+  </svg>
+);
+
+const calculateDiscount = (price: number, priceCompare?: number) => {
+  if (!priceCompare || priceCompare <= price) return null;
+  return Math.round(((priceCompare - price) / priceCompare) * 100);
+};
+
+const renderStars = (rating?: number, count?: number) => {
+  if (!rating || rating === 0) return null;
+  return (
+    <div style={{ "display": "flex", "align-items": "center", "gap": "6px", "font-size": "0.75rem", "color": "var(--muted)" }}>
+      <div style={{ "display": "flex", "gap": "2px" }}>
+        <For each={Array(5).fill(0)}>
+          {(_, i) => (
+            <div style={{ "opacity": i() < Math.round(rating) ? "1" : "0.3" }}>
+              <StarIcon />
+            </div>
+          )}
+        </For>
+      </div>
+      <span>{rating.toFixed(1)} {count && `(${count})`}</span>
+    </div>
+  );
+};
+
 export default function ShopPage() {
   const [products] = createResource<Product[]>(fetchProducts);
   const [categories] = createResource<Category[]>(fetchCategories);
@@ -55,6 +87,8 @@ export default function ShopPage() {
   const [selectedCategory, setSelectedCategory] = createSignal<string>("all");
   const [sortBy, setSortBy] = createSignal("newest");
   const [priceRange, setPriceRange] = createSignal(5000000);
+  const [showFilters, setShowFilters] = createSignal(false);
+  const [gridColumns, setGridColumns] = createSignal<1 | 2>(2);
 
   const filteredProducts = createMemo(() => {
     let list = products() || [];
@@ -93,9 +127,48 @@ export default function ShopPage() {
           <p class="section-sub">Jelajahi koleksi produk kesehatan, fashion muslim, dan kebutuhan harian terbaik kami.</p>
         </div>
 
+        {/* Mobile Filter Header */}
+        <div class="shop-mobile-header">
+          <button 
+            class="filter-toggle-btn"
+            onClick={() => setShowFilters(!showFilters())}
+            style={{ display: "flex", "align-items": "center", gap: "8px" }}
+          >
+            <span class="material-symbols-outlined">tune</span>
+            Filter
+          </button>
+          <div style={{ "font-size": "0.9rem", color: "var(--muted)" }}>
+            {filteredProducts().length} Produk
+          </div>
+          <select 
+            class="mobile-sort-select"
+            value={sortBy()}
+            onChange={(e) => setSortBy(e.currentTarget.value)}
+          >
+            <option value="newest">Terbaru</option>
+            <option value="name">Nama (A-Z)</option>
+            <option value="price-low">Harga Terendah</option>
+            <option value="price-high">Harga Tertinggi</option>
+          </select>
+        </div>
+
         <div class="shop-layout">
-          {/* Sidebar Filters */}
-          <aside class="shop-sidebar">
+          {/* Sidebar Filters - Hidden on mobile, shown as modal */}
+          <Show when={showFilters()} fallback={<></>}>
+            <div class="shop-mobile-overlay" onClick={() => setShowFilters(false)} />
+          </Show>
+
+          <aside class={`shop-sidebar ${showFilters() ? "show" : ""}`}>
+            <div class="filter-header-mobile">
+              <h3>Filter & Pencarian</h3>
+              <button 
+                class="close-filter-btn"
+                onClick={() => setShowFilters(false)}
+              >
+                <span class="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
             <div class="filter-section">
               <h3 class="filter-title">Kategori</h3>
               <div>
@@ -137,8 +210,7 @@ export default function ShopPage() {
               </div>
             </div>
 
-            {/* Mobile Search (Hidden on large screens by CSS if needed, or we just render it here for all screens to be safe) */}
-            <div class="filter-section" style={{ "margin-top": "30px" }}>
+            <div class="filter-section">
               <h3 class="filter-title">Pencarian</h3>
               <div class="shop-search" style={{ "max-width": "100%" }}>
                 <span class="material-symbols-outlined">search</span>
@@ -154,28 +226,52 @@ export default function ShopPage() {
 
           {/* Product Grid Area */}
           <div class="shop-main">
-            {/* Toolbar */}
-            <div class="shop-toolbar">
+            {/* Desktop Toolbar */}
+            <div class="shop-toolbar-desktop">
               <div style={{ color: "var(--muted)", "font-size": "0.95rem", "font-weight": "600" }}>
                 Menampilkan <span style={{ color: "var(--ink)", "font-weight": "700" }}>{filteredProducts().length}</span> Produk
               </div>
 
-              <div class="shop-sort">
-                <span>Urutkan:</span>
-                <select 
-                  value={sortBy()}
-                  onChange={(e) => setSortBy(e.currentTarget.value)}
-                >
-                  <option value="newest">Terbaru</option>
-                  <option value="name">Nama (A-Z)</option>
-                  <option value="price-low">Harga Terendah</option>
-                  <option value="price-high">Harga Tertinggi</option>
-                </select>
+              <div class="shop-toolbar-controls">
+                <div class="shop-sort">
+                  <span>Urutkan:</span>
+                  <select 
+                    value={sortBy()}
+                    onChange={(e) => setSortBy(e.currentTarget.value)}
+                  >
+                    <option value="newest">Terbaru</option>
+                    <option value="name">Nama (A-Z)</option>
+                    <option value="price-low">Harga Terendah</option>
+                    <option value="price-high">Harga Tertinggi</option>
+                  </select>
+                </div>
+
+                <div class="grid-toggle">
+                  <button 
+                    class={`col-btn ${gridColumns() === 2 ? "active" : ""}`}
+                    onClick={() => setGridColumns(2)}
+                    title="2 Kolom"
+                  >
+                    <span class="material-symbols-outlined">grid_view</span>
+                  </button>
+                  <button 
+                    class={`col-btn ${gridColumns() === 1 ? "active" : ""}`}
+                    onClick={() => setGridColumns(1)}
+                    title="1 Kolom"
+                  >
+                    <span class="material-symbols-outlined">menu</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Grid */}
-            <div class="prod-grid">
+            <div 
+              class="prod-grid"
+              style={{
+                "grid-template-columns": `repeat(${gridColumns()}, 1fr)`
+              }}
+            >
               <For each={filteredProducts()} fallback={
                 <div class="empty-state">
                   <div class="material-symbols-outlined empty-state-icon">inventory_2</div>
@@ -183,39 +279,61 @@ export default function ShopPage() {
                   <p class="empty-state-desc">Coba sesuaikan kata kunci atau filter pencarian Anda.</p>
                 </div>
               }>
-                {(product) => (
-                  <A href={`/product/${product.slug}`} class="prod-card">
-                    <div class="prod-img">
-                      <Show when={product.thumbnail_url} fallback={
-                        <>
-                          <span class="material-symbols-outlined" style={{ "font-size": "48px", opacity: 0.2 }}>inventory_2</span>
-                          <p style={{ "margin-top": "10px", "font-size": "0.9rem", color: "var(--muted)" }}>{product.name}</p>
-                        </>
-                      }>
-                        <img 
-                          src={product.thumbnail_url} 
-                          alt={product.name} 
-                          style={{ width: "100%", height: "100%", "object-fit": "cover" }}
-                        />
-                      </Show>
-                      <Show when={product.status !== "In Stock"}>
-                        <span class="prod-badge" style={{ background: product.status === 'Out of Stock' ? 'var(--red-sale)' : 'orange' }}>
-                          {product.status}
-                        </span>
-                      </Show>
-                    </div>
-                    <div class="prod-body">
-                      <div class="prod-cat">{product.category_name}</div>
-                      <div class="prod-name">{product.name}</div>
-                      <div class="prod-footer">
-                        <span class="prod-price">Rp {product.price.toLocaleString('id-ID')}</span>
-                        <div class="btn btn-wa btn-sm" style={{ padding: "6px 12px", "font-size": "0.85rem" }}>
-                          Detail
+                {(product) => {
+                  const discount = calculateDiscount(product.price, product.price_compare);
+                  return (
+                    <A href={`/product/${product.slug}`} class="prod-card">
+                      <div class="prod-img">
+                        <Show when={product.thumbnail_url} fallback={
+                          <>
+                            <span class="material-symbols-outlined" style={{ "font-size": "48px", opacity: 0.2 }}>inventory_2</span>
+                            <p style={{ "margin-top": "10px", "font-size": "0.9rem", color: "var(--muted)" }}>{product.name}</p>
+                          </>
+                        }>
+                          <img 
+                            src={product.thumbnail_url} 
+                            alt={product.name} 
+                            style={{ width: "100%", height: "100%", "object-fit": "cover" }}
+                          />
+                        </Show>
+                        <Show when={discount}>
+                          <span class="prod-badge" style={{ background: "var(--red-sale)" }}>
+                            -{discount}%
+                          </span>
+                        </Show>
+                        <Show when={!discount && product.status !== "In Stock"}>
+                          <span class="prod-badge" style={{ background: product.status === 'Out of Stock' ? 'var(--red-sale)' : 'orange' }}>
+                            {product.status}
+                          </span>
+                        </Show>
+                      </div>
+                      <div class="prod-body">
+                        <div class="prod-cat">{product.category_name}</div>
+                        <div class="prod-name">{product.name}</div>
+                        
+                        <Show when={product.average_rating && product.average_rating > 0}>
+                          <div style={{ "margin-bottom": "12px" }}>
+                            {renderStars(product.average_rating, product.total_reviews)}
+                          </div>
+                        </Show>
+
+                        <div class="prod-footer">
+                          <div>
+                            <span class="prod-price">Rp {product.price.toLocaleString('id-ID')}</span>
+                            <Show when={product.price_compare != null && product.price_compare > product.price}>
+                              <div style={{ "font-size": "0.75rem", "color": "var(--muted)", "text-decoration": "line-through" }}>
+                                Rp {product.price_compare!.toLocaleString('id-ID')}
+                              </div>
+                            </Show>
+                          </div>
+                          <div class="btn btn-wa btn-sm" style={{ padding: "6px 12px", "font-size": "0.85rem" }}>
+                            Detail
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </A>
-                )}
+                    </A>
+                  );
+                }}
               </For>
             </div>
 

@@ -5,7 +5,7 @@ import {
   Show,
   mergeProps,
 } from "solid-js";
-import maplibregl from "maplibre-gl";
+import type maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./MapPicker.css";
 
@@ -45,15 +45,14 @@ export default function MapPicker(rawProps: MapPickerProps) {
     null,
   );
 
-  const [addressLabel, setAddressLabel] = createSignal("");
   const [fullAddress, setFullAddress] = createSignal("");
   const [courierNote, setCourierNote] = createSignal("");
-  const [recipientName, setRecipientName] = createSignal("");
-  const [recipientPhone, setRecipientPhone] = createSignal("");
 
   const [map, setMap] = createSignal<maplibregl.Map | null>(null);
 
   const [marker, setMarker] = createSignal<maplibregl.Marker | null>(null);
+
+  let maplibreglClient: typeof maplibregl | null = null;
 
   const [dropdownOptions, setDropdownOptions] = createSignal<AreaOption[]>([]);
 
@@ -61,6 +60,7 @@ export default function MapPicker(rawProps: MapPickerProps) {
   const [isUsingCurrentLocation, setIsUsingCurrentLocation] = createSignal(false);
 
   const [loadError, setLoadError] = createSignal<string | null>(null);
+  const [searchQuery, setSearchQuery] = createSignal("");
 
   const [mapContainer, setMapContainer] = createSignal<HTMLDivElement | null>(
     null,
@@ -78,12 +78,17 @@ export default function MapPicker(rawProps: MapPickerProps) {
 
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  const initializeMap = () => {
-    if (map() || !mapContainer()) {
+  const initializeMap = async () => {
+    if (!props.isOpen || map() || !mapContainer()) {
       return;
     }
 
-    const mapInstance = new maplibregl.Map({
+    if (!maplibreglClient) {
+      const imported = await import("maplibre-gl");
+      maplibreglClient = (imported.default ?? imported) as typeof maplibregl;
+    }
+
+    const mapInstance = new maplibreglClient.Map({
       container: mapContainer()!,
       style: {
         version: 8,
@@ -148,10 +153,13 @@ export default function MapPicker(rawProps: MapPickerProps) {
     });
 
     setFullAddress(props.initialAddress || "");
+    setCourierNote("");
   });
 
   createEffect(() => {
-    initializeMap();
+    if (props.isOpen) {
+      void initializeMap();
+    }
   });
 
   createEffect(() => {
@@ -166,6 +174,16 @@ export default function MapPicker(rawProps: MapPickerProps) {
     if (step() === 2 && map()) {
       setTimeout(() => {
         map()?.resize();
+
+        const location = selectedLocation();
+        if (location) {
+          map()?.flyTo({
+            center: [location.lng, location.lat],
+            zoom: 16,
+            speed: 1.2,
+            essential: true,
+          });
+        }
       }, 50);
     }
   });
@@ -190,6 +208,11 @@ export default function MapPicker(rawProps: MapPickerProps) {
     }
   };
 
+  const closePicker = () => {
+    cleanupMap();
+    props.onClose();
+  };
+
   const updateMarker = (lng: number, lat: number, address = "") => {
     if (Number.isNaN(lng) || Number.isNaN(lat)) return;
 
@@ -198,7 +221,7 @@ export default function MapPicker(rawProps: MapPickerProps) {
     let markerInstance = marker();
 
     if (!markerInstance) {
-      markerInstance = new maplibregl.Marker({
+      markerInstance = new maplibreglClient!.Marker({
         color: "#10b981",
         draggable: true,
       });
@@ -223,6 +246,34 @@ export default function MapPicker(rawProps: MapPickerProps) {
       zoom: 14,
       speed: 0.8,
     });
+  };
+
+  const normalizeAreaCoordinates = (item: any): [number | null, number | null] => {
+    if (!item) {
+      return [null, null];
+    }
+
+    if (Array.isArray(item.geometry?.coordinates) && item.geometry.coordinates.length >= 2) {
+      return [Number(item.geometry.coordinates[0]), Number(item.geometry.coordinates[1])];
+    }
+
+    if (Array.isArray(item.coordinates) && item.coordinates.length >= 2) {
+      return [Number(item.coordinates[0]), Number(item.coordinates[1])];
+    }
+
+    if (typeof item.longitude === "number" && typeof item.latitude === "number") {
+      return [item.longitude, item.latitude];
+    }
+
+    if (typeof item.lng === "number" && typeof item.lat === "number") {
+      return [item.lng, item.lat];
+    }
+
+    if (typeof item.lon === "number" && typeof item.lat === "number") {
+      return [item.lon, item.lat];
+    }
+
+    return [null, null];
   };
 
   const fetchDropdownOptions = async (query: string) => {
@@ -267,26 +318,26 @@ export default function MapPicker(rawProps: MapPickerProps) {
       const options: AreaOption[] = await Promise.all(
         areas.map(async (item: any) => {
           const label = item.name || "Area tidak diketahui";
+          let [lng, lat] = normalizeAreaCoordinates(item);
 
-          let lat: number | null = null;
-          let lng: number | null = null;
+          if (lat === null || lng === null) {
+            try {
+              // geocoding gratis OpenStreetMap
+              const geoResponse = await fetch(
+                `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+                  label,
+                )}&format=json&limit=1`,
+              );
 
-          try {
-            // geocoding gratis OpenStreetMap
-            const geoResponse = await fetch(
-              `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
-                label,
-              )}&format=json&limit=1`,
-            );
+              const geoData = await geoResponse.json();
 
-            const geoData = await geoResponse.json();
-
-            if (Array.isArray(geoData) && geoData.length > 0) {
-              lat = Number(geoData[0].lat);
-              lng = Number(geoData[0].lon);
+              if (Array.isArray(geoData) && geoData.length > 0) {
+                lat = Number(geoData[0].lat);
+                lng = Number(geoData[0].lon);
+              }
+            } catch (geoError) {
+              console.error("Geocoding error:", geoError);
             }
-          } catch (geoError) {
-            console.error("Geocoding error:", geoError);
           }
 
           return {
@@ -380,6 +431,8 @@ export default function MapPicker(rawProps: MapPickerProps) {
   };
 
   const handleSearchInput = (value: string) => {
+    setSearchQuery(value);
+
     if (debounceTimer) {
       clearTimeout(debounceTimer);
     }
@@ -405,18 +458,19 @@ export default function MapPicker(rawProps: MapPickerProps) {
         ? selected.lng
         : props.initialLng;
 
+    setSearchQuery(selected.label);
     setSelectedLocation({
       lat,
       lng,
       address: selected.label,
     });
 
-    // update marker
-    updateMarker(lng, lat, selected.label);
-
     if (step() === 1) {
       setStep(2);
     }
+
+    // update marker
+    updateMarker(lng, lat, selected.label);
 
     // auto geser map
     map()?.flyTo({
@@ -428,12 +482,9 @@ export default function MapPicker(rawProps: MapPickerProps) {
   };
 
   const getCombinedAddress = () => {
-    const locationText = fullAddress().trim() || selectedLocation()?.address || "";
+    const locationText =
+      fullAddress().trim() || selectedLocation()?.address || "";
     const details: string[] = [];
-
-    if (addressLabel().trim()) {
-      details.push(addressLabel().trim());
-    }
 
     if (locationText) {
       details.push(locationText);
@@ -441,14 +492,6 @@ export default function MapPicker(rawProps: MapPickerProps) {
 
     if (courierNote().trim()) {
       details.push(`Catatan untuk kurir: ${courierNote().trim()}`);
-    }
-
-    if (recipientName().trim()) {
-      details.push(`Nama penerima: ${recipientName().trim()}`);
-    }
-
-    if (recipientPhone().trim()) {
-      details.push(`Nomor HP: ${recipientPhone().trim()}`);
     }
 
     return details.join("\n");
@@ -484,7 +527,7 @@ export default function MapPicker(rawProps: MapPickerProps) {
       lng: location.lng,
       address: combinedAddress || location.address,
     });
-    props.onClose();
+    closePicker();
   };
 
 return (
@@ -496,7 +539,7 @@ return (
             type="button"
             class="map-picker-back-mobile"
             onClick={() =>
-              currentStep() === 1 ? props.onClose() : handlePrevious()
+              currentStep() === 1 ? closePicker() : handlePrevious()
             }
           >
             ←
@@ -505,7 +548,8 @@ return (
           <h2>{getHeaderTitle()}</h2>
 
           <button
-            onClick={props.onClose}
+            type="button"
+            onClick={closePicker}
             class="map-picker-close"
           >
             ✕
@@ -548,6 +592,7 @@ return (
                   type="text"
                   placeholder="Tulis nama kecamatan"
                   class="map-picker-input"
+                  value={searchQuery()}
                   onInput={(e) =>
                     handleSearchInput(
                       e.currentTarget.value
@@ -560,6 +605,7 @@ return (
                 <div class="map-picker-select-wrapper">
                   <select
                     class="map-picker-select"
+                    value={selectedLocation()?.address || ""}
                     onChange={(e) =>
                       handleDropdownSelect(
                         e.currentTarget.value
@@ -630,22 +676,12 @@ return (
 
           <Show when={currentStep() === 3}>
             <div class="map-picker-detail-section">
-              <div class="map-picker-section-header">
-                Lengkapi detail alamat
-              </div>
+              <p class="map-picker-description">
+                Label, nama penerima, dan nomor HP diisi di halaman profil.
+                Di sini cukup lengkapi alamat dan catatan kurir.
+              </p>
 
               <div class="map-picker-form-grid">
-                <div class="map-picker-field">
-                  <label>Label Alamat</label>
-                  <input
-                    type="text"
-                    class="map-picker-input"
-                    value={addressLabel()}
-                    onInput={(e) => setAddressLabel(e.currentTarget.value)}
-                    placeholder="Contoh: Rumah, Kantor, Orang Tua"
-                  />
-                </div>
-
                 <div class="map-picker-field map-picker-fullwidth">
                   <label>Alamat Lengkap</label>
                   <textarea
@@ -665,28 +701,6 @@ return (
                     placeholder="Warna rumah, patokan, pesan khusus, dll."
                   />
                 </div>
-
-                <div class="map-picker-field">
-                  <label>Nama Penerima</label>
-                  <input
-                    type="text"
-                    class="map-picker-input"
-                    value={recipientName()}
-                    onInput={(e) => setRecipientName(e.currentTarget.value)}
-                    placeholder="Nama penerima"
-                  />
-                </div>
-
-                <div class="map-picker-field">
-                  <label>Nomor HP</label>
-                  <input
-                    type="tel"
-                    class="map-picker-input"
-                    value={recipientPhone()}
-                    onInput={(e) => setRecipientPhone(e.currentTarget.value)}
-                    placeholder="628xxxxxxxxxx"
-                  />
-                </div>
               </div>
             </div>
           </Show>
@@ -697,8 +711,9 @@ return (
             <button
               type="button"
               class="map-picker-back-btn"
-              onClick={handlePrevious}
-              disabled={currentStep() === 1}
+              onClick={() =>
+                currentStep() === 1 ? closePicker() : handlePrevious()
+              }
             >
               Kembali
             </button>
@@ -717,7 +732,9 @@ return (
                 type="button"
                 class="map-picker-confirm-btn"
                 onClick={handleConfirm}
-                disabled={!selectedLocation()}
+                disabled={
+                  !selectedLocation() || !getCombinedAddress().trim()
+                }
               >
                 Pilih Lokasi
               </button>

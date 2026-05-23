@@ -6,10 +6,13 @@ export interface Product {
   name: string;
   category_name: string;
   price: number;
+  price_compare?: number;  // harga coret
   thumbnail_url: string | null;
   subtitle: string | null;
   status: string;
   is_featured?: boolean;
+  average_rating?: number;  // rata-rata rating (0-5)
+  total_reviews?: number;   // jumlah review
 }
 
 export async function fetchApi<T>(endpoint: string, options?: RequestInit): Promise<T> {
@@ -45,7 +48,7 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   return json.data as T;
 }
 
-export const getProducts = () => fetchApi<Product[]>("/products");
+export const getProducts = () => fetchApi<Product[]>("/products?include=rating");
 
 // --- Customer Auth ---
 export const loginCustomer = (payload: any) => fetchApi<any>("/customer/login", { method: "POST", body: JSON.stringify(payload) });
@@ -53,6 +56,64 @@ export const registerCustomer = (payload: any) => fetchApi<any>("/customer/regis
 export const googleLogin = (id_token: string) => fetchApi<any>("/customer/auth/google", { method: "POST", body: JSON.stringify({ id_token }) });
 export const getMeCustomer = () => fetchApi<any>("/customer/me");
 export const updateCustomerProfile = (payload: any) => fetchApi<any>("/customer/profile", { method: "PATCH", body: JSON.stringify(payload) });
+export interface CustomerAddress {
+  id: string;
+  customer_id: string;
+  label: string | null;
+  recipient_name: string;
+  recipient_phone: string;
+  address: string;
+  province: string | null;
+  city: string | null;
+  district: string | null;
+  postal_code: string | null;
+  lat: number | null;
+  lng: number | null;
+  is_default: boolean;
+  created_at: string;
+}
+
+export interface CreateCustomerAddressPayload {
+  label?: string | null;
+  recipient_name: string;
+  recipient_phone: string;
+  address: string;
+  province?: string | null;
+  city?: string | null;
+  district?: string | null;
+  postal_code?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  is_default?: boolean;
+}
+
+export type UpdateCustomerAddressPayload = Omit<
+  CreateCustomerAddressPayload,
+  "is_default"
+>;
+
+export const getCustomerAddresses = () =>
+  fetchApi<CustomerAddress[]>("/customer/addresses");
+export const createCustomerAddress = (payload: CreateCustomerAddressPayload) =>
+  fetchApi<CustomerAddress>("/customer/addresses", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+export const updateCustomerAddress = (
+  id: string,
+  payload: UpdateCustomerAddressPayload,
+) =>
+  fetchApi<CustomerAddress>(`/customer/addresses/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+export const deleteCustomerAddress = (id: string) =>
+  fetchApi<string>(`/customer/addresses/${id}`, { method: "DELETE" });
+export const setDefaultAddress = (id: string) =>
+  fetchApi<string>(`/customer/addresses/${id}/default`, {
+    method: "PATCH",
+    body: JSON.stringify({}),
+  });
 export const getCustomerOrders = () => fetchApi<any>("/customer/orders");
 export const createOrder = (payload: {
   shipping_address: string;
@@ -61,6 +122,7 @@ export const createOrder = (payload: {
   shipping_cost: number;
   payment_method: string;
   notes?: string;
+  coupon_code?: string;
 }) => fetchApi<any>("/customer/orders", { method: "POST", body: JSON.stringify(payload) });
 
 // --- Favorites ---

@@ -42,7 +42,7 @@
 
   padding: 20px 24px;
 
-  background: linear-gradient(135deg, #16a34a, #15803d);
+  background: linear-gradient(135deg, var(--green-700), var(--green-500));
 
   color: white;
 }
@@ -291,7 +291,7 @@
 
 .map-picker-next-btn,
 .map-picker-confirm-btn {
-  background: linear-gradient(135deg, #16a34a, #15803d);
+  background: linear-gradient(135deg, var(--green-700), var(--green-400));
   color: white;
 }
 
@@ -340,7 +340,7 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: #16a34a;
+  background: var(--green-500);
   color: white;
   font-size: 0.9rem;
   font-weight: 700;
@@ -399,7 +399,7 @@
 
   border-radius: 14px;
 
-  background: linear-gradient(135deg, #16a34a, #15803d);
+  background: linear-gradient(135deg, var(--green-700), var(--green-400));
 
   color: white;
 

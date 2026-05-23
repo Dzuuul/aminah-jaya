@@ -5,8 +5,10 @@ import {
   onMount,
   For,
   createEffect,
+  createMemo,
 } from "solid-js";
 import { A, useNavigate, useSearchParams } from "@solidjs/router";
+
 import {
   getMeCustomer,
   updateCustomerProfile,
@@ -14,7 +16,17 @@ import {
   getFavorites,
   removeFavorite,
   formatCurrency,
+  getCustomerAddresses,
+  updateCustomerAddress,
+  createCustomerAddress,
+  deleteCustomerAddress,
+  setDefaultAddress,
+  type CustomerAddress,
+  type CreateCustomerAddressPayload,
+  type UpdateCustomerAddressPayload,
+  type CustomerFavorite,
 } from "~/lib/api";
+
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
 import Loading from "~/components/ui/Loading";
@@ -22,37 +34,120 @@ import MapPicker from "~/components/MapPicker";
 
 import { setCustomerProfile } from "~/lib/auth-store";
 
+type ProfileTab = "profile" | "orders" | "wishlist" | "shipping";
+
 export default function Profile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Tab control: 'profile' | 'orders' | 'wishlist' | 'shipping'
-  const [activeTab, setActiveTab] = createSignal<
-    "profile" | "orders" | "wishlist" | "shipping"
-  >("profile");
+  /*
+   |--------------------------------------------------------------------------
+   | STATE
+   |--------------------------------------------------------------------------
+   */
 
-  createEffect(() => {
-    const tab = searchParams.tab;
-    if (
-      tab === "profile" ||
-      tab === "orders" ||
-      tab === "wishlist" ||
-      tab === "shipping"
-    ) {
-      setActiveTab(tab);
-    }
-  });
+  const [activeTab, setActiveTab] =
+    createSignal<ProfileTab>("profile");
 
-  // Profile data resource
-  const [profile, { refetch: refetchProfile }] = createResource(
-    () => typeof window !== "undefined",
-    async (isClient) => {
-      if (!isClient) return null;
-      return await getMeCustomer();
-    },
-  );
+  const [isHydrated, setIsHydrated] = createSignal(false);
 
-  // Orders data resource
+  // Profile form
+  const [isEditingProfile, setIsEditingProfile] =
+    createSignal(false);
+
+  const [editName, setEditName] = createSignal("");
+  const [editPhone, setEditPhone] = createSignal("");
+  const [editEmail, setEditEmail] = createSignal("");
+  const [editPassword, setEditPassword] = createSignal("");
+
+  const [profileError, setProfileError] = createSignal("");
+  const [profileSuccess, setProfileSuccess] = createSignal("");
+  const [savingProfile, setSavingProfile] = createSignal(false);
+
+  // Shipping form
+  const [isEditingShipping, setIsEditingShipping] =
+    createSignal(false);
+
+  const [editingAddressId, setEditingAddressId] =
+    createSignal<string | null>(null);
+
+  const [editShippingLabel, setEditShippingLabel] =
+    createSignal("");
+
+  const [editReceiverName, setEditReceiverName] =
+    createSignal("");
+
+  const [editReceiverPhone, setEditReceiverPhone] =
+    createSignal("");
+
+  const [editShippingAddress, setEditShippingAddress] =
+    createSignal("");
+
+  const [editShippingProvince, setEditShippingProvince] =
+    createSignal("");
+
+  const [editShippingCity, setEditShippingCity] =
+    createSignal("");
+
+  const [editShippingLat, setEditShippingLat] =
+    createSignal<number | null>(null);
+
+  const [editShippingLng, setEditShippingLng] =
+    createSignal<number | null>(null);
+
+  const [shippingError, setShippingError] =
+    createSignal("");
+
+  const [shippingSuccess, setShippingSuccess] =
+    createSignal("");
+
+  const [savingShipping, setSavingShipping] =
+    createSignal(false);
+
+  const [isMapPickerOpen, setIsMapPickerOpen] =
+    createSignal(false);
+
+  const [addressSearch, setAddressSearch] =
+    createSignal("");
+
+  const [editIsDefault, setEditIsDefault] =
+    createSignal(false);
+
+  /*
+   |--------------------------------------------------------------------------
+   | RESOURCES
+   |--------------------------------------------------------------------------
+   */
+
+  const [profile, { refetch: refetchProfile }] =
+    createResource(
+      () => typeof window !== "undefined",
+      async (isClient) => {
+        if (!isClient) return null;
+        return await getMeCustomer();
+      },
+    );
+
+  const normalizeAddresses = (items: CustomerAddress[]) =>
+    items.map((addr) => ({
+      ...addr,
+      is_default: Boolean(addr.is_default),
+    }));
+
+  const [addresses, { refetch: refetchAddresses, mutate: mutateAddresses }] =
+    createResource(async () => {
+      try {
+        const data = await getCustomerAddresses();
+        return normalizeAddresses(data);
+      } catch (err) {
+        console.error(err);
+        return [];
+      }
+    });
+
+  const [settingDefaultAddressId, setSettingDefaultAddressId] =
+    createSignal<string | null>(null);
+
   const [orders] = createResource(
     () => activeTab() === "orders",
     async () => {
@@ -65,81 +160,189 @@ export default function Profile() {
     },
   );
 
-  // Wishlist data resource
-  const [favorites, { refetch: refetchFavorites }] = createResource(
-    () => activeTab() === "wishlist",
-    async () => {
-      try {
-        return await getFavorites();
-      } catch (err) {
-        console.error(err);
-        return [];
-      }
-    },
-  );
+  const [favorites, { refetch: refetchFavorites }] =
+    createResource(
+      () => activeTab() === "wishlist",
+      async () => {
+        try {
+          return await getFavorites();
+        } catch (err) {
+          console.error(err);
+          return [];
+        }
+      },
+    );
 
-  // Form edit states for personal info
-  const [isEditingProfile, setIsEditingProfile] = createSignal(false);
-  const [editName, setEditName] = createSignal("");
-  const [editPhone, setEditPhone] = createSignal("");
-  const [editEmail, setEditEmail] = createSignal("");
-  const [editPassword, setEditPassword] = createSignal("");
-  const [profileError, setProfileError] = createSignal("");
-  const [profileSuccess, setProfileSuccess] = createSignal("");
-  const [savingProfile, setSavingProfile] = createSignal(false);
+  /*
+   |--------------------------------------------------------------------------
+   | MEMOS
+   |--------------------------------------------------------------------------
+   */
 
-  // Shipping edit states
-  const [isEditingShipping, setIsEditingShipping] = createSignal(false);
-  const [editShippingAddress, setEditShippingAddress] = createSignal("");
-  const [editShippingLat, setEditShippingLat] = createSignal<number | null>(
-    null,
-  );
-  const [editShippingLng, setEditShippingLng] = createSignal<number | null>(
-    null,
-  );
-  const [shippingError, setShippingError] = createSignal("");
-  const [shippingSuccess, setShippingSuccess] = createSignal("");
-  const [savingShipping, setSavingShipping] = createSignal(false);
-  const [isMapPickerOpen, setIsMapPickerOpen] = createSignal(false);
+  const filteredAddresses = createMemo(() => {
+    const keyword = addressSearch().toLowerCase().trim();
 
-  onMount(() => {
-    if (!localStorage.getItem("customer_token")) {
-      navigate("/login");
+    if (!keyword) return addresses() || [];
+
+    return (addresses() || []).filter((item: CustomerAddress) => {
+      return (
+        item.address?.toLowerCase().includes(keyword) ||
+        item.label?.toLowerCase().includes(keyword) ||
+        item.recipient_name?.toLowerCase().includes(keyword) ||
+        item.recipient_phone?.toLowerCase().includes(keyword) ||
+        item.province?.toLowerCase().includes(keyword) ||
+        item.city?.toLowerCase().includes(keyword)
+      );
+    });
+  });
+
+  /*
+   |--------------------------------------------------------------------------
+   | EFFECTS
+   |--------------------------------------------------------------------------
+   */
+
+  createEffect(() => {
+    const tab = searchParams.tab;
+
+    if (
+      tab === "profile" ||
+      tab === "orders" ||
+      tab === "wishlist" ||
+      tab === "shipping"
+    ) {
+      setActiveTab(tab);
     }
   });
+
+  onMount(() => {
+    setIsHydrated(true);
+
+    setTimeout(() => {
+      if (!localStorage.getItem("customer_token")) {
+        navigate("/");
+      }
+    }, 0);
+  });
+
+  /*
+   |--------------------------------------------------------------------------
+   | HELPERS
+   |--------------------------------------------------------------------------
+   */
+
+  const resetShippingForm = () => {
+    setEditingAddressId(null);
+
+    setEditShippingLabel("");
+    setEditReceiverName(profile()?.name || "");
+    setEditReceiverPhone(profile()?.phone || "");
+
+    setEditShippingAddress("");
+    setEditShippingProvince("");
+    setEditShippingCity("");
+
+    setEditShippingLat(null);
+    setEditShippingLng(null);
+    setEditIsDefault((addresses() || []).length === 0);
+
+    setShippingError("");
+    setShippingSuccess("");
+  };
+
+  const formatOrderDate = (value: string) => {
+    try {
+      return new Intl.DateTimeFormat("id-ID", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(new Date(value));
+    } catch {
+      return value;
+    }
+  };
+
+  const getOrderStatusClass = (status: string) =>
+    (status || "pending").toLowerCase().replace(/\s+/g, "_");
+
+  const getOrderStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      pending: "Menunggu",
+      confirmed: "Dikonfirmasi",
+      processing: "Diproses",
+      shipped: "Dikirim",
+      delivered: "Selesai",
+      cancelled: "Dibatalkan",
+      refunded: "Dikembalikan",
+    };
+    return labels[getOrderStatusClass(status)] || status;
+  };
+
+  const buildAddressPayload = (): CreateCustomerAddressPayload => ({
+    label: editShippingLabel().trim() || null,
+    recipient_name: editReceiverName().trim(),
+    recipient_phone: editReceiverPhone().trim(),
+    address: editShippingAddress().trim(),
+    province: editShippingProvince().trim() || null,
+    city: editShippingCity().trim() || null,
+    lat: editShippingLat(),
+    lng: editShippingLng(),
+  });
+
+  /*
+   |--------------------------------------------------------------------------
+   | AUTH
+   |--------------------------------------------------------------------------
+   */
 
   const handleLogout = () => {
     localStorage.removeItem("customer_token");
     localStorage.removeItem("customer_profile");
+
     setCustomerProfile(null);
+
     navigate("/login");
   };
 
+  /*
+   |--------------------------------------------------------------------------
+   | PROFILE
+   |--------------------------------------------------------------------------
+   */
+
   const startEditingProfile = () => {
     const data = profile();
-    if (data) {
-      setEditName(data.name || "");
-      setEditPhone(data.phone || "");
-      setEditEmail(data.email || "");
-      setEditPassword("");
-      setProfileError("");
-      setProfileSuccess("");
-      setIsEditingProfile(true);
-    }
+
+    if (!data) return;
+
+    setEditName(data.name || "");
+    setEditPhone(data.phone || "");
+    setEditEmail(data.email || "");
+    setEditPassword("");
+
+    setProfileError("");
+    setProfileSuccess("");
+
+    setIsEditingProfile(true);
   };
 
   const handleSaveProfile = async (e: Event) => {
     e.preventDefault();
+
     if (!editName().trim()) {
       setProfileError("Nama lengkap tidak boleh kosong");
       return;
     }
+
     if (!editEmail().trim()) {
       setProfileError("Email tidak boleh kosong");
       return;
     }
 
     setSavingProfile(true);
+
     setProfileError("");
     setProfileSuccess("");
 
@@ -148,703 +351,1104 @@ export default function Profile() {
         name: editName().trim(),
         phone: editPhone().trim() || null,
         email: editEmail().trim(),
-        shipping_address: profile()?.shipping_address || null,
         password: editPassword().trim() || null,
       };
 
       const updated = await updateCustomerProfile(payload);
-      localStorage.setItem("customer_profile", JSON.stringify(updated));
+
+      localStorage.setItem(
+        "customer_profile",
+        JSON.stringify(updated),
+      );
+
       setCustomerProfile(updated);
 
       await refetchProfile();
+
       setProfileSuccess("Profil berhasil diperbarui!");
+
       setTimeout(() => {
         setIsEditingProfile(false);
         setProfileSuccess("");
       }, 1500);
     } catch (err: any) {
-      setProfileError(err.message || "Gagal memperbarui profil");
+      setProfileError(
+        err.message || "Gagal memperbarui profil",
+      );
     } finally {
       setSavingProfile(false);
     }
   };
 
-  const startEditingShipping = () => {
-    const data = profile();
-    setEditShippingAddress(data?.shipping_address || "");
-    setEditShippingLat(data?.shipping_lat || null);
-    setEditShippingLng(data?.shipping_lng || null);
-    setShippingError("");
-    setShippingSuccess("");
+  /*
+   |--------------------------------------------------------------------------
+   | SHIPPING
+   |--------------------------------------------------------------------------
+   */
+
+  const startCreateAddress = () => {
+    resetShippingForm();
+
     setIsEditingShipping(true);
     setIsMapPickerOpen(true);
   };
 
+  const startEditingShipping = (address: CustomerAddress) => {
+    setEditingAddressId(address.id);
+
+    setEditShippingLabel(address.label || "");
+
+    setEditReceiverName(
+      address.recipient_name || profile()?.name || "",
+    );
+
+    setEditReceiverPhone(
+      address.recipient_phone || profile()?.phone || "",
+    );
+
+    setEditShippingAddress(address.address || "");
+    setEditShippingProvince(address.province || "");
+    setEditShippingCity(address.city || "");
+
+    setEditShippingLat(address.lat ?? null);
+
+    setEditShippingLng(address.lng ?? null);
+
+    setEditIsDefault(address.is_default);
+
+    setShippingError("");
+    setShippingSuccess("");
+
+    setIsEditingShipping(true);
+    setIsMapPickerOpen(false);
+  };
+
   const handleSaveShipping = async (e: Event) => {
     e.preventDefault();
+
+    if (!editReceiverName().trim()) {
+      setShippingError("Nama penerima wajib diisi");
+      return;
+    }
+
+    if (!editReceiverPhone().trim()) {
+      setShippingError("Nomor telepon penerima wajib diisi");
+      return;
+    }
+
+    if (!editShippingAddress().trim()) {
+      setShippingError("Alamat wajib diisi");
+      return;
+    }
+
+    if (!editShippingProvince().trim()) {
+      setShippingError("Provinsi wajib diisi");
+      return;
+    }
+
+    if (!editShippingCity().trim()) {
+      setShippingError("Kota/Kabupaten wajib diisi");
+      return;
+    }
+
     setSavingShipping(true);
+
     setShippingError("");
     setShippingSuccess("");
 
     try {
-      const payload = {
-        name: profile()?.name || "",
-        phone: profile()?.phone || null,
-        email: profile()?.email || "",
-        shipping_address: editShippingAddress().trim() || null,
-        shipping_lat: editShippingLat(),
-        shipping_lng: editShippingLng(),
-        password: null,
-      };
+      const basePayload = buildAddressPayload();
+      const addressId = editingAddressId();
 
-      const updated = await updateCustomerProfile(payload);
-      localStorage.setItem("customer_profile", JSON.stringify(updated));
-      setCustomerProfile(updated);
+      if (addressId) {
+        const updatePayload: UpdateCustomerAddressPayload = basePayload;
+        await updateCustomerAddress(addressId, updatePayload);
 
-      await refetchProfile();
-      setShippingSuccess("Alamat pengiriman berhasil diperbarui!");
+        if (editIsDefault()) {
+          await setDefaultAddress(addressId);
+        }
+      } else {
+        const createPayload: CreateCustomerAddressPayload = {
+          ...basePayload,
+          is_default:
+            editIsDefault() || (addresses() || []).length === 0,
+        };
+        await createCustomerAddress(createPayload);
+      }
+
+      await refetchAddresses();
+
+      setShippingSuccess(
+        addressId
+          ? "Alamat berhasil diperbarui!"
+          : "Alamat berhasil ditambahkan!",
+      );
+
       setTimeout(() => {
         setIsEditingShipping(false);
+        setIsMapPickerOpen(false);
+        resetShippingForm();
         setShippingSuccess("");
       }, 1500);
     } catch (err: any) {
-      setShippingError(err.message || "Gagal memperbarui alamat");
+      setShippingError(
+        err.message || "Gagal menyimpan alamat",
+      );
     } finally {
       setSavingShipping(false);
     }
   };
 
-  const handleRemoveFavorite = async (favId: string) => {
+  const handleDeleteAddress = async (addressId: string) => {
+    if (!window.confirm("Hapus alamat ini?")) return;
+
+    setShippingError("");
+    setShippingSuccess("");
+
     try {
-      await removeFavorite(favId);
-      await refetchFavorites();
-    } catch (err) {
-      console.error("Gagal menghapus wishlist:", err);
+      await deleteCustomerAddress(addressId);
+      await refetchAddresses();
+      setShippingSuccess("Alamat berhasil dihapus!");
+      setTimeout(() => setShippingSuccess(""), 1500);
+    } catch (err: any) {
+      setShippingError(err.message || "Gagal menghapus alamat");
     }
   };
+
+  const handleSetDefaultAddress = async (addressId: string) => {
+    if (settingDefaultAddressId()) return;
+
+    setSettingDefaultAddressId(addressId);
+    setShippingError("");
+    setShippingSuccess("");
+
+    try {
+      await setDefaultAddress(addressId);
+
+      mutateAddresses((prev) =>
+        normalizeAddresses(
+          (prev || []).map((addr) => ({
+            ...addr,
+            is_default: addr.id === addressId,
+          })),
+        ),
+      );
+
+      const refreshed = await getCustomerAddresses();
+      mutateAddresses(normalizeAddresses(refreshed));
+
+      setShippingSuccess("Alamat utama berhasil diubah!");
+      setTimeout(() => setShippingSuccess(""), 2500);
+    } catch (err: any) {
+      setShippingError(
+        err.message || "Gagal mengatur alamat utama",
+      );
+    } finally {
+      setSettingDefaultAddressId(null);
+    }
+  };
+
+  /*
+   |--------------------------------------------------------------------------
+   | FAVORITES
+   |--------------------------------------------------------------------------
+   */
+
+  const handleRemoveFavorite = async (
+    favId: string,
+  ) => {
+    try {
+      await removeFavorite(favId);
+
+      await refetchFavorites();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  /*
+   |--------------------------------------------------------------------------
+   | MAP
+   |--------------------------------------------------------------------------
+   */
 
   const handleMapLocationSelect = (location: {
     lat: number;
     lng: number;
     address: string;
   }) => {
-    // Update textarea dengan address atau format default
-    const addressText = location.address
-      ? `${location.address} (${location.lat.toFixed(4)}, ${location.lng.toFixed(4)})`
-      : `Koordinat: ${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`;
+    setEditShippingAddress(location.address || "");
 
-    setEditShippingAddress(addressText);
     setEditShippingLat(location.lat);
+
     setEditShippingLng(location.lng);
   };
+
+  /*
+   |--------------------------------------------------------------------------
+   | UI
+   |--------------------------------------------------------------------------
+   */
 
   return (
     <div class="min-h-screen bg-[#f8f9fa]">
       <Navbar />
+
       <main class="profile-page-container">
         <Show
-          when={!profile.loading}
+          when={isHydrated()}
           fallback={
             <div class="py-20">
               <Loading message="Memuat profil..." />
             </div>
           }
         >
-          <div class="profile-content">
-            {/* Sidebar Column */}
-            <div class="profile-sidebar">
-              <div class="profile-user-card">
-                <div class="user-avatar-large">
-                  {profile()?.name?.charAt(0) || "U"}
+          <Show
+            when={!profile.loading}
+            fallback={
+              <div class="py-20">
+                <Loading message="Memuat profil..." />
+              </div>
+            }
+          >
+            <div class="profile-content">
+              {/* SIDEBAR */}
+              <div class="profile-sidebar">
+                <div class="profile-user-card">
+                  <div class="user-avatar-large">
+                    {profile()?.name?.charAt(0) || "U"}
+                  </div>
+
+                  <div class="profile-user-details">
+                    <h2 class="user-name-display">
+                      {profile()?.name}
+                    </h2>
+
+                    <p class="user-email-display">
+                      {profile()?.email}
+                    </p>
+
+                    <div class="user-badge-premium">
+                      Member Gold
+                    </div>
+                  </div>
                 </div>
-                <div class="profile-user-details">
-                  <h2 class="user-name-display">{profile()?.name}</h2>
-                  <p class="user-email-display">{profile()?.email}</p>
-                  <div class="user-badge-premium">Member Gold</div>
-                </div>
+
+                <nav class="profile-nav">
+                  <button
+                    class={`profile-nav-item ${
+                      activeTab() === "profile"
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setActiveTab("profile");
+                      setIsEditingProfile(false);
+                    }}
+                  >
+                    <span class="material-symbols-outlined">
+                      person
+                    </span>
+
+                    Profil Saya
+                  </button>
+
+                  <button
+                    class={`profile-nav-item ${
+                      activeTab() === "orders"
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setActiveTab("orders")
+                    }
+                  >
+                    <span class="material-symbols-outlined">
+                      shopping_bag
+                    </span>
+
+                    Pesanan Saya
+                  </button>
+
+                  <button
+                    class={`profile-nav-item ${
+                      activeTab() === "wishlist"
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      setActiveTab("wishlist")
+                    }
+                  >
+                    <span class="material-symbols-outlined">
+                      favorite
+                    </span>
+
+                    Wishlist
+                  </button>
+
+                  <button
+                    class={`profile-nav-item ${
+                      activeTab() === "shipping"
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      setActiveTab("shipping");
+                      setIsEditingShipping(false);
+                    }}
+                  >
+                    <span class="material-symbols-outlined">
+                      location_on
+                    </span>
+
+                    Alamat Pengiriman
+                  </button>
+
+                  <div class="nav-divider"></div>
+
+                  <button
+                    class="profile-nav-item profile-nav-item--danger"
+                    onClick={handleLogout}
+                  >
+                    <span class="material-symbols-outlined">
+                      logout
+                    </span>
+
+                    Keluar
+                  </button>
+                </nav>
               </div>
 
-              <nav class="profile-nav">
-                <button
-                  class={`profile-nav-item ${activeTab() === "profile" ? "active" : ""}`}
-                  onClick={() => {
-                    setActiveTab("profile");
-                    setIsEditingProfile(false);
-                  }}
-                >
-                  <span class="material-symbols-outlined">person</span>
-                  Profil Saya
-                </button>
-                <button
-                  class={`profile-nav-item ${activeTab() === "orders" ? "active" : ""}`}
-                  onClick={() => setActiveTab("orders")}
-                >
-                  <span class="material-symbols-outlined">shopping_bag</span>
-                  Pesanan Saya
-                </button>
-                <button
-                  class={`profile-nav-item ${activeTab() === "wishlist" ? "active" : ""}`}
-                  onClick={() => setActiveTab("wishlist")}
-                >
-                  <span class="material-symbols-outlined">favorite</span>
-                  Wishlist
-                </button>
-                <button
-                  class={`profile-nav-item ${activeTab() === "shipping" ? "active" : ""}`}
-                  onClick={() => {
-                    setActiveTab("shipping");
-                    setIsEditingShipping(false);
-                  }}
-                >
-                  <span class="material-symbols-outlined">location_on</span>
-                  Alamat Pengiriman
-                </button>
-                <div class="nav-divider"></div>
-                <button
-                  class="profile-nav-item text-red-500"
-                  onClick={handleLogout}
-                >
-                  <span class="material-symbols-outlined">logout</span>
-                  Keluar
-                </button>
-              </nav>
-            </div>
+              {/* MAIN */}
+              <div class="profile-main-area">
+                {/* PROFILE TAB */}
+                <Show when={activeTab() === "profile"}>
+                  <div class="profile-section-card">
+                    <h3 class="section-card-title">
+                      Informasi Pribadi
+                    </h3>
 
-            {/* Main Area Column */}
-            <div class="profile-main-area">
-              {/* TAB 1: PROFILE TAB */}
-              <Show when={activeTab() === "profile"}>
-                <div class="profile-section-card">
-                  <h3 class="section-card-title">Informasi Pribadi</h3>
-
-                  <Show
-                    when={isEditingProfile()}
-                    fallback={
-                      <div>
-                        <div class="info-grid">
-                          <div class="info-item">
-                            <label>Nama Lengkap</label>
-                            <p>{profile()?.name}</p>
-                          </div>
-                          <div class="info-item">
-                            <label>Alamat Email</label>
-                            <p>{profile()?.email}</p>
-                          </div>
-                          <div class="info-item">
-                            <label>Nomor Telepon</label>
-                            <p>{profile()?.phone || "Belum diatur"}</p>
-                          </div>
-                          <div class="info-item">
-                            <label>Tanggal Bergabung</label>
-                            <p>
-                              {profile()?.created_at
-                                ? new Date(
-                                    profile()!.created_at,
-                                  ).toLocaleDateString("id-ID", {
-                                    day: "numeric",
-                                    month: "long",
-                                    year: "numeric",
-                                  })
-                                : "-"}
-                            </p>
-                          </div>
-                        </div>
-                        <button
-                          class="btn-edit-profile"
-                          onClick={startEditingProfile}
-                        >
-                          Ubah Profil
-                        </button>
-                      </div>
-                    }
-                  >
-                    {/* EDIT PROFILE FORM */}
-                    <form onSubmit={handleSaveProfile}>
-                      <Show when={profileError()}>
-                        <div
-                          style={{
-                            background: "#fee2e2",
-                            color: "#dc2626",
-                            padding: "12px 20px",
-                            "border-radius": "10px",
-                            "margin-bottom": "20px",
-                            "font-weight": "600",
-                          }}
-                        >
-                          {profileError()}
-                        </div>
-                      </Show>
-                      <Show when={profileSuccess()}>
-                        <div
-                          style={{
-                            background: "#dcfce7",
-                            color: "#16a34a",
-                            padding: "12px 20px",
-                            "border-radius": "10px",
-                            "margin-bottom": "20px",
-                            "font-weight": "600",
-                          }}
-                        >
-                          {profileSuccess()}
-                        </div>
-                      </Show>
-
-                      <div class="profile-form-group">
-                        <label>Nama Lengkap</label>
-                        <input
-                          type="text"
-                          class="profile-input"
-                          value={editName()}
-                          onInput={(e) => setEditName(e.currentTarget.value)}
-                          placeholder="Masukkan nama lengkap Anda"
-                        />
-                      </div>
-
-                      <div class="profile-form-group">
-                        <label>Alamat Email</label>
-                        <input
-                          type="email"
-                          class="profile-input"
-                          value={editEmail()}
-                          onInput={(e) => setEditEmail(e.currentTarget.value)}
-                          placeholder="Masukkan alamat email Anda"
-                        />
-                      </div>
-
-                      <div class="profile-form-group">
-                        <label>Nomor Telepon</label>
-                        <input
-                          type="tel"
-                          class="profile-input"
-                          value={editPhone()}
-                          onInput={(e) => setEditPhone(e.currentTarget.value)}
-                          placeholder="Masukkan nomor telepon Anda"
-                        />
-                      </div>
-
-                      <div class="profile-form-group">
-                        <label>Kata Sandi Baru (Opsional)</label>
-                        <input
-                          type="password"
-                          class="profile-input"
-                          value={editPassword()}
-                          onInput={(e) =>
-                            setEditPassword(e.currentTarget.value)
-                          }
-                          placeholder="Kosongkan jika tidak ingin mengubah kata sandi"
-                        />
-                      </div>
-
-                      <div class="profile-form-actions">
-                        <button
-                          type="submit"
-                          class="profile-btn-primary"
-                          disabled={savingProfile()}
-                        >
-                          {savingProfile()
-                            ? "Menyimpan..."
-                            : "Simpan Perubahan"}
-                        </button>
-                        <button
-                          type="button"
-                          class="profile-btn-secondary"
-                          onClick={() => setIsEditingProfile(false)}
-                        >
-                          Batal
-                        </button>
-                      </div>
-                    </form>
-                  </Show>
-                </div>
-              </Show>
-
-              {/* TAB 2: ORDERS TAB */}
-              <Show when={activeTab() === "orders"}>
-                <div class="profile-section-card">
-                  <h3 class="section-card-title">Pesanan Saya</h3>
-
-                  <Show
-                    when={!orders.loading}
-                    fallback={
-                      <div class="py-10">
-                        <Loading message="Memuat riwayat pesanan..." />
-                      </div>
-                    }
-                  >
                     <Show
-                      when={orders() && orders()!.length > 0}
+                      when={!isEditingProfile()}
                       fallback={
-                        <div class="empty-state-small">
-                          <span class="material-symbols-outlined">
-                            receipt_long
-                          </span>
-                          <p>Anda belum memiliki riwayat pesanan.</p>
-                          <A href="/shop" class="text-green-600 font-bold">
-                            Mulai belanja sekarang
-                          </A>
-                        </div>
+                        <form onSubmit={handleSaveProfile}>
+                          <Show when={profileError()}>
+                            <div class="profile-alert-error">
+                              {profileError()}
+                            </div>
+                          </Show>
+
+                          <Show when={profileSuccess()}>
+                            <div class="profile-alert-success">
+                              {profileSuccess()}
+                            </div>
+                          </Show>
+
+                          <div class="profile-form-group">
+                            <label>Nama Lengkap</label>
+                            <input
+                              type="text"
+                              class="profile-input"
+                              value={editName()}
+                              onInput={(e) =>
+                                setEditName(e.currentTarget.value)
+                              }
+                              placeholder="Nama lengkap"
+                            />
+                          </div>
+
+                          <div class="profile-form-group">
+                            <label>Nomor Telepon</label>
+                            <input
+                              type="tel"
+                              class="profile-input"
+                              value={editPhone()}
+                              onInput={(e) =>
+                                setEditPhone(e.currentTarget.value)
+                              }
+                              placeholder="628xxxxxxxxxx"
+                            />
+                          </div>
+
+                          <div class="profile-form-group">
+                            <label>Email</label>
+                            <input
+                              type="email"
+                              class="profile-input"
+                              value={editEmail()}
+                              onInput={(e) =>
+                                setEditEmail(e.currentTarget.value)
+                              }
+                              placeholder="email@contoh.com"
+                            />
+                          </div>
+
+                          <div class="profile-form-group">
+                            <label>Password Baru (Opsional)</label>
+                            <input
+                              type="password"
+                              class="profile-input"
+                              value={editPassword()}
+                              onInput={(e) =>
+                                setEditPassword(e.currentTarget.value)
+                              }
+                              placeholder="Kosongkan jika tidak diubah"
+                            />
+                          </div>
+
+                          <div class="profile-form-actions">
+                            <button
+                              type="submit"
+                              class="profile-btn-primary"
+                              disabled={savingProfile()}
+                            >
+                              {savingProfile()
+                                ? "Menyimpan..."
+                                : "Simpan Perubahan"}
+                            </button>
+                            <button
+                              type="button"
+                              class="profile-btn-secondary"
+                              onClick={() => {
+                                setIsEditingProfile(false);
+                                setProfileError("");
+                                setProfileSuccess("");
+                              }}
+                            >
+                              Batal
+                            </button>
+                          </div>
+                        </form>
                       }
                     >
-                      <div class="profile-orders-list">
-                        <For each={orders()}>
-                          {(order) => (
-                            <div class="profile-order-card">
-                              <div class="profile-order-header">
-                                <div>
-                                  <div class="profile-order-num">
-                                    {order.order_number}
-                                  </div>
-                                  <div class="profile-order-date">
-                                    {new Date(
-                                      order.ordered_at,
-                                    ).toLocaleDateString("id-ID", {
-                                      day: "numeric",
-                                      month: "long",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </div>
-                                </div>
-                                <span
-                                  class={`profile-order-badge ${order.status.toLowerCase()}`}
-                                >
-                                  {order.status === "pending"
-                                    ? "Menunggu"
-                                    : order.status === "confirmed"
-                                      ? "Dikonfirmasi"
-                                      : order.status === "processing"
-                                        ? "Diproses"
-                                        : order.status === "shipped"
-                                          ? "Dikirim"
-                                          : order.status === "delivered"
-                                            ? "Selesai"
-                                            : order.status === "cancelled"
-                                              ? "Dibatalkan"
-                                              : "Refund"}
-                                </span>
-                              </div>
+                      <div class="info-grid">
+                        <div class="info-item">
+                          <label>Nama Lengkap</label>
+                          <p>{profile()?.name || "-"}</p>
+                        </div>
+                        <div class="info-item">
+                          <label>Nomor Telepon</label>
+                          <p>{profile()?.phone || "-"}</p>
+                        </div>
+                        <div class="info-item">
+                          <label>Email</label>
+                          <p>{profile()?.email || "-"}</p>
+                        </div>
+                      </div>
 
-                              <div class="profile-order-items">
-                                <For each={order.items}>
-                                  {(item) => (
-                                    <div class="profile-order-item">
-                                      <div>
+                      <button
+                        type="button"
+                        class="btn-edit-profile"
+                        onClick={startEditingProfile}
+                      >
+                        Edit Profil
+                      </button>
+                    </Show>
+                  </div>
+                </Show>
+
+                {/* ORDERS TAB */}
+                <Show when={activeTab() === "orders"}>
+                  <div class="profile-section-card">
+                    <h3 class="section-card-title">
+                      Pesanan Saya
+                    </h3>
+
+                    <Show
+                      when={!orders.loading}
+                      fallback={
+                        <Loading message="Memuat pesanan..." />
+                      }
+                    >
+                      <Show
+                        when={(orders() || []).length > 0}
+                        fallback={
+                          <div class="empty-state-small">
+                            <span class="material-symbols-outlined">
+                              shopping_bag
+                            </span>
+                            <p>Belum ada pesanan.</p>
+                          </div>
+                        }
+                      >
+                        <div class="profile-orders-list">
+                          <For each={orders() || []}>
+                            {(order: any) => (
+                              <div class="profile-order-card">
+                                <div class="profile-order-header">
+                                  <div>
+                                    <div class="profile-order-num">
+                                      #{order.order_number}
+                                    </div>
+                                    <div class="profile-order-date">
+                                      {formatOrderDate(
+                                        order.ordered_at,
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span
+                                    class={`profile-order-badge ${getOrderStatusClass(order.status)}`}
+                                  >
+                                    {getOrderStatusLabel(
+                                      order.status,
+                                    )}
+                                  </span>
+                                </div>
+
+                                <div class="profile-order-items">
+                                  <For each={order.items || []}>
+                                    {(item: any) => (
+                                      <div class="profile-order-item">
                                         <span class="profile-order-item-qty">
                                           {item.quantity}x
                                         </span>
                                         <span class="profile-order-item-name">
                                           {item.product_name}
-                                          {item.variant_label && (
-                                            <span class="text-xs text-gray-500 ml-2">
-                                              ({item.variant_label})
-                                            </span>
+                                          {item.variant_label
+                                            ? ` (${item.variant_label})`
+                                            : ""}
+                                        </span>
+                                        <span class="profile-order-item-price">
+                                          {formatCurrency(
+                                            item.subtotal,
                                           )}
                                         </span>
                                       </div>
-                                      <span class="profile-order-item-price">
-                                        {formatCurrency(item.subtotal)}
-                                      </span>
-                                    </div>
-                                  )}
-                                </For>
-                              </div>
+                                    )}
+                                  </For>
+                                </div>
 
-                              <div class="profile-order-footer">
-                                <div class="profile-order-total-label">
-                                  Total Pembayaran
-                                </div>
-                                <div class="profile-order-total-price">
-                                  {formatCurrency(order.grand_total)}
+                                <div class="profile-order-footer">
+                                  <span class="profile-order-total-label">
+                                    Total Pembayaran
+                                  </span>
+                                  <span class="profile-order-total-price">
+                                    {formatCurrency(
+                                      order.grand_total,
+                                    )}
+                                  </span>
                                 </div>
                               </div>
-                            </div>
-                          )}
-                        </For>
+                            )}
+                          </For>
+                        </div>
+                      </Show>
+                    </Show>
+                  </div>
+                </Show>
+
+                {/* WISHLIST TAB */}
+                <Show when={activeTab() === "wishlist"}>
+                  <div class="profile-section-card">
+                    <h3 class="section-card-title">
+                      Wishlist
+                    </h3>
+
+                    <Show
+                      when={!favorites.loading}
+                      fallback={
+                        <Loading message="Memuat wishlist..." />
+                      }
+                    >
+                      <Show
+                        when={(favorites() || []).length > 0}
+                        fallback={
+                          <div class="empty-state-small">
+                            <span class="material-symbols-outlined">
+                              favorite
+                            </span>
+                            <p>Wishlist masih kosong.</p>
+                          </div>
+                        }
+                      >
+                        <div class="profile-wishlist-grid">
+                          <For each={favorites() || []}>
+                            {(fav: CustomerFavorite) => (
+                              <div class="profile-wishlist-card">
+                                <A
+                                  href={`/product/${fav.product_slug || fav.product_id}`}
+                                  class="wishlist-card-img"
+                                >
+                                  <Show
+                                    when={fav.product_thumbnail}
+                                    fallback={
+                                      <span class="material-symbols-outlined">
+                                        image
+                                      </span>
+                                    }
+                                  >
+                                    <img
+                                      src={fav.product_thumbnail!}
+                                      alt={fav.product_name || "Produk"}
+                                    />
+                                  </Show>
+                                </A>
+
+                                <button
+                                  type="button"
+                                  class="wishlist-remove-btn"
+                                  title="Hapus dari wishlist"
+                                  onClick={() => {
+                                    void handleRemoveFavorite(fav.id);
+                                  }}
+                                >
+                                  <span class="material-symbols-outlined">
+                                    close
+                                  </span>
+                                </button>
+
+                                <div class="wishlist-card-body">
+                                  <A
+                                    href={`/product/${fav.product_slug || fav.product_id}`}
+                                    class="wishlist-card-name"
+                                  >
+                                    {fav.product_name || "Produk"}
+                                  </A>
+                                  <div class="wishlist-card-price">
+                                    {fav.product_price != null
+                                      ? formatCurrency(
+                                          fav.product_price,
+                                        )
+                                      : "-"}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </For>
+                        </div>
+                      </Show>
+                    </Show>
+                  </div>
+                </Show>
+
+                {/* SHIPPING TAB */}
+                <Show when={activeTab() === "shipping"}>
+                  <div class="profile-section-card">
+                    <h3 class="section-card-title">
+                      Alamat Pengiriman
+                    </h3>
+
+                    <Show when={shippingError() && !isEditingShipping()}>
+                      <div class="profile-alert-error">
+                        {shippingError()}
                       </div>
                     </Show>
-                  </Show>
-                </div>
-              </Show>
 
-              {/* TAB 3: WISHLIST TAB */}
-              <Show when={activeTab() === "wishlist"}>
-                <div class="profile-section-card">
-                  <h3 class="section-card-title">Wishlist</h3>
-
-                  <Show
-                    when={!favorites.loading}
-                    fallback={
-                      <div class="py-10">
-                        <Loading message="Memuat wishlist..." />
+                    <Show when={shippingSuccess() && !isEditingShipping()}>
+                      <div class="profile-alert-success">
+                        {shippingSuccess()}
                       </div>
-                    }
-                  >
+                    </Show>
+
                     <Show
-                      when={favorites() && favorites()!.length > 0}
+                      when={isEditingShipping()}
                       fallback={
-                        <div class="empty-state-small">
-                          <span class="material-symbols-outlined">
-                            favorite_border
-                          </span>
-                          <p>Wishlist Anda masih kosong.</p>
-                          <A href="/shop" class="text-green-600 font-bold">
-                            Cari produk menarik
-                          </A>
+                        <div>
+                          {/* SEARCH + BUTTON */}
+                          <div class="profile-address-toolbar">
+                            <input
+                              type="text"
+                              class="profile-input profile-input--compact"
+                              value={addressSearch()}
+                              onInput={(e) =>
+                                setAddressSearch(
+                                  e.currentTarget.value,
+                                )
+                              }
+                              placeholder="Cari alamat..."
+                            />
+
+                            <button
+                              type="button"
+                              class="profile-btn-primary"
+                              onClick={
+                                startCreateAddress
+                              }
+                            >
+                              + Tambah Alamat
+                            </button>
+                          </div>
+
+                          {/* EMPTY */}
+                          <Show
+                            when={
+                              filteredAddresses()
+                                .length > 0
+                            }
+                            fallback={
+                              <div class="empty-state-small">
+                                <span class="material-symbols-outlined">
+                                  location_off
+                                </span>
+
+                                <p>
+                                  Belum ada alamat
+                                  pengiriman.
+                                </p>
+                              </div>
+                            }
+                          >
+                            <div class="profile-address-list">
+                              <For each={filteredAddresses()}>
+                                {(address: CustomerAddress) => (
+                                  <div class="profile-address-card">
+                                    <div class="profile-address-card-header">
+                                      <div class="profile-address-card-info">
+                                        <div class="profile-address-card-label-row">
+                                          <strong>
+                                            {address.label ||
+                                              "Alamat"}
+                                          </strong>
+
+                                          <Show
+                                            when={
+                                              address.is_default
+                                            }
+                                          >
+                                            <span class="profile-address-badge-default">
+                                              Utama
+                                            </span>
+                                          </Show>
+                                        </div>
+
+                                        <p>
+                                          {address.recipient_name}
+                                        </p>
+
+                                        <p>
+                                          {address.recipient_phone}
+                                        </p>
+
+                                        <Show
+                                          when={
+                                            address.city ||
+                                            address.province
+                                          }
+                                        >
+                                          <p class="profile-address-card-meta">
+                                            {[
+                                              address.city,
+                                              address.province,
+                                            ]
+                                              .filter(Boolean)
+                                              .join(", ")}
+                                          </p>
+                                        </Show>
+                                      </div>
+
+                                      <div class="profile-address-card-actions">
+                                        <Show
+                                          when={!address.is_default}
+                                        >
+                                          <button
+                                            type="button"
+                                            class="profile-btn-secondary profile-btn-secondary--default"
+                                            disabled={
+                                              settingDefaultAddressId() ===
+                                              address.id
+                                            }
+                                            onClick={() => {
+                                              void handleSetDefaultAddress(
+                                                address.id,
+                                              );
+                                            }}
+                                          >
+                                            {settingDefaultAddressId() ===
+                                            address.id
+                                              ? "Memproses..."
+                                              : "Jadikan Utama"}
+                                          </button>
+                                        </Show>
+
+                                        <button
+                                          type="button"
+                                          class="profile-btn-secondary"
+                                          disabled={
+                                            !!settingDefaultAddressId()
+                                          }
+                                          onClick={() =>
+                                            startEditingShipping(address)
+                                          }
+                                        >
+                                          Ubah
+                                        </button>
+
+                                        <button
+                                          type="button"
+                                          class="profile-btn-secondary profile-btn-secondary--danger"
+                                          disabled={
+                                            !!settingDefaultAddressId()
+                                          }
+                                          onClick={() => {
+                                            void handleDeleteAddress(
+                                              address.id,
+                                            );
+                                          }}
+                                        >
+                                          Hapus
+                                        </button>
+                                      </div>
+                                    </div>
+
+                                    <p class="profile-address-card-address">
+                                      {address.address}
+                                    </p>
+
+                                    <Show
+                                      when={
+                                        address.lat != null &&
+                                        address.lng != null
+                                      }
+                                    >
+                                      <div class="profile-address-coords">
+                                        <span class="profile-address-coords-badge">
+                                          📍{" "}
+                                          {address.lat!.toFixed(4)}
+                                          ,{" "}
+                                          {address.lng!.toFixed(4)}
+                                        </span>
+                                      </div>
+                                    </Show>
+                                  </div>
+                                )}
+                              </For>
+                            </div>
+                          </Show>
                         </div>
                       }
                     >
-                      <div class="profile-wishlist-grid">
-                        <For each={favorites()}>
-                          {(item) => (
-                            <div class="profile-wishlist-card">
-                              <button
-                                class="wishlist-remove-btn"
-                                onClick={() => handleRemoveFavorite(item.id)}
-                              >
-                                <span
-                                  class="material-symbols-outlined"
-                                  style={{ "font-size": "18px" }}
-                                >
-                                  delete
-                                </span>
-                              </button>
+                      {/* FORM */}
+                      <form onSubmit={handleSaveShipping}>
+                        <Show when={shippingError()}>
+                          <div class="profile-alert-error">
+                            {shippingError()}
+                          </div>
+                        </Show>
 
-                              <A
-                                href={`/product/${item.product_slug || item.product_id}`}
-                                class="wishlist-card-img"
-                                style={{ "text-decoration": "none" }}
-                              >
-                                <Show
-                                  when={item.product_thumbnail}
-                                  fallback={
-                                    <svg
-                                      width="40"
-                                      height="40"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="var(--green-500)"
-                                      stroke-width="1.5"
-                                    >
-                                      <rect
-                                        x="5"
-                                        y="2"
-                                        width="14"
-                                        height="20"
-                                        rx="2"
-                                        ry="2"
-                                      ></rect>
-                                    </svg>
-                                  }
-                                >
-                                  <img
-                                    src={item.product_thumbnail!}
-                                    alt={item.product_name}
-                                  />
-                                </Show>
-                              </A>
+                        <Show when={shippingSuccess()}>
+                          <div class="profile-alert-success">
+                            {shippingSuccess()}
+                          </div>
+                        </Show>
 
-                              <div class="wishlist-card-body">
-                                <A
-                                  href={`/product/${item.product_slug || item.product_id}`}
-                                  class="wishlist-card-name"
-                                  style={{ "text-decoration": "none" }}
-                                >
-                                  {item.product_name || "Produk"}
-                                </A>
-                                <div class="wishlist-card-price">
-                                  {item.product_price
-                                    ? formatCurrency(item.product_price)
-                                    : "-"}
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </For>
-                      </div>
-                    </Show>
-                  </Show>
-                </div>
-              </Show>
-
-              {/* TAB 4: SHIPPING TAB */}
-              <Show when={activeTab() === "shipping"}>
-                <div class="profile-section-card">
-                  <h3 class="section-card-title">Alamat Pengiriman</h3>
-
-                  <Show
-                    when={isEditingShipping()}
-                    fallback={
-                      <div>
-                        <div
-                          style={{
-                            background: "#f8f9fa",
-                            border: "1px solid var(--border)",
-                            padding: "25px",
-                            "border-radius": "16px",
-                            "margin-bottom": "25px",
-                            "line-height": "1.6",
-                          }}
-                        >
-                          <Show
-                            when={profile()?.shipping_address}
-                            fallback={
-                              <span
-                                style={{
-                                  color: "var(--muted)",
-                                  "font-style": "italic",
-                                }}
-                              >
-                                Belum ada alamat pengiriman yang diatur. Silakan
-                                tambahkan alamat pengiriman untuk mempermudah
-                                proses checkout.
-                              </span>
+                        <div class="profile-form-group">
+                          <label>Label Alamat</label>
+                          <input
+                            type="text"
+                            class="profile-input"
+                            value={editShippingLabel()}
+                            onInput={(e) =>
+                              setEditShippingLabel(
+                                e.currentTarget.value,
+                              )
                             }
-                          >
-                            <p
-                              style={{
-                                "font-weight": "600",
-                                color: "var(--ink)",
-                                "white-space": "pre-line",
-                              }}
-                            >
-                              {profile()?.shipping_address}
-                            </p>
-                          </Show>
+                            placeholder="Contoh: Rumah, Kantor"
+                          />
                         </div>
-                        <button
-                          class="btn-edit-profile"
-                          onClick={startEditingShipping}
-                        >
-                          {profile()?.shipping_address
-                            ? "Ubah Alamat"
-                            : "Tambah Alamat"}
-                        </button>
-                      </div>
-                    }
-                  >
-                    {/* EDIT SHIPPING FORM */}
-                    <form onSubmit={handleSaveShipping}>
-                      <Show when={shippingError()}>
-                        <div
-                          style={{
-                            background: "#fee2e2",
-                            color: "#dc2626",
-                            padding: "12px 20px",
-                            "border-radius": "10px",
-                            "margin-bottom": "20px",
-                            "font-weight": "600",
-                          }}
-                        >
-                          {shippingError()}
-                        </div>
-                      </Show>
-                      <Show when={shippingSuccess()}>
-                        <div
-                          style={{
-                            background: "#dcfce7",
-                            color: "#16a34a",
-                            padding: "12px 20px",
-                            "border-radius": "10px",
-                            "margin-bottom": "20px",
-                            "font-weight": "600",
-                          }}
-                        >
-                          {shippingSuccess()}
-                        </div>
-                      </Show>
 
-                      <div class="profile-form-group">
-                        <label>Alamat Pengiriman Lengkap</label>
-                        <MapPicker
-                          isOpen={isMapPickerOpen()}
-                          onClose={() => setIsMapPickerOpen(false)}
-                          onLocationSelect={handleMapLocationSelect}
-                          initialLat={editShippingLat() || undefined}
-                          initialLng={editShippingLng() || undefined}
-                          initialAddress={editShippingAddress() || undefined}
-                        />
-                        <div
-                          style={{
-                            display: "flex",
-                            gap: "10px",
-                            "margin-bottom": "10px",
-                          }}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => setIsMapPickerOpen(true)}
+                        <div class="profile-form-group">
+                          <label>Nama Penerima</label>
+                          <input
+                            type="text"
+                            class="profile-input"
+                            value={editReceiverName()}
+                            onInput={(e) =>
+                              setEditReceiverName(
+                                e.currentTarget.value,
+                              )
+                            }
+                            placeholder="Nama penerima"
+                          />
+                        </div>
+
+                        <div class="profile-form-group">
+                          <label>Nomor HP Penerima</label>
+                          <input
+                            type="tel"
+                            class="profile-input"
+                            value={editReceiverPhone()}
+                            onInput={(e) =>
+                              setEditReceiverPhone(
+                                e.currentTarget.value,
+                              )
+                            }
+                            placeholder="628xxxxxxxxxx"
+                          />
+                        </div>
+
+                        <div class="profile-form-row">
+                          <div class="profile-form-group">
+                            <label>Provinsi</label>
+                            <input
+                              type="text"
+                              class="profile-input"
+                              value={editShippingProvince()}
+                              onInput={(e) =>
+                                setEditShippingProvince(
+                                  e.currentTarget.value,
+                                )
+                              }
+                              placeholder="Contoh: Jawa Timur"
+                            />
+                          </div>
+
+                          <div class="profile-form-group">
+                            <label>Kota / Kabupaten</label>
+                            <input
+                              type="text"
+                              class="profile-input"
+                              value={editShippingCity()}
+                              onInput={(e) =>
+                                setEditShippingCity(
+                                  e.currentTarget.value,
+                                )
+                              }
+                              placeholder="Contoh: Surabaya"
+                            />
+                          </div>
+                        </div>
+
+                        <div class="profile-form-group">
+                          <label class="profile-checkbox-label">
+                            <input
+                              type="checkbox"
+                              checked={editIsDefault()}
+                              onChange={(e) =>
+                                setEditIsDefault(
+                                  e.currentTarget.checked,
+                                )
+                              }
+                            />
+                            Jadikan alamat utama
+                          </label>
+                        </div>
+
+                        <div class="profile-form-group">
+                          <label>Alamat & Lokasi</label>
+                          <MapPicker
+                            isOpen={isMapPickerOpen()}
+                            onClose={() =>
+                              setIsMapPickerOpen(
+                                false,
+                              )
+                            }
+                            onLocationSelect={
+                              handleMapLocationSelect
+                            }
+                            initialLat={
+                              editShippingLat() ||
+                              undefined
+                            }
+                            initialLng={
+                              editShippingLng() ||
+                              undefined
+                            }
+                            initialAddress={
+                              editShippingAddress() ||
+                              undefined
+                            }
+                          />
+
+                          <div
                             style={{
-                              padding: "10px 20px",
-                              background: "#10b981",
-                              color: "white",
-                              border: "none",
-                              "border-radius": "8px",
-                              cursor: "pointer",
-                              "font-weight": "600",
                               display: "flex",
-                              "align-items": "center",
-                              gap: "8px",
+                              gap: "12px",
+                              "margin-bottom":
+                                "12px",
                             }}
                           >
-                            <span
-                              class="material-symbols-outlined"
-                              style={{ "font-size": "18px" }}
+                            <button
+                              type="button"
+                              class="profile-btn-primary"
+                              onClick={() =>
+                                setIsMapPickerOpen(
+                                  true,
+                                )
+                              }
                             >
-                              location_on
-                            </span>
-                            Pilih di Maps
-                          </button>
-                          <Show when={editShippingLat() && editShippingLng()}>
-                            <div
-                              style={{
-                                padding: "10px 15px",
-                                background: "#dbeafe",
-                                color: "#1e40af",
-                                "border-radius": "8px",
-                                "font-size": "14px",
-                                "font-weight": "600",
-                              }}
-                            >
-                              📍 Koordinat: {editShippingLat()?.toFixed(4)},{" "}
-                              {editShippingLng()?.toFixed(4)}
-                            </div>
-                          </Show>
-                        </div>
-                        <textarea
-                          class="profile-textarea"
-                          value={editShippingAddress()}
-                          onInput={(e) =>
-                            setEditShippingAddress(e.currentTarget.value)
-                          }
-                          placeholder="Masukkan nama penerima, nomor HP aktif, nama jalan, RT/RW, kelurahan, kecamatan, kota, provinsi, dan kode pos"
-                        ></textarea>
-                      </div>
+                              Pilih di Maps
+                            </button>
 
-                      <div class="profile-form-actions">
-                        <button
-                          type="submit"
-                          class="profile-btn-primary"
-                          disabled={savingShipping()}
-                        >
-                          {savingShipping() ? "Menyimpan..." : "Simpan Alamat"}
-                        </button>
-                        <button
-                          type="button"
-                          class="profile-btn-secondary"
-                          onClick={() => setIsEditingShipping(false)}
-                        >
-                          Batal
-                        </button>
-                      </div>
-                    </form>
-                  </Show>
-                </div>
-              </Show>
+                            <Show
+                              when={
+                                editShippingLat() &&
+                                editShippingLng()
+                              }
+                            >
+                              <div
+                                style={{
+                                  background:
+                                    "#dbeafe",
+                                  color:
+                                    "#1e40af",
+                                  padding:
+                                    "10px 14px",
+                                  "border-radius":
+                                    "10px",
+                                }}
+                              >
+                                📍{" "}
+                                {editShippingLat()?.toFixed(
+                                  4,
+                                )}
+                                ,{" "}
+                                {editShippingLng()?.toFixed(
+                                  4,
+                                )}
+                              </div>
+                            </Show>
+                          </div>
+
+                          <textarea
+                            class="profile-textarea"
+                            value={editShippingAddress()}
+                            onInput={(e) =>
+                              setEditShippingAddress(
+                                e.currentTarget.value,
+                              )
+                            }
+                            placeholder="Masukkan alamat lengkap"
+                          />
+                        </div>
+
+                        <div class="profile-form-actions">
+                          <button
+                            type="submit"
+                            class="profile-btn-primary"
+                            disabled={
+                              savingShipping()
+                            }
+                          >
+                            {savingShipping()
+                              ? "Menyimpan..."
+                              : editingAddressId()
+                                ? "Update Alamat"
+                                : "Tambah Alamat"}
+                          </button>
+
+                          <button
+                            type="button"
+                            class="profile-btn-secondary"
+                            onClick={() => {
+                              setIsEditingShipping(false);
+                              setIsMapPickerOpen(false);
+                              resetShippingForm();
+                            }}
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      </form>
+                    </Show>
+                  </div>
+                </Show>
+              </div>
             </div>
-          </div>
+          </Show>
         </Show>
       </main>
+
       <Footer />
     </div>
   );

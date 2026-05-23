@@ -486,10 +486,25 @@ pub struct StorefrontCustomer {
     pub email: String,
     pub name: String,
     pub phone: Option<String>,
-    pub shipping_address: Option<String>,
-    pub shipping_lat: Option<f64>,
-    pub shipping_lng: Option<f64>,
-    pub created_at: DateTime<Utc>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, sqlx::FromRow)]
+pub struct CustomerAddress {
+    pub id: Uuid,
+    pub customer_id: Uuid,
+    pub label: Option<String>,
+    pub recipient_name: String,
+    pub recipient_phone: String,
+    pub address: String,
+    pub province: Option<String>,
+    pub city: Option<String>,
+    pub district: Option<String>,
+    pub postal_code: Option<String>,
+    pub lat: Option<f64>,
+    pub lng: Option<f64>,
+    pub is_default: bool,
+    pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -497,9 +512,6 @@ pub struct UpdateCustomerProfilePayload {
     pub name: String,
     pub phone: Option<String>,
     pub email: String,
-    pub shipping_address: Option<String>,
-    pub shipping_lat: Option<f64>,
-    pub shipping_lng: Option<f64>,
     pub password: Option<String>,
 }
 

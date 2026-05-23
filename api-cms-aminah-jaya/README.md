@@ -1,6 +1,8 @@
 # API CMS Aminah Jaya
 
-Backend API for Aminah Jaya Store CMS, built with Rust, Axum, and SQLx.
+Backend API for Aminah Jaya Store CMS, built with **Rust**, **Axum**, and **SQLx**.
+
+---
 
 ## Prerequisites
 
@@ -8,186 +10,371 @@ Backend API for Aminah Jaya Store CMS, built with Rust, Axum, and SQLx.
 - [Docker](https://docs.docker.com/get-docker/)
 - [sqlx-cli](https://github.com/launchbadge/sqlx/tree/main/sqlx-cli)
 
+---
+
 ## Setup
 
-1. **Start Database**:
-   ```bash
-   docker-compose up -d
-   ```
+### 1. Start Database
 
-2. **Configuration**:
-   Copy `.env.example.local` or `.env.example.production` to `.env` and fill in the required variables.
-   
-   If the database is in a private network, set `USE_SSH_TUNNEL=true` and provide the SSH credentials. The application will automatically open a tunnel on startup.
+```bash
+docker-compose up -d
+```
 
-3. **Run Application**:
-   ```bash
-   cargo run
-   ```
-   *Note: On startup, the app will automatically open an SSH tunnel (if enabled) and run pending database migrations.*
+### 2. Configuration
+
+Salin file berikut:
+
+```bash
+.env.example.local
+# atau
+.env.example.production
+```
+
+ke:
+
+```bash
+.env
+```
+
+Isi semua environment variable yang dibutuhkan.
+
+Jika database berada di private network/VPS, aktifkan SSH tunnel:
+
+```env
+USE_SSH_TUNNEL=true
+```
+
+Aplikasi akan otomatis membuat SSH tunnel saat startup.
+
+### 3. Run Application
+
+```bash
+cargo run
+```
+
+Saat startup, aplikasi secara otomatis akan:
+
+- Membuka SSH Tunnel (jika diaktifkan)
+- Menghubungkan ke PostgreSQL
+- Menjalankan pending SQLx migrations
+- Menjalankan Axum HTTP server
+
+---
 
 ## Database Migrations
 
-Database migrations are managed by `sqlx`.
+Migrations dikelola menggunakan SQLx.
 
 ### Automatic Migrations (Recommended)
-Migrations will run automatically every time you start the application with `cargo run`. You don't need to do anything manually.
+
+Migrations berjalan otomatis saat aplikasi dijalankan:
+
+```bash
+cargo run
+```
+
+Tidak perlu tindakan manual.
 
 ### Manual Migrations (CLI)
-If you need to use the `sqlx-cli`, follow these steps:
 
-1. **Install SQLx CLI**:
-   ```bash
-   cargo install sqlx-cli --no-default-features --features postgres
-   ```
+**Install SQLx CLI:**
 
-2. **Open SSH Tunnel (if required)**:
-   If connecting to a remote DB, open a tunnel in a separate terminal:
-   ```bash
-   ssh -L 5433:127.0.0.1:5432 <ssh_user>@<ssh_host> -i <key_path> -N
-   ```
+```bash
+cargo install sqlx-cli --no-default-features --features postgres
+```
 
-3. **Run CLI Commands**:
-   Override the `DATABASE_URL` to point to your local tunnel port:
-   ```bash
-   DATABASE_URL="postgres://user:pass@localhost:5433/db" sqlx migrate run
-   ```
+**Buat migration baru:**
+
+```bash
+sqlx migrate add create_customer_addresses
+```
+
+Contoh file yang dihasilkan:
+
+```
+migrations/
+└── 202605220001_create_customer_addresses.sql
+```
+
+**Jalankan migrations:**
+
+```bash
+sqlx migrate run
+```
+
+**Cek status migrations:**
+
+```bash
+sqlx migrate info
+```
+
+### SSH Tunnel untuk Remote Database
+
+Jika menggunakan PostgreSQL remote:
+
+```bash
+ssh -L 5433:127.0.0.1:5432 <ssh_user>@<ssh_host> -i <key_path> -N
+```
+
+Kemudian jalankan migration dengan:
+
+```bash
+DATABASE_URL="postgres://user:pass@localhost:5433/db" sqlx migrate run
+```
+
+---
 
 ## API Endpoints
 
-### Auth (Admin)
-- `POST /api/auth/login`: Authenticate and receive JWT.
-- `GET /api/auth/me`: Get current authenticated user profile.
+### Auth — Admin
 
-### Auth (Customer)
-- `POST /api/customer/register`: Register a new customer account.
-- `POST /api/customer/login`: Customer login to receive JWT.
-- `POST /api/customer/auth/google`: Customer login/registration using Google OAuth token.
-- `GET /api/customer/me`: Get current authenticated customer profile (includes shipping coordinates).
-- `PATCH /api/customer/profile`: Update current customer profile (name, email, phone, shipping address with GPS coordinates, or password).
-- `GET /api/customer/orders`: Get order history list for the authenticated customer.
-- `POST /api/customer/orders`: Create a new order from current cart items.
+| Method | Endpoint          | Description                        |
+| ------ | ----------------- | ---------------------------------- |
+| POST   | `/api/auth/login` | Authenticate admin dan terima JWT  |
+| GET    | `/api/auth/me`    | Get current authenticated admin    |
 
-### Cart (Customer Only)
-- `GET /api/cart`: Get current items in the shopping cart.
-- `POST /api/cart`: Add a product to the cart.
-- `PATCH /api/cart/:id`: Update item quantity in cart.
-- `DELETE /api/cart/:id`: Remove item from cart.
-- `DELETE /api/cart`: Clear entire cart.
+### Auth — Customer
 
-### Dashboard
-- `GET /api/dashboard/stats`: Retrieve summary statistics.
-- `GET /api/dashboard/performance`: Get detailed performance analytics.
-- `GET /api/dashboard/recent-orders`: Get list of most recent orders.
+| Method | Endpoint                    | Description                        |
+| ------ | --------------------------- | ---------------------------------- |
+| POST   | `/api/customer/register`    | Register akun customer             |
+| POST   | `/api/customer/login`       | Customer login                     |
+| POST   | `/api/customer/auth/google` | Login/Register via Google OAuth    |
+| GET    | `/api/customer/me`          | Get profil customer yang login     |
+| PATCH  | `/api/customer/profile`     | Update profil customer             |
+| GET    | `/api/customer/orders`      | Get riwayat order customer         |
+| POST   | `/api/customer/orders`      | Buat order baru dari cart          |
 
-### Products
-- `GET /api/products`: List products (paginated). Includes `slug` and `weight_gram`.
-- `POST /api/products`: Create a new product.
-- `GET /api/products/:id`: Get product details by UUID.
-- `GET /api/products/slug/:slug`: Get product details by URL slug.
-- `PATCH /api/products/:id`: Update product info.
-- `DELETE /api/products/:id`: Soft-delete product (sets status to inactive).
+### Customer Addresses
 
-### Categories
-- `GET /api/categories`: List all active categories.
-- `POST /api/categories`: Create a new category.
-- `PATCH /api/categories/:id`: Update category details.
-- `DELETE /api/categories/:id`: Soft-delete category.
+Alamat customer disimpan di tabel terpisah (`customer_addresses`) untuk mendukung multi-alamat pengiriman.
 
-### Collections
-- `GET /api/collections`: List all active collections.
-- `POST /api/collections`: Create a new collection.
-- `GET /api/collections/:id`: Get collection details by UUID.
-- `PATCH /api/collections/:id`: Update collection details.
-- `DELETE /api/collections/:id`: Delete a collection.
+| Method | Endpoint                              | Description                |
+| ------ | ------------------------------------- | -------------------------- |
+| GET    | `/api/customer/addresses`             | Get semua alamat customer  |
+| POST   | `/api/customer/addresses`             | Tambah alamat baru         |
+| PATCH  | `/api/customer/addresses/:id`         | Update alamat              |
+| DELETE | `/api/customer/addresses/:id`         | Hapus alamat               |
+| PATCH  | `/api/customer/addresses/:id/default` | Set alamat default         |
 
-### Flash Sales
-- `GET /api/flash-sales`: List all flash sale events.
-- `POST /api/flash-sales`: Create new flash sale with items.
-- `GET /api/flash-sales/active`: Get currently ongoing flash sale (public).
-- `GET /api/flash-sales/:id`: Get flash sale details.
-- `DELETE /api/flash-sales/:id`: Delete flash sale event.
+**Contoh request tambah alamat:**
 
-### Blogs
-- `GET /api/blogs`: List all articles (paginated).
-- `GET /api/blogs/latest`: Get 3 latest published articles.
-- `POST /api/blogs`: Create new article.
-- `GET /api/blogs/:id`: Get article details.
-- `DELETE /api/blogs/:id`: Delete an article.
-
-### Orders
-- `GET /api/orders`: List all orders.
-- `GET /api/orders/:id`: Get full order details.
-- `PATCH /api/orders/:id/status`: Update order status.
-
-### Customers (CMS View)
-- `GET /api/customers`: List contacts (mapped from WA contacts).
-- `GET /api/customers/stats`: Get customer-related statistics.
-- `GET /api/customers/:id`: Get contact profile and order history.
-
-### Coupons
-- `GET /api/coupons`: List all discount coupons.
-- `POST /api/coupons`: Create new coupon.
-- `GET /api/coupons/validate/:code`: Validate a coupon code.
-- `GET /api/coupons/:id`: Get coupon details.
-- `PATCH /api/coupons/:id`: Update coupon.
-- `DELETE /api/coupons/:id`: Delete coupon.
-
-### Banners
-- `GET /api/banners`: List active banners.
-- `GET /api/banners/all`: List all banners (including inactive).
-- `POST /api/banners`: Create new banner.
-- `PATCH /api/banners/:id`: Update banner.
-- `DELETE /api/banners/:id`: Delete banner.
-
-### Notifications
-- `GET /api/notifications`: List admin notifications.
-- `GET /api/notifications/unread-count`: Get count of unread notifications.
-- `PATCH /api/notifications/:id/read`: Mark notification as read.
-
-### Legal & Settings
-- `GET /api/legal`: List all legal pages.
-- `GET /api/legal/:key`: Get specific legal page (Terms, Privacy, etc.).
-- `PATCH /api/legal/:key`: Update legal page content.
-- `GET /api/settings`: Get global site settings.
-- `PATCH /api/settings`: Update site settings.
-
-### Media
-- `POST /api/upload`: Upload image/video to Cloudflare R2.
-
-### Favorites (Customer Only)
-- `GET /api/customer/favorites`: Get customer's wishlisted products.
-- `POST /api/customer/favorites`: Add a product to customer's wishlist.
-- `DELETE /api/customer/favorites/:id`: Remove item from wishlist by wishlist ID.
-- `DELETE /api/customer/favorites/product/:product_id`: Remove item from wishlist by product UUID.
-- `GET /api/customer/favorites/folders`: Get list of favorite folder names.
-
-## Features
-
-### GPS-Enabled Shipping Address
-Customer shipping addresses now include GPS coordinates (latitude & longitude) for precise delivery tracking and geolocation services. Coordinates are stored with 6-decimal precision (±1.1 meter accuracy).
-
-**Sample Request:**
 ```json
-PATCH /api/customer/profile
+POST /api/customer/addresses
+
 {
-  "shipping_address": "Jl. Sudirman No. 1, Jakarta Pusat",
-  "shipping_lat": -6.2088,
-  "shipping_lng": 106.8456
+  "label": "Rumah",
+  "recipient_name": "Fikri",
+  "recipient_phone": "08123456789",
+  "address": "Jl. Sudirman No. 1",
+  "province": "Jawa Barat",
+  "city": "Bandung",
+  "district": "Coblong",
+  "postal_code": "40132",
+  "lat": -6.914744,
+  "lng": 107.609810,
+  "is_default": true
 }
 ```
 
-See [BACKEND_COORDINATES_IMPLEMENTATION.md](./BACKEND_COORDINATES_IMPLEMENTATION.md) for detailed documentation.
+### Cart (Customer Only)
+
+| Method | Endpoint        | Description                  |
+| ------ | --------------- | ---------------------------- |
+| GET    | `/api/cart`     | Get shopping cart            |
+| POST   | `/api/cart`     | Tambah item ke cart          |
+| PATCH  | `/api/cart/:id` | Update jumlah item di cart   |
+| DELETE | `/api/cart/:id` | Hapus item dari cart         |
+| DELETE | `/api/cart`     | Kosongkan cart               |
+
+### Dashboard
+
+| Method | Endpoint                       | Description           |
+| ------ | ------------------------------ | --------------------- |
+| GET    | `/api/dashboard/stats`         | Statistik dashboard   |
+| GET    | `/api/dashboard/performance`   | Analitik dashboard    |
+| GET    | `/api/dashboard/recent-orders` | Order terbaru         |
+
+### Products
+
+| Method | Endpoint                   | Description            |
+| ------ | -------------------------- | ---------------------- |
+| GET    | `/api/products`            | List produk            |
+| POST   | `/api/products`            | Buat produk            |
+| GET    | `/api/products/:id`        | Detail produk          |
+| GET    | `/api/products/slug/:slug` | Detail produk by slug  |
+| PATCH  | `/api/products/:id`        | Update produk          |
+| DELETE | `/api/products/:id`        | Soft delete produk     |
+
+### Categories
+
+| Method | Endpoint              | Description      |
+| ------ | --------------------- | ---------------- |
+| GET    | `/api/categories`     | List kategori    |
+| POST   | `/api/categories`     | Buat kategori    |
+| PATCH  | `/api/categories/:id` | Update kategori  |
+| DELETE | `/api/categories/:id` | Hapus kategori   |
+
+### Collections
+
+| Method | Endpoint               | Description        |
+| ------ | ---------------------- | ------------------ |
+| GET    | `/api/collections`     | List koleksi       |
+| POST   | `/api/collections`     | Buat koleksi       |
+| GET    | `/api/collections/:id` | Detail koleksi     |
+| PATCH  | `/api/collections/:id` | Update koleksi     |
+| DELETE | `/api/collections/:id` | Hapus koleksi      |
+
+### Flash Sales
+
+| Method | Endpoint                  | Description             |
+| ------ | ------------------------- | ----------------------- |
+| GET    | `/api/flash-sales`        | List flash sales        |
+| POST   | `/api/flash-sales`        | Buat flash sale         |
+| GET    | `/api/flash-sales/active` | Get flash sale aktif    |
+| GET    | `/api/flash-sales/:id`    | Detail flash sale       |
+| DELETE | `/api/flash-sales/:id`    | Hapus flash sale        |
+
+### Blogs
+
+| Method | Endpoint            | Description     |
+| ------ | ------------------- | --------------- |
+| GET    | `/api/blogs`        | List blog       |
+| GET    | `/api/blogs/latest` | Blog terbaru    |
+| POST   | `/api/blogs`        | Buat blog       |
+| GET    | `/api/blogs/:id`    | Detail blog     |
+| DELETE | `/api/blogs/:id`    | Hapus blog      |
+
+### Orders
+
+| Method | Endpoint                 | Description          |
+| ------ | ------------------------ | -------------------- |
+| GET    | `/api/orders`            | List semua order     |
+| GET    | `/api/orders/:id`        | Detail order         |
+| PATCH  | `/api/orders/:id/status` | Update status order  |
+
+### Customers (CMS)
+
+| Method | Endpoint               | Description           |
+| ------ | ---------------------- | --------------------- |
+| GET    | `/api/customers`       | List customers        |
+| GET    | `/api/customers/stats` | Statistik customer    |
+| GET    | `/api/customers/:id`   | Detail customer       |
+
+### Coupons
+
+| Method | Endpoint                      | Description      |
+| ------ | ----------------------------- | ---------------- |
+| GET    | `/api/coupons`                | List kupon       |
+| POST   | `/api/coupons`                | Buat kupon       |
+| GET    | `/api/coupons/validate/:code` | Validasi kupon   |
+| GET    | `/api/coupons/:id`            | Detail kupon     |
+| PATCH  | `/api/coupons/:id`            | Update kupon     |
+| DELETE | `/api/coupons/:id`            | Hapus kupon      |
+
+### Banners
+
+| Method | Endpoint           | Description     |
+| ------ | ------------------ | --------------- |
+| GET    | `/api/banners`     | Banner aktif    |
+| GET    | `/api/banners/all` | Semua banner    |
+| POST   | `/api/banners`     | Buat banner     |
+| PATCH  | `/api/banners/:id` | Update banner   |
+| DELETE | `/api/banners/:id` | Hapus banner    |
+
+### Notifications
+
+| Method | Endpoint                          | Description                   |
+| ------ | --------------------------------- | ----------------------------- |
+| GET    | `/api/notifications`              | List notifikasi               |
+| GET    | `/api/notifications/unread-count` | Jumlah notifikasi belum dibaca|
+| PATCH  | `/api/notifications/:id/read`     | Tandai notifikasi dibaca      |
+
+### Legal & Settings
+
+| Method | Endpoint          | Description         |
+| ------ | ----------------- | ------------------- |
+| GET    | `/api/legal`      | List halaman legal  |
+| GET    | `/api/legal/:key` | Get halaman legal   |
+| PATCH  | `/api/legal/:key` | Update halaman legal|
+| GET    | `/api/settings`   | Get settings        |
+| PATCH  | `/api/settings`   | Update settings     |
+
+### Media Upload
+
+| Method | Endpoint      | Description                     |
+| ------ | ------------- | ------------------------------- |
+| POST   | `/api/upload` | Upload media ke Cloudflare R2   |
+
+### Favorites (Wishlist)
+
+| Method | Endpoint                                      | Description              |
+| ------ | --------------------------------------------- | ------------------------ |
+| GET    | `/api/customer/favorites`                     | Get wishlist             |
+| POST   | `/api/customer/favorites`                     | Tambah item wishlist     |
+| DELETE | `/api/customer/favorites/:id`                 | Hapus item wishlist      |
+| DELETE | `/api/customer/favorites/product/:product_id` | Hapus berdasarkan produk |
+| GET    | `/api/customer/favorites/folders`             | List folder favorit      |
+
+---
+
+## Features
+
+### Multi Address Support
+
+Customer dapat menyimpan beberapa alamat pengiriman.
+
+- Multiple alamat per customer
+- Dukungan alamat default
+- Koordinat GPS
+- Label alamat (`Rumah`, `Kantor`, dll.)
+- Dukungan Provinsi / Kota / Kecamatan
+- Dukungan kode pos
+
+### GPS Coordinates Support
+
+Alamat mendukung latitude dan longitude untuk:
+
+- Tracking pengiriman
+- Integrasi peta
+- Perhitungan jarak
+- Estimasi ongkos kirim
+- Integrasi kurir
+
+```json
+{
+  "lat": -6.914744,
+  "lng": 107.609810
+}
+```
+
+---
 
 ## Technology Stack
 
-- **Axum**: Web framework.
-- **SQLx**: Asynchronous SQL toolkit.
-- **PostgreSQL**: Database.
-- **Cloudflare R2**: S3-compatible media storage.
-- **AWS SDK for Rust**: Interacting with R2.
-- **Serde**: JSON serialization.
-- **Chrono**: DateTime handling.
-- **Tower HTTP**: CORS and tracing layers.
-- **Bcrypt**: Password hashing.
-- **JSONWebToken**: Authentication.
+| Teknologi        | Deskripsi                 |
+| ---------------- | ------------------------- |
+| Rust             | Bahasa pemrograman utama  |
+| Axum             | Web framework             |
+| SQLx             | Async SQL toolkit         |
+| PostgreSQL       | Database                  |
+| Cloudflare R2    | Object storage            |
+| AWS SDK for Rust | Integrasi R2              |
+| Serde            | JSON serialization        |
+| Chrono           | Date & time               |
+| Tower HTTP       | Middleware                |
+| Bcrypt           | Password hashing          |
+| JWT              | Authentication            |
+
+---
+
+## Architecture Notes
+
+- UUID primary key dari PostgreSQL
+- SQLx compile-time checked queries
+- Automatic migrations saat startup
+- SSH Tunnel support
+- Arsitektur multi-alamat untuk customer
+- Transaction-safe order creation
+- Media upload ke Cloudflare R2
+- JWT authentication
