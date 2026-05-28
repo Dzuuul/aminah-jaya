@@ -3,7 +3,8 @@ services:
     image: api-cms-aminah-jaya:latest
     container_name: api-cms-aminah-jaya
     restart: always
-    network_mode: host
+    expose:
+      - ${PORT:-8001}
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
@@ -19,3 +20,8 @@ services:
       - R2_BUCKET=${R2_BUCKET}
       - R2_PUBLIC_URL=${R2_PUBLIC_URL}
       - INTEGRASI_API_URL=${INTEGRASI_API_URL:-http://127.0.0.1:8002}
+    networks:
+      - aminah-network
+networks:
+  aminah-network:
+    external: true

@@ -16,4 +16,8 @@ services:
       - VITE_API_BASE=${VITE_API_BASE}
       - VITE_GOOGLE_CLIENT_ID=${VITE_GOOGLE_CLIENT_ID}
       - VITE_INTEGRASI_API_BASE=${VITE_INTEGRASI_API_BASE}
-
+    networks:
+      - aminah-network
+networks:
+  aminah-network:
+    external: true

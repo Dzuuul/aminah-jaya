@@ -1,0 +1,31 @@
+services:
+  api-integrasi-aminah-jaya:
+    image: api-integrasi-aminah-jaya:latest
+    container_name: api-integrasi-aminah-jaya
+    restart: always
+    expose:
+      - ${PORT:-8002}
+    environment:
+      - PORT=${PORT:-8002}
+      - RUST_LOG=${RUST_LOG:-info}
+      - VERIFY_TOKEN=${VERIFY_TOKEN}
+      - WHATSAPP_TOKEN=${WHATSAPP_TOKEN}
+      - PHONE_NUMBER_ID=${PHONE_NUMBER_ID}
+      - DUITKU_MERCHANT_CODE=${DUITKU_MERCHANT_CODE}
+      - DUITKU_API_KEY=${DUITKU_API_KEY}
+      - DUITKU_BASE_URL=${DUITKU_BASE_URL}
+      - DUITKU_CALLBACK_URL=${DUITKU_CALLBACK_URL}
+      - BITESHIP_API_KEY=${BITESHIP_API_KEY}
+      - BITESHIP_ORIGIN_LAT=${BITESHIP_ORIGIN_LAT}
+      - BITESHIP_ORIGIN_LNG=${BITESHIP_ORIGIN_LNG}
+      - BITESHIP_ORIGIN_ADDRESS=${BITESHIP_ORIGIN_ADDRESS}
+      - BITESHIP_ORIGIN_POSTAL_CODE=${BITESHIP_ORIGIN_POSTAL_CODE}
+      - BITESHIP_ORIGIN_CONTACT_NAME=${BITESHIP_ORIGIN_CONTACT_NAME}
+      - BITESHIP_ORIGIN_CONTACT_PHONE=${BITESHIP_ORIGIN_CONTACT_PHONE}
+      - BITESHIP_ORIGIN_AREA_ID=${BITESHIP_ORIGIN_AREA_ID}
+      - BITESHIP_DEFAULT_COURIERS=${BITESHIP_DEFAULT_COURIERS}
+    networks:
+      - aminah-network
+networks:
+  aminah-network:
+    external: true

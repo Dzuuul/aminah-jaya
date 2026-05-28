@@ -13,3 +13,8 @@ services:
       - HOST=0.0.0.0
       - PORT=${HOST_PORT:-3001}
       - VITE_API_BASE=${VITE_API_BASE}
+    networks:
+      - aminah-network
+networks:
+  aminah-network:
+    external: true
