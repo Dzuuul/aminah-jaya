@@ -1,6 +1,6 @@
 use axum::{Json, response::IntoResponse, http::{StatusCode, HeaderMap}, extract::State};
 use crate::models::{ApiResponse, StorefrontCustomer, RegisterCustomerPayload, LoginCustomerPayload, LoginResponse, UserProfile, GoogleAuthPayload, CartItem, Coupon};
-use crate::biteship::{build_rate_items, BiteshipClient};
+use crate::integrasi::IntegrasiClient;
 use serde_json::json;
 use crate::auth::{create_jwt, verify_jwt};
 use crate::state::AppState;
@@ -632,7 +632,7 @@ pub async fn create_order(
 
     let courier_company = payload.courier_company.clone().filter(|s| !s.trim().is_empty());
     let courier_type = payload.courier_type.clone().filter(|s| !s.trim().is_empty());
-    let biteship_enabled = BiteshipClient::from_env().is_ok();
+    let biteship_enabled = IntegrasiClient::is_configured();
 
     if biteship_enabled && (courier_company.is_none() || courier_type.is_none()) {
         return (StatusCode::BAD_REQUEST, Json(ApiResponse::error("Pilih metode pengiriman terlebih dahulu", None))).into_response();
@@ -726,15 +726,40 @@ pub async fn create_order(
     // 7. Create Biteship shipment
     let mut biteship_draft_order_id = payload.biteship_draft_order_id.clone();
 
-    if let Ok(biteship) = BiteshipClient::from_env() {
-        let cfg = biteship.config();
-        let items = build_rate_items(&cart_items);
+    if let Ok(integrasi) = IntegrasiClient::from_env() {
+        let items: Vec<serde_json::Value> = cart_items
+            .iter()
+            .map(|item| {
+                let weight = item
+                    .product_weight_gram
+                    .filter(|w| *w > 0)
+                    .unwrap_or(500) as i64;
+                let value = item.product_price.unwrap_or(0.0).round() as i64;
+                let name = item
+                    .product_name
+                    .clone()
+                    .unwrap_or_else(|| "Produk".into());
+                json!({
+                    "name": name,
+                    "description": "Produk Aminah Jaya",
+                    "value": value.max(1000),
+                    "weight": weight,
+                    "quantity": item.quantity,
+                    "length": 10,
+                    "width": 10,
+                    "height": 10
+                })
+            })
+            .collect();
+
         let company = courier_company.clone().unwrap_or_default();
         let service = courier_type.clone().unwrap_or_default();
 
-        let biteship_result = if let Some(draft_id) = payload.biteship_draft_order_id.clone().filter(|d| !d.is_empty()) {
+        let biteship_result = if let Some(draft_id) =
+            payload.biteship_draft_order_id.clone().filter(|d| !d.is_empty())
+        {
             biteship_draft_order_id = Some(draft_id.clone());
-            biteship.confirm_draft_order(&draft_id).await
+            integrasi.confirm_draft_order(&draft_id).await
         } else {
             let dest_phone = payload
                 .destination_contact_phone
@@ -746,11 +771,6 @@ pub async fn create_order(
                 .clone()
                 .unwrap_or_else(|| customer.name.clone());
             let mut body = json!({
-                "shipper_contact_name": cfg.origin_contact_name,
-                "shipper_contact_phone": cfg.origin_contact_phone,
-                "origin_contact_name": cfg.origin_contact_name,
-                "origin_contact_phone": cfg.origin_contact_phone,
-                "origin_address": cfg.origin_address,
                 "destination_contact_name": dest_name,
                 "destination_contact_phone": dest_phone,
                 "destination_address": payload.shipping_address,
@@ -764,7 +784,6 @@ pub async fn create_order(
             });
 
             if let (Some(lat), Some(lng)) = (payload.destination_lat, payload.destination_lng) {
-                body["origin_coordinate"] = json!({ "latitude": cfg.origin_lat, "longitude": cfg.origin_lng });
                 body["destination_coordinate"] = json!({ "latitude": lat, "longitude": lng });
             }
             if let Some(area_id) = &payload.destination_area_id {
@@ -775,14 +794,8 @@ pub async fn create_order(
                     body["destination_postal_code"] = json!(code);
                 }
             }
-            if let Some(area_id) = &cfg.origin_area_id {
-                body["origin_area_id"] = json!(area_id);
-            }
-            if let Some(postal) = cfg.origin_postal_code {
-                body["origin_postal_code"] = json!(postal);
-            }
 
-            biteship.create_order(body).await
+            integrasi.create_biteship_order(body).await
         };
 
         match biteship_result {
@@ -823,7 +836,7 @@ pub async fn create_order(
             }
         }
     } else {
-        tracing::warn!("BITESHIP_API_KEY not configured; order saved without Biteship shipment");
+        tracing::warn!("INTEGRASI_API_URL not configured; order saved without Biteship shipment");
     }
 
     // Commit Transaction

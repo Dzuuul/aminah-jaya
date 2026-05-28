@@ -2,67 +2,270 @@
 	"info": {
 		"_postman_id": "a1b2c3d4-e5f6-4a5b-bc6d-e7f8g9h0i1j2",
 		"name": "Aminah Jaya Integration API",
-		"description": "WhatsApp Cloud API Integration for Aminah Jaya Store",
+		"description": "API Integrasi Aminah Jaya — Biteship (ongkir), Duitku (pembayaran), Meta WhatsApp Cloud API.\n\nBase lokal: port 8002. Shipping di bawah `/api/shipping/*`.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Webhook",
+			"name": "WhatsApp",
 			"item": [
 				{
-					"name": "Verify Webhook",
+					"name": "Verify Webhook (GET)",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/webhook?hub.mode=subscribe&hub.verify_token={{verify_token}}&hub.challenge=123456",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"webhook"
-							],
+							"host": ["{{base_url}}"],
+							"path": ["webhook"],
 							"query": [
-								{
-									"key": "hub.mode",
-									"value": "subscribe"
-								},
-								{
-									"key": "hub.verify_token",
-									"value": "{{verify_token}}"
-								},
-								{
-									"key": "hub.challenge",
-									"value": "123456"
-								}
+								{ "key": "hub.mode", "value": "subscribe" },
+								{ "key": "hub.verify_token", "value": "{{verify_token}}" },
+								{ "key": "hub.challenge", "value": "123456" }
+							]
+						},
+						"description": "Verifikasi webhook Meta. Respons sukses: plain text challenge."
+					},
+					"response": []
+				},
+				{
+					"name": "Handle Webhook (POST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [\n    {\n      \"id\": \"123456789\",\n      \"changes\": [\n        {\n          \"value\": {\n            \"messaging_product\": \"whatsapp\",\n            \"metadata\": {\n              \"display_phone_number\": \"123456789\",\n              \"phone_number_id\": \"{{phone_number_id}}\"\n            },\n            \"contacts\": [\n              {\n                \"profile\": { \"name\": \"Customer Name\" },\n                \"wa_id\": \"628123456789\"\n              }\n            ],\n            \"messages\": [\n              {\n                \"from\": \"628123456789\",\n                \"id\": \"msg-123\",\n                \"timestamp\": \"1625000000\",\n                \"text\": { \"body\": \"Halo Aminah Jaya\" },\n                \"type\": \"text\"\n              }\n            ]\n          },\n          \"field\": \"messages\"\n        }\n      ]\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/webhook",
+							"host": ["{{base_url}}"],
+							"path": ["webhook"]
+						},
+						"description": "Menerima pesan masuk dari Meta. Server membalas via WhatsApp API (async)."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Shipping (Biteship)",
+			"item": [
+				{
+					"name": "List Couriers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/shipping/couriers",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "couriers"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search Maps Areas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/shipping/maps/areas?input=Kediri",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "maps", "areas"],
+							"query": [
+								{ "key": "input", "value": "Kediri", "description": "Min. 3 karakter" }
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "Handle Webhook",
+					"name": "Get Shipping Rates",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" },
+							{
+								"key": "Authorization",
+								"value": "Bearer {{customer_token}}",
+								"description": "Opsional",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"destination_lat\": -7.7702,\n  \"destination_lng\": 112.0262,\n  \"destination_postal_code\": \"64182\",\n  \"destination_city\": \"Kediri\",\n  \"destination_province\": \"Jawa Timur\",\n  \"couriers\": \"jne,sicepat,grab\",\n  \"cart_items\": [\n    {\n      \"quantity\": 2,\n      \"product_weight_gram\": 500,\n      \"product_price\": 75000,\n      \"product_name\": \"Hijab Premium\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/shipping/rates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "rates"]
+						},
+						"description": "Hitung ongkir. Wajib `cart_items`. Respons: `{ success, data: { rates, weight_kg, cache_key } }`."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Draft Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"destination_contact_name\": \"Budi Santoso\",\n  \"destination_contact_phone\": \"081234567890\",\n  \"destination_address\": \"Jl. Contoh No. 1, Kediri\",\n  \"destination_note\": \"Tolong hubungi sebelum kirim\",\n  \"destination_lat\": -7.7702,\n  \"destination_lng\": 112.0262,\n  \"destination_postal_code\": \"64182\",\n  \"courier_company\": \"jne\",\n  \"courier_type\": \"reg\",\n  \"cart_items\": [\n    {\n      \"quantity\": 1,\n      \"product_weight_gram\": 500,\n      \"product_price\": 150000,\n      \"product_name\": \"Produk Aminah\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/shipping/draft-orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "draft-orders"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Draft Order Rates",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/shipping/draft-orders/{{draft_order_id}}/rates",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "draft-orders", "{{draft_order_id}}", "rates"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm Draft Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/shipping/draft-orders/{{draft_order_id}}/confirm",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "draft-orders", "{{draft_order_id}}", "confirm"]
+						},
+						"description": "Dipanggil api-cms saat checkout dengan biteship_draft_order_id."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Biteship Order (CMS)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"destination_contact_name\": \"Budi Santoso\",\n  \"destination_contact_phone\": \"081234567890\",\n  \"destination_address\": \"Fikri | 08123456789 | Jl. Sudirman No. 1\",\n  \"destination_note\": \"Catatan pengiriman\",\n  \"destination_lat\": -7.7702,\n  \"destination_lng\": 112.0262,\n  \"destination_postal_code\": \"64182\",\n  \"courier_company\": \"jne\",\n  \"courier_type\": \"reg\",\n  \"delivery_type\": \"now\",\n  \"reference_id\": \"{{merchant_order_id}}\",\n  \"items\": [\n    {\n      \"name\": \"Produk Aminah\",\n      \"description\": \"Produk Aminah Jaya\",\n      \"value\": 150000,\n      \"weight\": 500,\n      \"quantity\": 1,\n      \"length\": 10,\n      \"width\": 10,\n      \"height\": 10\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/shipping/orders",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "orders"]
+						},
+						"description": "Server-to-server dari api-cms. Origin diisi otomatis dari env BITESHIP_ORIGIN_*."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Biteship Order",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/shipping/orders/{{biteship_order_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "orders", "{{biteship_order_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tracking",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/shipping/tracking/{{tracking_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "shipping", "tracking", "{{tracking_id}}"]
+						},
+						"description": "Dipanggil api-cms untuk GET /api/customer/orders/:id/tracking."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Duitku",
+			"item": [
+				{
+					"name": "Create Payment (Inquiry)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"merchantOrderId\": \"{{merchant_order_id}}\",\n  \"paymentAmount\": 150000,\n  \"paymentMethod\": \"SP\",\n  \"productDetails\": \"Pesanan Aminah Jaya\",\n  \"email\": \"customer@example.com\",\n  \"phoneNumber\": \"081234567890\",\n  \"customerVaName\": \"Budi Santoso\",\n  \"returnUrl\": \"http://localhost:3000/success\",\n  \"expiryPeriod\": 60\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/payments/duitku",
+							"host": ["{{base_url}}"],
+							"path": ["payments", "duitku"]
+						},
+						"description": "Buat tagihan VA/QRIS. Respons JSON Duitku langsung (statusCode 00 = sukses). paymentMethod: SP (QRIS), BC, VA, dll."
+					},
+					"response": []
+				},
+				{
+					"name": "Payment Callback (Webhook)",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Content-Type",
-								"value": "application/json"
+								"value": "application/x-www-form-urlencoded"
 							}
 						],
 						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"object\": \"whatsapp_business_account\",\n    \"entry\": [\n        {\n            \"id\": \"123456789\",\n            \"changes\": [\n                {\n                    \"value\": {\n                        \"messaging_product\": \"whatsapp\",\n                        \"metadata\": {\n                            \"display_phone_number\": \"123456789\",\n                            \"phone_number_id\": \"123456789\"\n                        },\n                        \"contacts\": [\n                            {\n                                \"profile\": {\n                                    \"name\": \"Customer Name\"\n                                },\n                                \"wa_id\": \"628123456789\"\n                            }\n                        ],\n                        \"messages\": [\n                            {\n                                \"from\": \"628123456789\",\n                                \"id\": \"msg-123\",\n                                \"timestamp\": \"1625000000\",\n                                \"text\": {\n                                    \"body\": \"Halo Aminah Jaya\"\n                                },\n                                \"type\": \"text\"\n                            }\n                        ]\n                    },\n                    \"field\": \"messages\"\n                }\n            ]\n        }\n    ]\n}"
+							"mode": "urlencoded",
+							"urlencoded": [
+								{ "key": "merchantCode", "value": "{{duitku_merchant_code}}", "type": "text" },
+								{ "key": "amount", "value": "150000", "type": "text" },
+								{ "key": "merchantOrderId", "value": "{{merchant_order_id}}", "type": "text" },
+								{ "key": "productDetail", "value": "Pesanan Aminah Jaya", "type": "text" },
+								{ "key": "paymentCode", "value": "SP", "type": "text" },
+								{ "key": "resultCode", "value": "00", "type": "text" },
+								{ "key": "reference", "value": "DUITKU-REF-001", "type": "text" },
+								{
+									"key": "signature",
+									"value": "ganti_dengan_md5_valid",
+									"type": "text",
+									"description": "MD5(merchantCode + amount + merchantOrderId + apiKey)"
+								}
+							]
 						},
 						"url": {
-							"raw": "{{base_url}}/webhook",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"webhook"
-							]
-						}
+							"raw": "{{base_url}}/payments/duitku/callback",
+							"host": ["{{base_url}}"],
+							"path": ["payments", "duitku", "callback"]
+						},
+						"description": "Simulasi callback Duitku. Respons wajib: HTTP 200 + body plain text OK."
 					},
 					"response": []
 				}
@@ -72,12 +275,47 @@
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:3000",
+			"value": "http://localhost:8002",
 			"type": "string"
 		},
 		{
 			"key": "verify_token",
 			"value": "7X8AP2DM73ovv6qOb9wZ5so6MF2ipHtK3XjsxWgs5K84c5XDbv0qBfhz95I0qI0t",
+			"type": "string"
+		},
+		{
+			"key": "phone_number_id",
+			"value": "your_phone_number_id",
+			"type": "string"
+		},
+		{
+			"key": "customer_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "merchant_order_id",
+			"value": "ORD-TEST-001",
+			"type": "string"
+		},
+		{
+			"key": "draft_order_id",
+			"value": "draft_order_id_dari_biteship",
+			"type": "string"
+		},
+		{
+			"key": "biteship_order_id",
+			"value": "biteship_order_id",
+			"type": "string"
+		},
+		{
+			"key": "tracking_id",
+			"value": "tracking_id",
+			"type": "string"
+		},
+		{
+			"key": "duitku_merchant_code",
+			"value": "your_merchant_code",
 			"type": "string"
 		}
 	]

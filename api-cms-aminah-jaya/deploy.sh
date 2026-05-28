@@ -5,10 +5,12 @@
 
 set -e
 
-# Load environment variables from .env
+# Load environment variables from .env (supports values with spaces when quoted)
 if [ -f .env ]; then
-  # Export variables while ignoring comments
-  export $(grep -v '^#' .env | xargs)
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
 fi
 
 # Default values

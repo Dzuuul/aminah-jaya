@@ -339,6 +339,11 @@ export default function CheckoutPage() {
       return;
     }
 
+    const items = cartItems();
+    if (!items || items.length === 0) {
+      return;
+    }
+
     if (!options?.skipSessionCache) {
       const cached = readSessionShippingCache(fetchKey);
       if (cached) {
@@ -359,6 +364,12 @@ export default function CheckoutPage() {
         destination_area_id: destinationAreaId() ?? undefined,
         destination_city: city() || undefined,
         destination_province: province() || undefined,
+        cart_items: items!.map((item) => ({
+          quantity: item.quantity,
+          product_weight_gram: item.product_weight_gram,
+          product_price: item.product_price,
+          product_name: item.product_name,
+        })),
       });
 
       if (generation !== shippingFetchGeneration) return;

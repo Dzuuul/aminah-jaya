@@ -289,33 +289,8 @@ export default function MapPicker(rawProps: MapPickerProps) {
     try {
       setIsLoading(true);
 
-      const token =
-        typeof window !== "undefined"
-          ? localStorage.getItem("customer_token")
-          : null;
-      const apiBase =
-        import.meta.env.VITE_API_BASE || "http://localhost:8001/api";
-
-      const response = await fetch(
-        `${apiBase}/shipping/maps/areas?input=${encodeURIComponent(trimmedQuery)}`,
-        {
-          method: "GET",
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Gagal mengambil area dari Biteship");
-      }
-
-      const json = await response.json();
-      if (!json?.success) {
-        throw new Error(json?.message || "Gagal mengambil area");
-      }
-
-      const areas = Array.isArray(json?.data) ? json.data : [];
+      const { searchShippingAreas } = await import("~/lib/api");
+      const areas = await searchShippingAreas(trimmedQuery);
 
       const options: AreaOption[] = await Promise.all(
         areas.map(async (item: any) => {

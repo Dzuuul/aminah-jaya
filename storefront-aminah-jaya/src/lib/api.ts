@@ -1,3 +1,5 @@
+import { fetchIntegrasiApi } from "./integrasi-api";
+
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8001/api";
 
 export interface Product {
@@ -164,10 +166,20 @@ export interface ShippingRateOption {
   available_for_cash_on_delivery?: boolean;
 }
 
-export const getShippingCouriers = () => fetchApi<any[]>("/shipping/couriers");
+export interface ShippingRateCartItem {
+  quantity: number;
+  product_weight_gram?: number;
+  product_price?: number;
+  product_name?: string;
+}
+
+export const getShippingCouriers = () =>
+  fetchIntegrasiApi<any[]>("/shipping/couriers");
 
 export const searchShippingAreas = (input: string) =>
-  fetchApi<any[]>(`/shipping/maps/areas?input=${encodeURIComponent(input)}`);
+  fetchIntegrasiApi<any[]>(
+    `/shipping/maps/areas?input=${encodeURIComponent(input)}`,
+  );
 
 export const getShippingRates = (payload: {
   destination_lat?: number;
@@ -177,8 +189,9 @@ export const getShippingRates = (payload: {
   destination_city?: string;
   destination_province?: string;
   couriers?: string;
+  cart_items: ShippingRateCartItem[];
 }) =>
-  fetchApi<{
+  fetchIntegrasiApi<{
     rates: ShippingRateOption[];
     cached?: boolean;
     cache_key?: string;
@@ -189,13 +202,13 @@ export const getShippingRates = (payload: {
   });
 
 export const createShippingDraftOrder = (payload: Record<string, unknown>) =>
-  fetchApi<any>("/shipping/draft-orders", {
+  fetchIntegrasiApi<any>("/shipping/draft-orders", {
     method: "POST",
     body: JSON.stringify(payload),
   });
 
 export const getShippingDraftRates = (draftId: string) =>
-  fetchApi<{ rates: ShippingRateOption[] }>(
+  fetchIntegrasiApi<{ rates: ShippingRateOption[] }>(
     `/shipping/draft-orders/${draftId}/rates`,
   );
 

@@ -1,7 +1,16 @@
 use reqwest::Method;
+use serde::Deserialize;
 use serde_json::{json, Value};
 
 const BITESHIP_BASE_URL: &str = "https://api.biteship.com/v1";
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct RateCartItem {
+    pub quantity: i32,
+    pub product_weight_gram: Option<i32>,
+    pub product_price: Option<f64>,
+    pub product_name: Option<String>,
+}
 
 #[derive(Clone)]
 pub struct BiteshipConfig {
@@ -112,11 +121,6 @@ impl BiteshipClient {
         self.request(Method::POST, "/draft_orders", Some(body)).await
     }
 
-    pub async fn get_draft_order(&self, draft_id: &str) -> Result<Value, BiteshipError> {
-        self.request(Method::GET, &format!("/draft_orders/{draft_id}"), None)
-            .await
-    }
-
     pub async fn get_draft_rates(&self, draft_id: &str) -> Result<Value, BiteshipError> {
         self.request(
             Method::GET,
@@ -177,9 +181,7 @@ impl BiteshipClient {
             status: Some(status.as_u16()),
         })?;
 
-        let parsed: Value = serde_json::from_str(&text).unwrap_or_else(|_| {
-            json!({ "raw": text })
-        });
+        let parsed: Value = serde_json::from_str(&text).unwrap_or_else(|_| json!({ "raw": text }));
 
         if !status.is_success() {
             let message = parsed
@@ -199,14 +201,7 @@ impl BiteshipClient {
     }
 }
 
-pub fn cache_ttl_hours() -> i64 {
-    std::env::var("SHIPPING_RATE_CACHE_TTL_HOURS")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(6)
-}
-
-pub fn cart_total_weight_gram(cart_items: &[crate::models::CartItem]) -> i64 {
+pub fn cart_total_weight_gram(cart_items: &[RateCartItem]) -> i64 {
     cart_items
         .iter()
         .map(|item| {
@@ -227,10 +222,7 @@ pub fn weight_kg_bucket(total_grams: i64) -> i32 {
 #[derive(Clone, Debug)]
 pub struct ShippingRateCacheKey {
     pub cache_key: String,
-    pub origin_key: String,
-    pub destination_key: String,
     pub weight_kg: i32,
-    pub couriers: String,
 }
 
 fn normalize_location_part(value: Option<&str>) -> String {
@@ -285,13 +277,7 @@ pub fn build_shipping_cache_key(
 
     let cache_key = format!("{origin_key}|{destination_key}|{weight_kg}kg|{couriers}");
 
-    ShippingRateCacheKey {
-        cache_key,
-        origin_key,
-        destination_key,
-        weight_kg,
-        couriers,
-    }
+    ShippingRateCacheKey { cache_key, weight_kg }
 }
 
 pub fn build_synthetic_items_for_weight(weight_kg: i32, total_value_idr: i64) -> Vec<Value> {
@@ -307,14 +293,13 @@ pub fn build_synthetic_items_for_weight(weight_kg: i32, total_value_idr: i64) ->
     })]
 }
 
-/// Daftar kurir default — wajib untuk Rates API (lihat Postman: Rates API By Coordinates).
 pub fn default_couriers_list() -> String {
     std::env::var("BITESHIP_DEFAULT_COURIERS").unwrap_or_else(|_| {
         "jne,sicepat,jnt,tiki,anteraja,ninja,paxel,grab,gojek,idexpress".to_string()
     })
 }
 
-pub fn build_rate_items(cart_items: &[crate::models::CartItem]) -> Vec<Value> {
+pub fn build_rate_items(cart_items: &[RateCartItem]) -> Vec<Value> {
     cart_items
         .iter()
         .map(|item| {
@@ -339,29 +324,6 @@ pub fn build_rate_items(cart_items: &[crate::models::CartItem]) -> Vec<Value> {
             })
         })
         .collect()
-}
-
-/// Susun body POST /v1/rates/couriers sesuai mode Biteship (koordinat, kode pos, mix, atau area id).
-pub fn build_rates_request_body(
-    cfg: &BiteshipConfig,
-    items: Vec<Value>,
-    destination_lat: Option<f64>,
-    destination_lng: Option<f64>,
-    destination_postal_code: Option<&str>,
-    destination_area_id: Option<&str>,
-    couriers_override: Option<&str>,
-) -> Result<Value, String> {
-    let default_couriers = default_couriers_list();
-    let couriers = couriers_override.unwrap_or(&default_couriers);
-    build_rates_request_body_with_couriers(
-        cfg,
-        items,
-        destination_lat,
-        destination_lng,
-        destination_postal_code,
-        destination_area_id,
-        couriers,
-    )
 }
 
 pub fn build_rates_request_body_with_couriers(
@@ -393,7 +355,6 @@ pub fn build_rates_request_body_with_couriers(
         .map(str::trim)
         .filter(|s| !s.is_empty());
 
-    // Mode: area id (Rates API By Area Id)
     if let (Some(origin_area), Some(dest_area)) =
         (cfg.origin_area_id.as_deref(), dest_area)
     {
@@ -405,7 +366,6 @@ pub fn build_rates_request_body_with_couriers(
         }));
     }
 
-    // Mode: koordinat penuh (Rates API By Coordinates)
     if let Some((dlat, dlng)) = dest_coords {
         return Ok(json!({
             "origin_latitude": cfg.origin_lat,
@@ -417,7 +377,6 @@ pub fn build_rates_request_body_with_couriers(
         }));
     }
 
-    // Mode: kode pos penuh (Rates API By Postal Code)
     if let (Some(op), Some(dp)) = (cfg.origin_postal_code, dest_postal) {
         return Ok(json!({
             "origin_postal_code": op,
@@ -427,7 +386,6 @@ pub fn build_rates_request_body_with_couriers(
         }));
     }
 
-    // Mode: mix origin koordinat + destination postal
     if let (Some(dp),) = (dest_postal,) {
         return Ok(json!({
             "origin_latitude": cfg.origin_lat,
@@ -444,7 +402,6 @@ pub fn build_rates_request_body_with_couriers(
     )
 }
 
-/// Ambil nilai maksimum dari rentang durasi Biteship, mis. `"0 - 1"` → `1`, `"2"` → `2`.
 fn parse_duration_max_value(range: &str) -> f64 {
     let trimmed = range.trim();
     if trimmed.is_empty() {
@@ -465,7 +422,6 @@ fn parse_duration_max_value(range: &str) -> f64 {
         .unwrap_or(f64::MAX)
 }
 
-/// Kelompok kecepatan untuk UI checkout: Next Day (≤1 hari) vs Reguler.
 pub fn classify_speed_group(duration_range: &str, duration_unit: &str) -> &'static str {
     let unit = duration_unit.trim().to_lowercase();
     let max_val = parse_duration_max_value(duration_range);
