@@ -3,8 +3,8 @@ services:
     image: api-cms-aminah-jaya:latest
     container_name: api-cms-aminah-jaya
     restart: always
-    expose:
-      - ${PORT:-8001}
+    ports:
+      - "8001:8001"
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
