@@ -1391,7 +1391,9 @@ ul.nav-links li.mobile-nav-header {
   cursor: pointer;
   box-shadow: var(--shadow-md);
   z-index: 10;
-  transition: background 0.2s, transform 0.2s;
+  transition:
+    background 0.2s,
+    transform 0.2s;
   color: var(--black);
   flex-shrink: 0;
 }
@@ -7512,8 +7514,25 @@ footer {
 
 @media (min-width: 1024px) {
   .prod-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .prod-grid .prod-body {
+    padding: 12px;
+  }
+
+  .prod-grid .prod-name {
+    font-size: 0.85rem;
+  }
+
+  .prod-grid .prod-price {
+    font-size: 0.875rem;
+  }
+
+  .prod-grid .btn-sm {
+    padding: 5px 10px;
+    font-size: 0.78rem;
   }
 }
 

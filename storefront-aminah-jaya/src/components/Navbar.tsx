@@ -1,6 +1,19 @@
-import { createSignal, createResource, For, Show, onMount, createEffect } from "solid-js";
+import {
+  createSignal,
+  createResource,
+  For,
+  Show,
+  onMount,
+  createEffect,
+} from "solid-js";
 import { A } from "@solidjs/router";
-import { Search, Bell, ShoppingCart, User as UserIcon, Heart } from "lucide-solid";
+import {
+  Search,
+  Bell,
+  ShoppingCart,
+  User as UserIcon,
+  Heart,
+} from "lucide-solid";
 
 const fetchProducts = async () => {
   try {
@@ -37,7 +50,9 @@ const fetchCollections = async () => {
 
 const fetchActiveFlashSale = async () => {
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/flash-sales/active`);
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/flash-sales/active`,
+    );
     if (!res.ok) return null;
     const json = await res.json();
     return json.data || null;
@@ -49,7 +64,9 @@ const fetchActiveFlashSale = async () => {
 
 const fetchUnreadCount = async () => {
   try {
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/notifications/unread-count`);
+    const res = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/notifications/unread-count`,
+    );
     const json = await res.json();
     return json.count || 0;
   } catch (e) {
@@ -58,7 +75,11 @@ const fetchUnreadCount = async () => {
 };
 
 import { getCart, getMeCustomer, formatCurrency } from "~/lib/api";
-import { setShowLoginModal, customerProfile, setCustomerProfile } from "~/lib/auth-store";
+import {
+  setShowLoginModal,
+  customerProfile,
+  setCustomerProfile,
+} from "~/lib/auth-store";
 import { cartCount, refetchCartCount, cartItems } from "~/lib/cart-store";
 
 export default function Navbar() {
@@ -82,6 +103,15 @@ export default function Navbar() {
     localStorage.removeItem("customer_profile");
     setCustomerProfile(null);
     window.location.href = "/login";
+  };
+
+  const truncate = (text: string, maxLength = 45) => {
+    if (text.length <= maxLength) return text;
+
+    const truncated = text.slice(0, maxLength);
+    const lastSpace = truncated.lastIndexOf(" ");
+
+    return `${truncated.slice(0, lastSpace)}...`;
   };
 
   onMount(async () => {
@@ -127,9 +157,14 @@ export default function Navbar() {
   };
 
   return (
-    <nav class="navbar-wrapper" style={{ position: "sticky", top: 0, "z-index": 100 }}>
+    <nav
+      class="navbar-wrapper"
+      style={{ position: "sticky", top: 0, "z-index": 100 }}
+    >
       {/* Full-screen backdrop blur overlay */}
-      <div class={`navbar-backdrop-overlay ${(isCartHovered() && customerProfile() && (cartCount() || 0) > 0) || (isProfileHovered() && customerProfile()) ? 'active' : ''}`}></div>
+      <div
+        class={`navbar-backdrop-overlay ${(isCartHovered() && customerProfile() && (cartCount() || 0) > 0) || (isProfileHovered() && customerProfile()) ? "active" : ""}`}
+      ></div>
 
       {/* Main Bar */}
       <div class="navbar-main" style={{ position: "relative", "z-index": 101 }}>
@@ -141,31 +176,58 @@ export default function Navbar() {
               <span class={isOpen() ? "open" : ""}></span>
             </button>
             <A href="/" class="nav-logo">
-              <img src="/logo_inverted.png" alt="Logo" style={{ "width": "45px", "height": "auto" }} />
+              <img
+                src="/logo_inverted.png"
+                alt="Logo"
+                style={{ width: "45px", height: "auto" }}
+              />
             </A>
           </div>
 
           <ul class={`nav-links ${isOpen() ? "mobile-open" : ""}`}>
             <li class="has-mega">
-              <a href="/" onClick={(e) => {
-                if (window.innerWidth <= 900) {
-                  e.preventDefault();
-                  setMobileShopOpen(!mobileShopOpen());
-                }
-              }}>Shop</a>
-              <span class={`mobile-arrow-icon ${mobileShopOpen() ? 'open' : ''}`} onClick={() => setMobileShopOpen(!mobileShopOpen())}>▼</span>
-              <div class={`mega-menu ${mobileShopOpen() ? 'mobile-show' : ''}`}>
+              <a
+                href="/"
+                onClick={(e) => {
+                  if (window.innerWidth <= 900) {
+                    e.preventDefault();
+                    setMobileShopOpen(!mobileShopOpen());
+                  }
+                }}
+              >
+                Shop
+              </a>
+              <span
+                class={`mobile-arrow-icon ${mobileShopOpen() ? "open" : ""}`}
+                onClick={() => setMobileShopOpen(!mobileShopOpen())}
+              >
+                ▼
+              </span>
+              <div class={`mega-menu ${mobileShopOpen() ? "mobile-show" : ""}`}>
                 <div class="container">
-                  <div class="mega-menu-content" style={{ display: "grid", "grid-template-columns": "repeat(3, 1fr)", gap: "40px" }}>
-
+                  <div
+                    class="mega-menu-content"
+                    style={{
+                      display: "grid",
+                      "grid-template-columns": "repeat(3, 1fr)",
+                      gap: "40px",
+                    }}
+                  >
                     {/* Kolom 1: Yang Baru (Dynamic Products) */}
                     <div class="mega-col">
                       <h4>Yang Baru</h4>
                       <ul>
-                        <Show when={!products.loading} fallback={<li>Loading...</li>}>
-                          <For each={products()?.slice(0, 8)}>
+                        <Show
+                          when={!products.loading}
+                          fallback={<li>Loading...</li>}
+                        >
+                          <For each={products()?.slice(0, 5)}>
                             {(product: any) => (
-                              <li><A href={`/product/${product.slug}`}>{product.name}</A></li>
+                              <li>
+                                <A href={`/product/${product.slug}`}>
+                                  {truncate(product.name)}
+                                </A>
+                              </li>
                             )}
                           </For>
                         </Show>
@@ -176,13 +238,22 @@ export default function Navbar() {
                     <div class="mega-col">
                       <h4>Event Penting</h4>
                       <ul>
-                        <Show when={!activeFlashSale.loading} fallback={<li>Loading...</li>}>
+                        <Show
+                          when={!activeFlashSale.loading}
+                          fallback={<li>Loading...</li>}
+                        >
                           <Show
                             when={activeFlashSale()}
                             fallback={<li>Belum ada event berlangsung</li>}
                           >
                             <li>
-                              <A href="/shop" style={{ color: "var(--red-sale)", "font-weight": "700" }}>
+                              <A
+                                href="/shop"
+                                style={{
+                                  color: "var(--red-sale)",
+                                  "font-weight": "700",
+                                }}
+                              >
                                 🔥 {activeFlashSale().name}
                               </A>
                             </li>
@@ -197,13 +268,20 @@ export default function Navbar() {
                       <ul>
                         <li>
                           <A href="/zona-pengguna-baru">
-                            <span class="sale-badge" style={{ "margin-left": "0", "margin-right": "8px" }}>NEW</span>
+                            <span
+                              class="sale-badge"
+                              style={{
+                                "margin-left": "0",
+                                "margin-right": "8px",
+                              }}
+                            >
+                              NEW
+                            </span>
                             Zona Pengguna Baru
                           </A>
                         </li>
                       </ul>
                     </div>
-
                   </div>
                 </div>
               </div>
@@ -211,18 +289,39 @@ export default function Navbar() {
 
             {/* collections */}
             <li class="has-mega">
-              <A href="/shop" onClick={(e) => {
-                if (window.innerWidth <= 900) {
-                  e.preventDefault();
-                  setMobileCollectionsOpen(!mobileCollectionsOpen());
+              <A
+                href="/shop"
+                onClick={(e) => {
+                  if (window.innerWidth <= 900) {
+                    e.preventDefault();
+                    setMobileCollectionsOpen(!mobileCollectionsOpen());
+                  }
+                }}
+              >
+                Collections
+              </A>
+              <span
+                class={`mobile-arrow-icon ${mobileCollectionsOpen() ? "open" : ""}`}
+                onClick={() =>
+                  setMobileCollectionsOpen(!mobileCollectionsOpen())
                 }
-              }}>Collections</A>
-              <span class={`mobile-arrow-icon ${mobileCollectionsOpen() ? 'open' : ''}`} onClick={() => setMobileCollectionsOpen(!mobileCollectionsOpen())}>▼</span>
-              <div class={`mega-menu ${mobileCollectionsOpen() ? 'mobile-show' : ''}`}>
+              >
+                ▼
+              </span>
+              <div
+                class={`mega-menu ${mobileCollectionsOpen() ? "mobile-show" : ""}`}
+              >
                 <div class="container">
                   <div class="mega-menu-inner">
                     <div class="mega-menu-content collections-grid">
-                      <Show when={!collections.loading} fallback={<div style="color: var(--muted); padding: 20px;">Loading collections...</div>}>
+                      <Show
+                        when={!collections.loading}
+                        fallback={
+                          <div style="color: var(--muted); padding: 20px;">
+                            Loading collections...
+                          </div>
+                        }
+                      >
                         <For each={collections()}>
                           {(collection: any) => {
                             return (
@@ -234,12 +333,21 @@ export default function Navbar() {
                                   <For each={collection.products || []}>
                                     {(product: any) => (
                                       <li>
-                                        <A href={`/product/${product.slug}`}>{product.name}</A>
+                                        <A href={`/product/${product.slug}`}>
+                                          {product.name}
+                                        </A>
                                       </li>
                                     )}
                                   </For>
-                                  <Show when={!collection.products || collection.products.length === 0}>
-                                    <li style="color: var(--muted); font-style: italic; font-size: 0.85rem; padding: 4px 0;">Belum ada produk</li>
+                                  <Show
+                                    when={
+                                      !collection.products ||
+                                      collection.products.length === 0
+                                    }
+                                  >
+                                    <li style="color: var(--muted); font-style: italic; font-size: 0.85rem; padding: 4px 0;">
+                                      Belum ada produk
+                                    </li>
                                   </Show>
                                 </ul>
                               </div>
@@ -255,21 +363,35 @@ export default function Navbar() {
 
             {/* Journal */}
             <li class="has-mega">
-              <a href="/blog" onClick={(e) => {
-                if (window.innerWidth <= 900) {
-                  e.preventDefault();
-                  setMobileJournalOpen(!mobileJournalOpen());
-                }
-              }}>Journal</a>
-              <span class={`mobile-arrow-icon ${mobileJournalOpen() ? 'open' : ''}`} onClick={() => setMobileJournalOpen(!mobileJournalOpen())}>▼</span>
-              <div class={`mega-menu ${mobileJournalOpen() ? 'mobile-show' : ''}`}>
+              <a
+                href="/blog"
+                onClick={(e) => {
+                  if (window.innerWidth <= 900) {
+                    e.preventDefault();
+                    setMobileJournalOpen(!mobileJournalOpen());
+                  }
+                }}
+              >
+                Journal
+              </a>
+              <span
+                class={`mobile-arrow-icon ${mobileJournalOpen() ? "open" : ""}`}
+                onClick={() => setMobileJournalOpen(!mobileJournalOpen())}
+              >
+                ▼
+              </span>
+              <div
+                class={`mega-menu ${mobileJournalOpen() ? "mobile-show" : ""}`}
+              >
                 <div class="container">
                   <div class="mega-menu-inner">
                     <div class="mega-menu-content">
                       <div class="mega-col">
                         <h4>Skincare</h4>
                         <ul>
-                          <li><a href="#">Skin Care</a></li>
+                          <li>
+                            <a href="#">Skin Care</a>
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -280,14 +402,19 @@ export default function Navbar() {
 
             {/* About */}
             <li>
-              <a href="#produk" onClick={(e) => handleAnchorClick(e, "#produk")}>About</a>
+              <a
+                href="#produk"
+                onClick={(e) => handleAnchorClick(e, "#produk")}
+              >
+                About
+              </a>
             </li>
 
             {/* Mobile Only: Icons & Actions shifted to Hamburger Menu */}
             <Show when={customerProfile()}>
               <li class="mobile-only-nav-item">
                 <A href="/cart" onClick={() => setIsOpen(false)}>
-                  Cart {cartCount() > 0 ? `(${cartCount()})` : ''}
+                  Cart {cartCount() > 0 ? `(${cartCount()})` : ""}
                 </A>
               </li>
               <li class="mobile-only-nav-item">
@@ -306,12 +433,23 @@ export default function Navbar() {
                 </A>
               </li>
               <li class="mobile-only-nav-item">
-                <A href="/profile?tab=shipping" onClick={() => setIsOpen(false)}>
+                <A
+                  href="/profile?tab=shipping"
+                  onClick={() => setIsOpen(false)}
+                >
                   Alamat Pengiriman
                 </A>
               </li>
               <li class="mobile-only-nav-item">
-                <a href="#" onClick={(e) => { e.preventDefault(); handleLogout(); setIsOpen(false); }} style="color: #dc2626 !important;">
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleLogout();
+                    setIsOpen(false);
+                  }}
+                  style="color: #dc2626 !important;"
+                >
                   Keluar
                 </a>
               </li>
@@ -319,7 +457,14 @@ export default function Navbar() {
 
             <Show when={!customerProfile()}>
               <li class="mobile-only-nav-item">
-                <a href="#" onClick={(e) => { e.preventDefault(); setShowLoginModal(true); setIsOpen(false); }}>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowLoginModal(true);
+                    setIsOpen(false);
+                  }}
+                >
                   Masuk
                 </a>
               </li>
@@ -333,7 +478,11 @@ export default function Navbar() {
 
           <div class="nav-icons">
             {/* Search Icon triggers expand */}
-            <div class="nav-icon-wrapper search-trigger-btn" onClick={() => setIsSearchExpanded(true)} style="cursor: pointer;">
+            <div
+              class="nav-icon-wrapper search-trigger-btn"
+              onClick={() => setIsSearchExpanded(true)}
+              style="cursor: pointer;"
+            >
               <Search size={22} />
             </div>
 
@@ -387,17 +536,33 @@ export default function Navbar() {
                 <Show when={customerProfile() && (cartCount() || 0) > 0}>
                   <div class="nav-cart-dropdown">
                     <div class="cart-dropdown-header">
-                      <span class="cart-dropdown-title">Keranjang ({cartCount()})</span>
-                      <A href="/cart" class="cart-dropdown-view-all">Lihat</A>
+                      <span class="cart-dropdown-title">
+                        Keranjang ({cartCount()})
+                      </span>
+                      <A href="/cart" class="cart-dropdown-view-all">
+                        Lihat
+                      </A>
                     </div>
                     <div class="cart-dropdown-items">
                       <For each={cartItems()}>
                         {(item) => (
                           <div class="cart-dropdown-item">
-                            <img src={item.product_thumbnail || "/placeholder.jpg"} alt={item.product_name} class="cart-item-dropdown-img" />
+                            <img
+                              src={item.product_thumbnail || "/placeholder.jpg"}
+                              alt={item.product_name}
+                              class="cart-item-dropdown-img"
+                            />
                             <div class="cart-item-dropdown-info">
-                              <A href={`/product/${item.product_slug}`} class="cart-item-dropdown-name">{item.product_name}</A>
-                              <span class="cart-item-dropdown-qty-price">{item.quantity} x {formatCurrency(item.product_price)}</span>
+                              <A
+                                href={`/product/${item.product_slug}`}
+                                class="cart-item-dropdown-name"
+                              >
+                                {item.product_name}
+                              </A>
+                              <span class="cart-item-dropdown-qty-price">
+                                {item.quantity} x{" "}
+                                {formatCurrency(item.product_price)}
+                              </span>
                             </div>
                           </div>
                         )}
@@ -418,11 +583,13 @@ export default function Navbar() {
                     >
                       MASUK
                     </div>
-                    <A href="/register" class="btn-nav-register">DAFTAR</A>
+                    <A href="/register" class="btn-nav-register">
+                      DAFTAR
+                    </A>
                   </div>
                 }
               >
-                <div 
+                <div
                   class="nav-profile-container"
                   onMouseEnter={() => setIsProfileHovered(true)}
                   onMouseLeave={() => setIsProfileHovered(false)}
@@ -436,26 +603,47 @@ export default function Navbar() {
                   <div class="nav-profile-dropdown">
                     <div class="profile-dropdown-header">
                       <div class="profile-dropdown-greeting">Halo,</div>
-                      <div class="profile-dropdown-name">{customerProfile()?.name || "Pelanggan"}</div>
+                      <div class="profile-dropdown-name">
+                        {customerProfile()?.name || "Pelanggan"}
+                      </div>
                     </div>
                     <div class="profile-dropdown-menu">
-                      <A href="/profile?tab=profile" class="profile-dropdown-item">
+                      <A
+                        href="/profile?tab=profile"
+                        class="profile-dropdown-item"
+                      >
                         <span class="material-symbols-outlined">person</span>
                         Profil Saya
                       </A>
-                      <A href="/profile?tab=orders" class="profile-dropdown-item">
-                        <span class="material-symbols-outlined">shopping_bag</span>
+                      <A
+                        href="/profile?tab=orders"
+                        class="profile-dropdown-item"
+                      >
+                        <span class="material-symbols-outlined">
+                          shopping_bag
+                        </span>
                         Pesanan Saya
                       </A>
-                      <A href="/profile?tab=wishlist" class="profile-dropdown-item">
+                      <A
+                        href="/profile?tab=wishlist"
+                        class="profile-dropdown-item"
+                      >
                         <span class="material-symbols-outlined">favorite</span>
                         Wishlist
                       </A>
-                      <A href="/profile?tab=shipping" class="profile-dropdown-item">
-                        <span class="material-symbols-outlined">location_on</span>
+                      <A
+                        href="/profile?tab=shipping"
+                        class="profile-dropdown-item"
+                      >
+                        <span class="material-symbols-outlined">
+                          location_on
+                        </span>
                         Alamat Pengiriman
                       </A>
-                      <button onClick={handleLogout} class="profile-dropdown-item logout-btn">
+                      <button
+                        onClick={handleLogout}
+                        class="profile-dropdown-item logout-btn"
+                      >
                         <span class="material-symbols-outlined">logout</span>
                         Keluar
                       </button>
@@ -467,13 +655,15 @@ export default function Navbar() {
           </div>
 
           {/* Full-width Expanding Search Bar */}
-          <div class={`nav-search-bar-container ${isSearchExpanded() ? 'expanded' : ''}`}>
+          <div
+            class={`nav-search-bar-container ${isSearchExpanded() ? "expanded" : ""}`}
+          >
             <div class="nav-search-input-wrapper">
               <Search size={20} class="nav-search-input-icon" />
-              <input 
-                type="text" 
-                class="nav-search-input" 
-                placeholder="Cari produk kesehatan & fashion di Aminah Jaya..." 
+              <input
+                type="text"
+                class="nav-search-input"
+                placeholder="Cari produk kesehatan & fashion di Aminah Jaya..."
                 value={searchQuery()}
                 onInput={(e) => setSearchQuery(e.currentTarget.value)}
                 onKeyDown={(e) => {
@@ -489,7 +679,10 @@ export default function Navbar() {
                   });
                 }}
               />
-              <button class="nav-search-close-btn" onClick={() => setIsSearchExpanded(false)}>
+              <button
+                class="nav-search-close-btn"
+                onClick={() => setIsSearchExpanded(false)}
+              >
                 <span class="material-symbols-outlined">close</span>
               </button>
             </div>
