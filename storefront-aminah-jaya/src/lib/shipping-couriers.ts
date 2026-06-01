@@ -1,21 +1,16 @@
 /** Logo kurir — fallback jika URL Biteship/CDN gagal dimuat. */
 const COURIER_LOGO_FALLBACKS: Record<string, string> = {
-  jne: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/New_JNE_logo.svg/120px-New_JNE_logo.svg.png",
+  jne: "/couriers/jne-logo.svg",
   sicepat:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/SiCepat_Ekspres_logo.svg/120px-SiCepat_Ekspres_logo.svg.png",
-  jnt: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/J%26T_Express_logo.svg/120px-J%26T_Express_logo.svg.png",
-  tiki: "https://upload.wikimedia.org/wikipedia/id/thumb/0/0e/Tiki_Logo.svg/120px-Tiki_Logo.svg.png",
-  anteraja:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/AnterAja_logo.svg/120px-AnterAja_logo.svg.png",
-  ninja:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Ninja_Xpress_logo.svg/120px-Ninja_Xpress_logo.svg.png",
-  paxel:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Paxel_logo.svg/120px-Paxel_logo.svg.png",
-  grab: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Grab_Logo.svg/120px-Grab_Logo.svg.png",
-  gojek:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Gojek_logo_2019.svg/120px-Gojek_logo_2019.svg.png",
-  idexpress:
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/ID_Express_logo.svg/120px-ID_Express_logo.svg.png",
+    "/couriers/sicepat-logo.svg",
+  jnt: "/couriers/j&t-express-logo.svg",
+  tiki: "/couriers/tiki-logo.svg",
+  anteraja: "/couriers/anteraja-logo.svg",
+  ninja: "/couriers/ninja-xpress-logo.svg",
+  paxel: "/couriers/paxel-logo.svg",
+  grab: "/couriers/grabexpress-logo.svg",
+  gojek: "/couriers/gosend-logo.svg",
+  idexpress: "/couriers/id-express-logo.svg",
 };
 
 export type ShippingSpeedGroup = "next_day" | "reguler";

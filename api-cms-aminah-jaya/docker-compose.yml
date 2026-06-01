@@ -19,7 +19,7 @@ services:
       - R2_SECRET_KEY=${R2_SECRET_KEY}
       - R2_BUCKET=${R2_BUCKET}
       - R2_PUBLIC_URL=${R2_PUBLIC_URL}
-      - INTEGRASI_API_URL=${INTEGRASI_API_URL:-http://127.0.0.1:8002}
+      - INTEGRASI_API_URL=${INTEGRASI_API_URL:-http://api-integrasi-aminah-jaya:8002}
     networks:
       - aminah-network
 networks:

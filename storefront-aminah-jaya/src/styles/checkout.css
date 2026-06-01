@@ -648,3 +648,96 @@
   font-size: 0.8rem;
   line-height: 1.4;
 }
+
+/* ==============================
+   CUSTOM RADIO — ADDRESS OPTION
+============================== */
+
+/* Sembunyikan native radio */
+.checkout-address-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Reset override layout yang salah dari sebelumnya */
+.checkout-address-option .checkout-address-option-body {
+  display: block;
+  width: 100%;
+}
+
+.checkout-address-option .checkout-address-option-body::before {
+  display: none;
+}
+
+.checkout-address-option.active .checkout-address-option-body::before {
+  display: none;
+}
+
+/* Custom radio circle — pseudo di container utama */
+.checkout-address-option {
+  position: relative;
+  padding-left: 42px;
+}
+
+.checkout-address-option::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  background: #fff;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.checkout-address-option.active::before {
+  background: var(--green-500, #2a8a60);
+  border-color: var(--green-500, #2a8a60);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpolyline points='1,4 3.5,6.5 9,1' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* ==============================
+   CUSTOM CHECK — SHIPPING OPTION
+============================== */
+.cart-item-checkbox {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  background: #fff;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.checkout-option.active .cart-item-checkbox {
+  background: var(--green-500, #2a8a60);
+  border-color: var(--green-500, #2a8a60);
+}
+
+.cart-item-checkbox-inner {
+  display: none;
+}
+
+.checkout-option.active .cart-item-checkbox::after {
+  content: '';
+  display: block;
+  width: 10px;
+  height: 8px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpolyline points='1,4 3.5,6.5 9,1' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}

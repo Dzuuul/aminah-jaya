@@ -10,7 +10,7 @@ import {
   createMemo,
   type Component,
 } from "solid-js";
-import { A } from "@solidjs/router";
+import { A, useBeforeLeave, useNavigate } from "@solidjs/router";
 import {
   getCart,
   getMeCustomer,
@@ -43,6 +43,25 @@ const SHIPPING_RATES_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const SHIPPING_RATES_DEBOUNCE_MS = 600;
 const DEFAULT_ITEM_WEIGHT_GRAM = 500;
 
+/* ─── Types ─── */
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  shipping_address?: string;
+}
+
+interface CartItem {
+  product_id: string;
+  product_name: string;
+  product_price: number;
+  quantity: number;
+  product_weight_gram?: number;
+  product_thumbnail?: string;
+}
+
+/* ─── Sub-components ─── */
 const CourierLogo: Component<{
   code: string;
   name: string;
@@ -83,6 +102,7 @@ const CourierLogo: Component<{
   );
 };
 
+/* ─── Helpers ─── */
 const normalizeLocationPart = (value: string) =>
   value
     .trim()
@@ -117,37 +137,68 @@ const paymentMethods = [
     dbMethod: "cod",
     logo: "https://cdn-icons-png.flaticon.com/512/6491/6491509.png",
   },
-];
+] as const;
 
+export const ssr = false;
+
+/* ─── Main Component ─── */
 export default function CheckoutPage() {
+  const navigate = useNavigate();
+
+  /* ── Cart ── */
   const [cartItems] = createResource(
-    () => typeof window !== "undefined",
-    async (isClient) => {
-      if (!isClient) return [];
+    () => true, // ssr = false, selalu client
+    async () => {
       return await getCart();
     },
   );
 
+  const safeCartItems = () => cartItems() ?? [];
+
+  /* ── Navigation guard ── */
+  const [showLeaveModal, setShowLeaveModal] = createSignal(false);
+  const [pendingPath, setPendingPath] = createSignal<string | null>(null);
+  const [checkoutCompleted, setCheckoutCompleted] = createSignal(false);
+
+  const shouldBlockLeaving = () => {
+    if (checkoutCompleted()) return false;
+    return !!receiverName().trim() || !!phone().trim() || !!address().trim();
+  };
+
+  useBeforeLeave((event) => {
+    if (!shouldBlockLeaving()) return;
+    event.preventDefault();
+    setPendingPath((event.to as string) ?? "/");
+    setShowLeaveModal(true);
+  });
+
+  onMount(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!shouldBlockLeaving()) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  });
+
+  const confirmLeavePage = () => {
+    const target = pendingPath();
+    setShowLeaveModal(false);
+    setPendingPath(null);
+    if (target) navigate(target);
+  };
+
+  const cancelLeavePage = () => {
+    setShowLeaveModal(false);
+    setPendingPath(null);
+  };
+
+  /* ── Customer & Address ── */
   const [ready, setReady] = createSignal(false);
-  const [customer, setCustomer] = createSignal<any>(null);
-  const [selectedPayment, setSelectedPayment] = createSignal("bca");
-  const [shippingRates, setShippingRates] = createSignal<ShippingRateOption[]>(
-    [],
-  );
-  const [selectedShippingRate, setSelectedShippingRate] =
-    createSignal<ShippingRateOption | null>(null);
-  const [loadingShippingRates, setLoadingShippingRates] = createSignal(false);
-  const [shippingRatesError, setShippingRatesError] = createSignal<string | null>(
-    null,
-  );
-  const [destinationLat, setDestinationLat] = createSignal<number | null>(null);
-  const [destinationLng, setDestinationLng] = createSignal<number | null>(null);
-  const [destinationPostalCode, setDestinationPostalCode] = createSignal<
-    string | null
-  >(null);
-  const [destinationAreaId, setDestinationAreaId] = createSignal<string | null>(
-    null,
-  );
+  const [customer, setCustomer] = createSignal<Customer | null>(null);
 
   // Form fields
   const [receiverName, setReceiverName] = createSignal("");
@@ -164,8 +215,6 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = createSignal<string | null>(
     null,
   );
-  const [submitting, setSubmitting] = createSignal(false);
-  const [errorMessage, setErrorMessage] = createSignal<string | null>(null);
 
   const normalizeAddresses = (items: CustomerAddress[]) =>
     items.map((addr) => ({
@@ -186,6 +235,60 @@ export default function CheckoutPage() {
     setSelectedShippingRate(null);
   };
 
+  const selectSavedAddress = (addressId: string) => {
+    const addr = savedAddresses().find((item) => item.id === addressId);
+    if (!addr) return;
+
+    setSelectedAddressId(addressId);
+    applySavedAddress(addr);
+
+    if (!addr.province || !addr.city) {
+      setIsEditingAddress(true);
+    } else {
+      setIsEditingAddress(false);
+    }
+  };
+
+  const cancelAddressEdit = () => {
+    const selectedId = selectedAddressId();
+    if (selectedId) {
+      selectSavedAddress(selectedId);
+      return;
+    }
+
+    const data = customer();
+    setReceiverName(data?.name || "");
+    setPhone(data?.phone || "");
+    setAddress(data?.shipping_address || "");
+    setProvince("");
+    setCity("");
+    setIsEditingAddress(!data?.shipping_address);
+  };
+
+  const hasSavedAddresses = () => savedAddresses().length > 0;
+
+  const showAddressSummary = () =>
+    !isEditingAddress() && !!receiverName().trim() && !!address().trim();
+
+  /* ── Shipping ── */
+  const [shippingRates, setShippingRates] = createSignal<ShippingRateOption[]>(
+    [],
+  );
+  const [selectedShippingRate, setSelectedShippingRate] =
+    createSignal<ShippingRateOption | null>(null);
+  const [loadingShippingRates, setLoadingShippingRates] = createSignal(false);
+  const [shippingRatesError, setShippingRatesError] = createSignal<
+    string | null
+  >(null);
+  const [destinationLat, setDestinationLat] = createSignal<number | null>(null);
+  const [destinationLng, setDestinationLng] = createSignal<number | null>(null);
+  const [destinationPostalCode, setDestinationPostalCode] = createSignal<
+    string | null
+  >(null);
+  const [destinationAreaId, setDestinationAreaId] = createSignal<string | null>(
+    null,
+  );
+
   const canFetchShippingRates = () => {
     const hasCoords = destinationLat() != null && destinationLng() != null;
     const hasPostal = !!destinationPostalCode()?.trim();
@@ -194,7 +297,7 @@ export default function CheckoutPage() {
   };
 
   const cartTotalWeightGram = createMemo(() => {
-    const items = cartItems() || [];
+    const items = safeCartItems();
     return items.reduce((sum, item) => {
       const unit =
         item.product_weight_gram && item.product_weight_gram > 0
@@ -313,9 +416,7 @@ export default function CheckoutPage() {
               r.shipment_duration_unit,
             ) === "next_day",
         );
-        setSelectedShippingRate(
-          nextDay.length > 0 ? nextDay[0] : sorted[0],
-        );
+        setSelectedShippingRate(nextDay.length > 0 ? nextDay[0] : sorted[0]);
       }
       setShippingRatesError(null);
     } else {
@@ -339,8 +440,8 @@ export default function CheckoutPage() {
       return;
     }
 
-    const items = cartItems();
-    if (!items || items.length === 0) {
+    const items = safeCartItems();
+    if (items.length === 0) {
       return;
     }
 
@@ -364,7 +465,7 @@ export default function CheckoutPage() {
         destination_area_id: destinationAreaId() ?? undefined,
         destination_city: city() || undefined,
         destination_province: province() || undefined,
-        cart_items: items!.map((item) => ({
+        cart_items: items.map((item) => ({
           quantity: item.quantity,
           product_weight_gram: item.product_weight_gram,
           product_price: item.product_price,
@@ -431,54 +532,28 @@ export default function CheckoutPage() {
 
   onCleanup(() => {
     clearTimeout(shippingDebounceTimer);
-    shippingFetchGeneration += 1;
+    shippingFetchGeneration = Number.MAX_SAFE_INTEGER;
   });
 
-  const selectSavedAddress = (addressId: string) => {
-    const addr = savedAddresses().find((item) => item.id === addressId);
-    if (!addr) return;
-
-    setSelectedAddressId(addressId);
-    applySavedAddress(addr);
-
-    if (!addr.province || !addr.city) {
-      setIsEditingAddress(true);
-    } else {
-      setIsEditingAddress(false);
-    }
-  };
-
-  const cancelAddressEdit = () => {
-    const selectedId = selectedAddressId();
-    if (selectedId) {
-      selectSavedAddress(selectedId);
-      return;
-    }
-
-    const data = customer();
-    setReceiverName(data?.name || "");
-    setPhone(data?.phone || "");
-    setAddress(data?.shipping_address || "");
-    setProvince("");
-    setCity("");
-    setIsEditingAddress(!data?.shipping_address);
-  };
-
-  const hasSavedAddresses = () => savedAddresses().length > 0;
-
-  const showAddressSummary = () =>
-    !isEditingAddress() && !!receiverName().trim() && !!address().trim();
-
+  /* ── Voucher ── */
   const [showVoucherModal, setShowVoucherModal] = createSignal(false);
-  const [availableCoupons, setAvailableCoupons] = createSignal<CustomerCoupon[]>(
-    [],
-  );
+  const [availableCoupons, setAvailableCoupons] = createSignal<
+    CustomerCoupon[]
+  >([]);
   const [selectedCoupon, setSelectedCoupon] =
     createSignal<CustomerCoupon | null>(null);
   const [loadingCoupons, setLoadingCoupons] = createSignal(false);
   const [voucherError, setVoucherError] = createSignal<string | null>(null);
 
   const otherFees = () => ({ service: 1000, app: 1000 });
+
+  const subtotal = () =>
+    safeCartItems().reduce(
+      (acc, item) => acc + item.product_price * item.quantity,
+      0,
+    );
+
+  const shippingPrice = () => selectedShippingRate()?.price || 0;
 
   const computeDiscount = (coupon: CustomerCoupon) => {
     const base = subtotal() + shippingPrice();
@@ -502,8 +577,7 @@ export default function CheckoutPage() {
     return computeDiscount(coupon);
   };
 
-  const displayedTotal = () =>
-    subtotal() + shippingPrice() - discount();
+  const displayedTotal = () => subtotal() + shippingPrice() - discount();
 
   const formatCouponLabel = (coupon: CustomerCoupon) => {
     if (coupon.discount_type.toLowerCase() === "percentage") {
@@ -530,10 +604,7 @@ export default function CheckoutPage() {
     setVoucherError(null);
     setLoadingCoupons(true);
     try {
-      const coupons = await getAvailableCoupons(
-        subtotal(),
-        shippingPrice(),
-      );
+      const coupons = await getAvailableCoupons(subtotal(), shippingPrice());
       setAvailableCoupons(coupons);
     } catch (err: any) {
       setVoucherError(err.message || "Gagal memuat voucher");
@@ -554,6 +625,110 @@ export default function CheckoutPage() {
     setSelectedCoupon(null);
   };
 
+  /* ── Form validation ── */
+  const isAddressComplete = () =>
+    !!receiverName().trim() &&
+    !!phone().trim() &&
+    !!address().trim() &&
+    !!city().trim() &&
+    !!province().trim();
+
+  const isPaymentSelected = () =>
+    !!selectedPayment() &&
+    paymentMethods.some((method) => method.id === selectedPayment());
+
+  const isShippingSelected = () => selectedShippingRate() != null;
+
+  const canSubmitCheckout = () =>
+    isAddressComplete() && isShippingSelected() && isPaymentSelected();
+
+  const checkoutDisabledHint = () => {
+    if (!isAddressComplete()) {
+      return "Lengkapi alamat pengiriman terlebih dahulu";
+    }
+    if (!isShippingSelected()) {
+      return "Pilih metode pengiriman terlebih dahulu";
+    }
+    if (!isPaymentSelected()) {
+      return "Pilih metode pembayaran terlebih dahulu";
+    }
+    return "";
+  };
+
+  /* ── Submit ── */
+  const [submitting, setSubmitting] = createSignal(false);
+  const [errorMessage, setErrorMessage] = createSignal<string | null>(null);
+
+  const handleCheckout = async (e: Event) => {
+    e.preventDefault();
+
+    // Guard: prevent double submit or invalid state
+    if (submitting() || !canSubmitCheckout()) return;
+
+    if (!address() || !city() || !province() || !receiverName() || !phone()) {
+      setErrorMessage("Mohon lengkapi semua kolom alamat pengiriman");
+      return;
+    }
+
+    const rate = selectedShippingRate();
+    if (!rate) {
+      setErrorMessage("Pilih metode pengiriman terlebih dahulu");
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const dbMethod =
+        paymentMethods.find((p) => p.id === selectedPayment())?.dbMethod ||
+        "transfer";
+
+      // Single read to avoid race condition
+      const currentCustomer = customer();
+      if (currentCustomer) {
+        await updateCustomerProfile({
+          name: receiverName(),
+          phone: phone(),
+          email: currentCustomer.email,
+        });
+      }
+
+      const res = await createOrder({
+        shipping_address: `${receiverName()} | ${phone()} | ${address()}`,
+        shipping_city: city(),
+        shipping_province: province(),
+        shipping_cost: shippingPrice(),
+        payment_method: dbMethod,
+        notes: notes().trim() || undefined,
+        coupon_code: selectedCoupon()?.code,
+        courier_company: rate.courier_company,
+        courier_type: rate.courier_type,
+        destination_lat: destinationLat() ?? undefined,
+        destination_lng: destinationLng() ?? undefined,
+        destination_postal_code: destinationPostalCode() ?? undefined,
+        destination_area_id: destinationAreaId() ?? undefined,
+        destination_contact_name: receiverName(),
+        destination_contact_phone: phone(),
+      });
+
+      await refetchCartCount();
+      setCheckoutCompleted(true);
+
+      window.location.href = `/success?order_number=${res.order_number}&amount=${res.grand_total}&payment_method=${dbMethod}&shipping=${encodeURIComponent(rate.name)}`;
+    } catch (err: any) {
+      setErrorMessage(
+        err.message || "Gagal memproses pesanan, silakan coba lagi.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /* ── Payment ── */
+  const [selectedPayment, setSelectedPayment] = createSignal("bca");
+
+  /* ── Init ── */
   onMount(async () => {
     try {
       const token = localStorage.getItem("customer_token");
@@ -597,104 +772,7 @@ export default function CheckoutPage() {
     }
   });
 
-  const subtotal = () =>
-    cartItems()?.reduce(
-      (acc, item) => acc + item.product_price * item.quantity,
-      0,
-    ) || 0;
-
-  const shippingPrice = () => selectedShippingRate()?.price || 0;
-
-  const total = () => subtotal() + shippingPrice();
-
-  const isAddressComplete = () =>
-    !!receiverName().trim() &&
-    !!phone().trim() &&
-    !!address().trim() &&
-    !!city().trim() &&
-    !!province().trim();
-
-  const isPaymentSelected = () =>
-    !!selectedPayment() &&
-    paymentMethods.some((method) => method.id === selectedPayment());
-
-  const isShippingSelected = () => selectedShippingRate() != null;
-
-  const canSubmitCheckout = () =>
-    isAddressComplete() && isShippingSelected() && isPaymentSelected();
-
-  const checkoutDisabledHint = () => {
-    if (!isAddressComplete()) {
-      return "Lengkapi alamat pengiriman terlebih dahulu";
-    }
-    if (!isShippingSelected()) {
-      return "Pilih metode pengiriman terlebih dahulu";
-    }
-    if (!isPaymentSelected()) {
-      return "Pilih metode pembayaran terlebih dahulu";
-    }
-    return "";
-  };
-
-  const handleCheckout = async (e: Event) => {
-    e.preventDefault();
-    if (!address() || !city() || !province() || !receiverName() || !phone()) {
-      setErrorMessage("Mohon lengkapi semua kolom alamat pengiriman");
-      return;
-    }
-
-    const rate = selectedShippingRate();
-    if (!rate) {
-      setErrorMessage("Pilih metode pengiriman terlebih dahulu");
-      return;
-    }
-
-    setSubmitting(true);
-    setErrorMessage(null);
-
-    try {
-      const dbMethod =
-        paymentMethods.find((p) => p.id === selectedPayment())?.dbMethod ||
-        "transfer";
-
-      if (customer()) {
-        await updateCustomerProfile({
-          name: receiverName(),
-          phone: phone(),
-          email: customer().email,
-        });
-      }
-
-      const res = await createOrder({
-        shipping_address: `${receiverName()} | ${phone()} | ${address()}`,
-        shipping_city: city(),
-        shipping_province: province(),
-        shipping_cost: shippingPrice(),
-        payment_method: dbMethod,
-        notes: notes() || undefined,
-        coupon_code: selectedCoupon()?.code,
-        courier_company: rate.courier_company,
-        courier_type: rate.courier_type,
-        destination_lat: destinationLat() ?? undefined,
-        destination_lng: destinationLng() ?? undefined,
-        destination_postal_code: destinationPostalCode() ?? undefined,
-        destination_area_id: destinationAreaId() ?? undefined,
-        destination_contact_name: receiverName(),
-        destination_contact_phone: phone(),
-      });
-
-      await refetchCartCount();
-
-      window.location.href = `/success?order_number=${res.order_number}&amount=${res.grand_total}&payment_method=${dbMethod}&shipping=${encodeURIComponent(rate.name)}`;
-    } catch (err: any) {
-      setErrorMessage(
-        err.message || "Gagal memproses pesanan, silakan coba lagi.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
+  /* ── Render ── */
   return (
     <>
       <Show
@@ -743,9 +821,9 @@ export default function CheckoutPage() {
                       Tambahkan beberapa produk terlebih dahulu sebelum
                       melakukan checkout.
                     </p>
-                    <a href="/shop" class="btn-shop-now">
+                    <A href="/shop" class="btn-shop-now">
                       Mulai Belanja
-                    </a>
+                    </A>
                   </div>
                 }
               >
@@ -993,7 +1071,9 @@ export default function CheckoutPage() {
                       <Show when={loadingShippingRates()}>
                         <Loading message="Menghitung ongkir..." />
                       </Show>
-                      <Show when={!loadingShippingRates() && shippingRatesError()}>
+                      <Show
+                        when={!loadingShippingRates() && shippingRatesError()}
+                      >
                         <div class="error-message">{shippingRatesError()}</div>
                       </Show>
                       <Show
@@ -1034,16 +1114,7 @@ export default function CheckoutPage() {
                                           name={method.name}
                                           logoUrl={method.courier_logo}
                                         />
-                                        <div class="cart-item-checkbox">
-                                          <Show
-                                            when={
-                                              selectedShippingRate()?.id ===
-                                              method.id
-                                            }
-                                          >
-                                            <div class="cart-item-checkbox-inner" />
-                                          </Show>
-                                        </div>
+                                        <div class="cart-item-checkbox"></div>
                                         <div class="checkout-option-info">
                                           <div class="checkout-option-name">
                                             {method.name}
@@ -1053,7 +1124,10 @@ export default function CheckoutPage() {
                                               {method.courier_company.toUpperCase()}
                                             </span>
                                             <Show when={method.description}>
-                                              <span> · {method.description}</span>
+                                              <span>
+                                                {" "}
+                                                · {method.description}
+                                              </span>
                                             </Show>
                                             <Show
                                               when={formatShipmentDuration(
@@ -1127,7 +1201,7 @@ export default function CheckoutPage() {
                     <div class="checkout-section">
                       <div class="checkout-section-title">Review Pesanan</div>
                       <div class="checkout-items-list">
-                        <For each={cartItems()}>
+                        <For each={safeCartItems()}>
                           {(item) => (
                             <div class="checkout-item-small">
                               <img
@@ -1207,7 +1281,9 @@ export default function CheckoutPage() {
                         <div class="promo-action">
                           <Show
                             when={selectedCoupon()}
-                            fallback={<ChevronRight size={20} color="#6b7280" />}
+                            fallback={
+                              <ChevronRight size={20} color="#6b7280" />
+                            }
                           >
                             <button
                               type="button"
@@ -1226,7 +1302,7 @@ export default function CheckoutPage() {
                       <div class="summary-details">
                         <div class="summary-row">
                           <span>
-                            Total Harga ({cartItems()?.length || 0} Barang)
+                            Total Harga ({safeCartItems().length || 0} Barang)
                           </span>
                           <span>{formatCurrency(subtotal())}</span>
                         </div>
@@ -1240,9 +1316,7 @@ export default function CheckoutPage() {
                         </div>
                         <Show when={selectedCoupon() && discount() > 0}>
                           <div class="summary-row discount">
-                            <span>
-                              Diskon ({selectedCoupon()!.code})
-                            </span>
+                            <span>Diskon ({selectedCoupon()!.code})</span>
                             <span>-{formatCurrency(discount())}</span>
                           </div>
                         </Show>
@@ -1331,7 +1405,9 @@ export default function CheckoutPage() {
                           </Show>
                         </button>
                         <Show when={!canSubmitCheckout() && !submitting()}>
-                          <p class="checkout-submit-hint">{checkoutDisabledHint()}</p>
+                          <p class="checkout-submit-hint">
+                            {checkoutDisabledHint()}
+                          </p>
                         </Show>
                         <div class="mini-note">
                           Dengan melanjutkan pembayaran, kamu menyetujui S&K
@@ -1375,10 +1451,7 @@ export default function CheckoutPage() {
             class="voucher-modal-overlay"
             onClick={() => setShowVoucherModal(false)}
           >
-            <div
-              class="voucher-modal"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div class="voucher-modal" onClick={(e) => e.stopPropagation()}>
               <div class="voucher-modal-header">
                 <h3>Pilih Voucher</h3>
                 <button
@@ -1432,9 +1505,8 @@ export default function CheckoutPage() {
                               {formatCouponLabel(coupon)}
                             </div>
                             <div class="voucher-meta">
-                              Min. belanja{" "}
-                              {formatCurrency(coupon.min_purchase)} · Berlaku
-                              s/d {formatCouponExpiry(coupon.end_at)}
+                              Min. belanja {formatCurrency(coupon.min_purchase)}{" "}
+                              · Berlaku s/d {formatCouponExpiry(coupon.end_at)}
                             </div>
                             <Show when={coupon.disabled_reason}>
                               <div
@@ -1473,6 +1545,27 @@ export default function CheckoutPage() {
                     </For>
                   </div>
                 </Show>
+              </div>
+            </div>
+          </div>
+        </Show>
+
+        {/* Leave confirmation modal */}
+        <Show when={showLeaveModal()}>
+          <div class="modal-overlay" onClick={cancelLeavePage}>
+            <div class="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h3>Tinggalkan Checkout?</h3>
+              <p>
+                Data checkout yang sedang Anda isi belum selesai. Jika keluar
+                dari halaman ini, Anda harus mengulang proses checkout.
+              </p>
+              <div class="modal-actions">
+                <button type="button" onClick={cancelLeavePage}>
+                  Tetap di Halaman
+                </button>
+                <button type="button" class="danger" onClick={confirmLeavePage}>
+                  Keluar
+                </button>
               </div>
             </div>
           </div>
