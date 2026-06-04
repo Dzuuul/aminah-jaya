@@ -2,7 +2,7 @@ import { Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
 import { MetaProvider } from "@solidjs/meta";
 import { Suspense } from "solid-js";
-import "./app.css";
+import "./app.scss";
 import Loading from "./components/ui/Loading";
 import LoginModal from "./components/LoginModal";
 

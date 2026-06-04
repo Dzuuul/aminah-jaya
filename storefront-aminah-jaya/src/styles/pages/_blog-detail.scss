@@ -1,0 +1,45 @@
+/* ==============================
+   BLOG DETAIL STYLES
+============================== */
+.blog-content {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: var(--ink-light);
+}
+
+.blog-content h2,
+.blog-content h3 {
+  font-family: "EB Garamond", serif;
+  color: var(--ink);
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
+  font-weight: 600;
+}
+
+.blog-content h2 {
+  font-size: 2rem;
+}
+
+.blog-content h3 {
+  font-size: 1.5rem;
+}
+
+.blog-content p {
+  margin-bottom: 1.5rem;
+}
+
+.blog-content img {
+  border-radius: 1rem;
+  margin: 2.5rem 0;
+  box-shadow: var(--shadow-md);
+}
+
+.blog-content ul,
+.blog-content ol {
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.blog-content li {
+  margin-bottom: 0.5rem;
+}

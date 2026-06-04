@@ -28,7 +28,6 @@ import { refetchCartCount } from "~/lib/cart-store";
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
 import Loading from "~/components/ui/Loading";
-import "~/styles/checkout.css";
 import { ChevronRight, X } from "lucide-solid";
 import {
   SHIPPING_SPEED_GROUPS,
