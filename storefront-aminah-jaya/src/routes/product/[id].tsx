@@ -1,5 +1,5 @@
 import { createSignal, For, Show, onMount } from "solid-js";
-import { useParams, useNavigate } from "@solidjs/router";
+import { useParams, useNavigate, useLocation } from "@solidjs/router";
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
 import Loading from "~/components/ui/Loading";
@@ -250,11 +250,11 @@ const Breadcrumb = (props: { name: string }) => (
   </div>
 );
 
-const Gallery = (props: { images: string[]; certs: string[] }) => {
+const Gallery = (props: { images: string[]; certs: string[]; id: string }) => {
   const [activeImg, setActiveImg] = createSignal(props.images[0]);
   return (
     <div class="pd-gallery-wrap">
-      <div class="pd-main-img">
+      <div class="pd-main-img" style={{ "view-transition-name": `product-img-${props.id}` }}>
         <img src={activeImg()} alt="Main Product" />
       </div>
       <div class="pd-thumb-row">
@@ -627,6 +627,9 @@ const ProductInfo = (props: {
 
 export default function ProductDetail() {
   const params = useParams();
+  const location = useLocation();
+  const state = location.state as { fallbackImg?: string; fallbackId?: string } | undefined;
+  
   const [product, setProduct] = createSignal<Product | null>(null);
   const [loading, setLoading] = createSignal(true);
   const [error, setError] = createSignal<string | null>(null);
@@ -663,9 +666,25 @@ export default function ProductDetail() {
         when={!loading() && !error()}
         fallback={
           <div class="pd-loading-container">
+            <Show when={state?.fallbackImg && state?.fallbackId}>
+              <div class="pd-container" style={{ "margin-top": "20px" }}>
+                <div class="pd-hero-grid" style={{ opacity: 0.8 }}>
+                  <div class="pd-gallery-wrap">
+                    <div class="pd-main-img" style={{ "view-transition-name": `product-img-${state!.fallbackId}` }}>
+                      <img src={state!.fallbackImg} alt="Loading..." />
+                    </div>
+                  </div>
+                  <div class="pd-info skeleton" style={{ height: "400px", "background-color": "var(--color-sand)", "border-radius": "16px" }}></div>
+                </div>
+              </div>
+            </Show>
             <Show
               when={error()}
-              fallback={<Loading message="Menyiapkan detail produk..." />}
+              fallback={
+                <Show when={!state?.fallbackImg}>
+                  <Loading message="Menyiapkan detail produk..." />
+                </Show>
+              }
             >
               <div class="pd-error-container">{error()}</div>
             </Show>
@@ -682,6 +701,7 @@ export default function ProductDetail() {
                 <Gallery
                   images={product()!.images}
                   certs={product()!.certifications}
+                  id={product()!.id}
                 />
                 <ProductInfo product={product()!} onAction={triggerToast} />
               </div>

@@ -1,6 +1,7 @@
 import { For, createResource, Show } from "solid-js";
 import { JSX } from "solid-js";
 import { A } from "@solidjs/router";
+import TransitionLink from "~/components/TransitionLink";
 import { getProducts, formatCurrency } from "../lib/api";
 
 const WaIcon = () => (
@@ -81,8 +82,8 @@ export default function Products() {
               {(product) => {
                 const discount = calculateDiscount(product.price, product.price_compare);
                 return (
-                  <A href={`/product/${product.slug}`} class="prod-card" style={{ "text-decoration": "none", "color": "inherit", "display": "block" }}>
-                    <div class="prod-img">
+                  <TransitionLink href={`/product/${product.slug}`} state={{ fallbackImg: product.thumbnail_url, fallbackId: product.id }} class="prod-card" style={{ "text-decoration": "none", "color": "inherit", "display": "block" }}>
+                    <div class="prod-img" style={{ "view-transition-name": `product-img-${product.id}` }}>
                       <Show
                         when={product.thumbnail_url}
                         fallback={<DefaultProductIcon />}
@@ -126,7 +127,7 @@ export default function Products() {
                         </div>
                       </div>
                     </div>
-                  </A>
+                  </TransitionLink>
                 );
               }}
             </For>

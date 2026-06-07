@@ -1,4 +1,5 @@
 import { For, createResource, Show } from "solid-js";
+import { A } from "@solidjs/router";
 
 const fetchCategories = async () => {
   const response = await fetch(`${import.meta.env.VITE_API_URL}/api/categories`);
@@ -18,7 +19,7 @@ export default function Categories() {
           }>
             <For each={categories()}>
               {(cat) => (
-                <div class="cat-pill">
+                <A href={`/category/${cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-')}`} class="cat-pill" style={{ "text-decoration": "none", color: "inherit" }}>
                   <div class="cat-pill-img">
                     <Show when={cat.image_url} fallback={
                       <div class="w-full h-full flex items-center justify-center bg-[#f3fbf7] text-[#2a8a60]/30">
@@ -33,7 +34,7 @@ export default function Categories() {
                     </Show>
                   </div>
                   <div class="cat-pill-label">{cat.name}</div>
-                </div>
+                </A>
               )}
             </For>
           </Show>

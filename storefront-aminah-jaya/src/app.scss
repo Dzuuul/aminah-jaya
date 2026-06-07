@@ -2,6 +2,7 @@
 @use "./styles/base/variables";
 @use "./styles/base/reset";
 @use "./styles/base/responsive";
+@use "./styles/base/transitions";
 
 // Component Styles
 @use "./styles/components/buttons";
@@ -21,3 +22,4 @@
 @use "./styles/pages/legal";
 @use "./styles/pages/auth";
 @use "./styles/pages/profile";
+@use "./styles/pages/category";

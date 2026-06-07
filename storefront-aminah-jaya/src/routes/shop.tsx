@@ -1,5 +1,6 @@
 import { createResource, createSignal, For, Show, createMemo } from "solid-js";
 import { A } from "@solidjs/router";
+import TransitionLink from "~/components/TransitionLink";
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
 
@@ -337,8 +338,8 @@ export default function ShopPage() {
                     product.price_compare,
                   );
                   return (
-                    <A href={`/product/${product.slug}`} class="prod-card">
-                      <div class="prod-img">
+                    <TransitionLink href={`/product/${product.slug}`} state={{ fallbackImg: product.thumbnail_url, fallbackId: product.id }} class="prod-card">
+                      <div class="prod-img" style={{ "view-transition-name": `product-img-${product.id}` }}>
                         <Show
                           when={product.thumbnail_url}
                           fallback={
@@ -444,7 +445,7 @@ export default function ShopPage() {
                           </div>
                         </div>
                       </div>
-                    </A>
+                    </TransitionLink>
                   );
                 }}
               </For>
