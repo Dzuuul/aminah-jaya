@@ -20,7 +20,10 @@
   position: relative;
   width: 90%;
   max-width: 450px;
-  background: white;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   animation: slideUp 0.3s ease;
 }
 
@@ -36,8 +39,11 @@
   transition: color 0.2s;
 }
 
-.modal-close:hover {
-  color: var(--ink);
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 
 @keyframes fadeIn {

@@ -20,9 +20,12 @@ import {
   updateCustomerProfile,
   getAvailableCoupons,
   getShippingRates,
+  updateCartItem,
+  removeFromCart,
   type CustomerAddress,
   type CustomerCoupon,
   type ShippingRateOption,
+  type CartItem,
 } from "~/lib/api";
 import { refetchCartCount } from "~/lib/cart-store";
 import Navbar from "~/components/Navbar";
@@ -51,14 +54,7 @@ interface Customer {
   shipping_address?: string;
 }
 
-interface CartItem {
-  product_id: string;
-  product_name: string;
-  product_price: number;
-  quantity: number;
-  product_weight_gram?: number;
-  product_thumbnail?: string;
-}
+
 
 /* ─── Sub-components ─── */
 const CourierLogo: Component<{
@@ -145,7 +141,7 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
 
   /* ── Cart ── */
-  const [cartItems] = createResource(
+  const [cartItems, { refetch: refetchCart }] = createResource(
     () => true, // ssr = false, selalu client
     async () => {
       return await getCart();
@@ -154,10 +150,54 @@ export default function CheckoutPage() {
 
   const safeCartItems = () => cartItems() ?? [];
 
+  const [updatingCart, setUpdatingCart] = createSignal(false);
+
+  const handleUpdateQuantity = async (item: CartItem, newQty: number) => {
+    if (newQty < 1) {
+      await handleRemoveItem(item);
+      return;
+    }
+    if (updatingCart()) return;
+    setUpdatingCart(true);
+    try {
+      await updateCartItem(item.id, newQty);
+      await refetchCart();
+      await refetchCartCount();
+      const key = shippingFetchKey();
+      if (key) {
+        void fetchShippingRates(key, { skipSessionCache: true });
+      }
+    } catch (e: any) {
+      alert(e.message || "Gagal mengubah jumlah barang");
+    } finally {
+      setUpdatingCart(false);
+    }
+  };
+
+  const handleRemoveItem = async (item: CartItem) => {
+    if (updatingCart()) return;
+    setUpdatingCart(true);
+    try {
+      await removeFromCart(item.id);
+      await refetchCart();
+      await refetchCartCount();
+      const key = shippingFetchKey();
+      if (key) {
+        void fetchShippingRates(key, { skipSessionCache: true });
+      }
+    } catch (e: any) {
+      alert(e.message || "Gagal menghapus barang");
+    } finally {
+      setUpdatingCart(false);
+    }
+  };
+
   /* ── Navigation guard ── */
   const [showLeaveModal, setShowLeaveModal] = createSignal(false);
   const [pendingPath, setPendingPath] = createSignal<string | null>(null);
   const [checkoutCompleted, setCheckoutCompleted] = createSignal(false);
+
+  const [isConfirmingLeave, setIsConfirmingLeave] = createSignal(false);
 
   const shouldBlockLeaving = () => {
     if (checkoutCompleted()) return false;
@@ -165,6 +205,7 @@ export default function CheckoutPage() {
   };
 
   useBeforeLeave((event) => {
+    if (isConfirmingLeave()) return; // skip guard when confirming leave
     if (!shouldBlockLeaving()) return;
     event.preventDefault();
     setPendingPath((event.to as string) ?? "/");
@@ -187,12 +228,16 @@ export default function CheckoutPage() {
     const target = pendingPath();
     setShowLeaveModal(false);
     setPendingPath(null);
-    if (target) navigate(target);
+    if (target) {
+      setIsConfirmingLeave(true);
+      navigate(target);
+    }
   };
 
   const cancelLeavePage = () => {
     setShowLeaveModal(false);
     setPendingPath(null);
+    setIsConfirmingLeave(false);
   };
 
   /* ── Customer & Address ── */
@@ -275,6 +320,8 @@ export default function CheckoutPage() {
   );
   const [selectedShippingRate, setSelectedShippingRate] =
     createSignal<ShippingRateOption | null>(null);
+  // Label grup yang sedang aktif di tab horizontal
+  const [selectedGroup, setSelectedGroup] = createSignal<string | null>(null);
   const [loadingShippingRates, setLoadingShippingRates] = createSignal(false);
   const [shippingRatesError, setShippingRatesError] = createSignal<
     string | null
@@ -407,19 +454,24 @@ export default function CheckoutPage() {
       const stillValid =
         current && sorted.some((rate) => rate.id === current.id);
       if (!stillValid) {
-        const nextDay = sorted.filter(
-          (r) =>
-            resolveSpeedGroup(
-              r.speed_group,
-              r.shipment_duration_range,
-              r.shipment_duration_unit,
-            ) === "next_day",
+        // Pilih harga termurah dari semua rates
+        const cheapest = sorted[0];
+        setSelectedShippingRate(cheapest);
+        // Set tab aktif ke grup yang mengandung harga termurah
+        const cheapestGroup = resolveSpeedGroup(
+          cheapest.speed_group,
+          cheapest.shipment_duration_range,
+          cheapest.shipment_duration_unit,
         );
-        setSelectedShippingRate(nextDay.length > 0 ? nextDay[0] : sorted[0]);
+        const groupMeta = SHIPPING_SPEED_GROUPS.find(
+          (g) => g.id === cheapestGroup,
+        );
+        setSelectedGroup(groupMeta?.label ?? null);
       }
       setShippingRatesError(null);
     } else {
       setSelectedShippingRate(null);
+      setSelectedGroup(null);
       setShippingRatesError("Tidak ada kurir tersedia untuk alamat ini.");
     }
   };
@@ -730,6 +782,17 @@ export default function CheckoutPage() {
   /* ── Init ── */
   onMount(async () => {
     try {
+      if (typeof performance !== "undefined") {
+        const navEntries = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+        if (navEntries.length > 0 && navEntries[0].type === "reload") {
+          window.location.href = "/";
+          return;
+        } else if (performance.navigation && performance.navigation.type === 1) {
+          window.location.href = "/";
+          return;
+        }
+      }
+
       const token = localStorage.getItem("customer_token");
 
       if (!token) {
@@ -832,6 +895,65 @@ export default function CheckoutPage() {
                     <Show when={errorMessage()}>
                       <div class="error-message">{errorMessage()}</div>
                     </Show>
+
+                    {/* Review Pesanan */}
+                    <div class="checkout-section">
+                      <div class="checkout-section-title">Review Pesanan</div>
+                      <div class="checkout-items-list">
+                        <For each={safeCartItems()}>
+                          {(item) => (
+                            <div class="checkout-item-small" classList={{ "opacity-50": updatingCart() }}>
+                              <img
+                                src={
+                                  item.product_thumbnail || "/placeholder.jpg"
+                                }
+                                alt={item.product_name}
+                              />
+                              <div class="checkout-item-small-info">
+                                <div class="checkout-item-small-name">
+                                  {item.product_name}
+                                </div>
+                                <div class="checkout-item-small-price">
+                                  {formatCurrency(item.product_price)}
+                                </div>
+                              </div>
+                              <div class="checkout-item-small-actions" style={{ display: "flex", "align-items": "center", gap: "12px" }}>
+                                <div class="cart-qty-ctrl" style={{ padding: "2px" }}>
+                                  <button
+                                    type="button"
+                                    class="qty-btn-sm"
+                                    style={{ width: "24px", height: "24px", "font-size": "0.8rem" }}
+                                    onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
+                                    disabled={updatingCart()}
+                                  >
+                                    -
+                                  </button>
+                                  <span class="qty-val" style={{ width: "24px", "font-size": "0.8rem" }}>{item.quantity}</span>
+                                  <button
+                                    type="button"
+                                    class="qty-btn-sm"
+                                    style={{ width: "24px", height: "24px", "font-size": "0.8rem" }}
+                                    onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
+                                    disabled={updatingCart()}
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                                <button
+                                  type="button"
+                                  class="btn-remove-item"
+                                  onClick={() => handleRemoveItem(item)}
+                                  disabled={updatingCart()}
+                                  title="Hapus barang"
+                                >
+                                  <X size={16} />
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </For>
+                      </div>
+                    </div>
 
                     {/* Alamat Pengiriman */}
                     <div class="checkout-section">
@@ -1083,17 +1205,38 @@ export default function CheckoutPage() {
                         }
                       >
                         <div class="checkout-shipping-groups">
-                          <For each={groupedShippingRates()}>
-                            {(group) => (
-                              <div class="checkout-shipping-group">
-                                <div class="checkout-shipping-group-header">
-                                  <span class="checkout-shipping-group-title">
+                          {/* Horizontal tab navigation */}
+                          <div class="shipping-tabs">
+                            <For each={groupedShippingRates()}>
+                              {(group) => (
+                                <button
+                                  type="button"
+                                  class="shipping-tab"
+                                  classList={{
+                                    active: selectedGroup() === group.label,
+                                  }}
+                                  onClick={() => setSelectedGroup(group.label)}
+                                >
+                                  <span class="shipping-tab-label">
                                     {group.label}
                                   </span>
-                                  <span class="checkout-shipping-group-hint">
+                                  <span class="shipping-tab-hint">
                                     {group.hint}
                                   </span>
-                                </div>
+                                </button>
+                              )}
+                            </For>
+                          </div>
+
+                          {/* Rate list untuk grup yang sedang aktif */}
+                          <For each={groupedShippingRates()}>
+                            {(group) => (
+                              <div
+                                class="checkout-shipping-group"
+                                classList={{
+                                  active: selectedGroup() === group.label,
+                                }}
+                              >
                                 <div class="checkout-option-list">
                                   <For each={group.rates}>
                                     {(method) => (
@@ -1194,36 +1337,6 @@ export default function CheckoutPage() {
                         value={notes()}
                         onInput={(e) => setNotes(e.currentTarget.value)}
                       />
-                    </div>
-
-                    {/* Review Pesanan */}
-                    <div class="checkout-section">
-                      <div class="checkout-section-title">Review Pesanan</div>
-                      <div class="checkout-items-list">
-                        <For each={safeCartItems()}>
-                          {(item) => (
-                            <div class="checkout-item-small">
-                              <img
-                                src={
-                                  item.product_thumbnail || "/placeholder.jpg"
-                                }
-                                alt={item.product_name}
-                              />
-                              <div class="checkout-item-small-info">
-                                <div class="checkout-item-small-name">
-                                  {item.product_name}
-                                </div>
-                                <div class="checkout-item-small-price">
-                                  {formatCurrency(item.product_price)}
-                                </div>
-                              </div>
-                              <div class="checkout-item-small-qty">
-                                x{item.quantity}
-                              </div>
-                            </div>
-                          )}
-                        </For>
-                      </div>
                     </div>
                   </div>
 
@@ -1553,6 +1666,7 @@ export default function CheckoutPage() {
         <Show when={showLeaveModal()}>
           <div class="modal-overlay" onClick={cancelLeavePage}>
             <div class="modal-content" onClick={(e) => e.stopPropagation()}>
+              <button type="button" class="modal-close" aria-label="Close" onClick={cancelLeavePage}>×</button>
               <h3>Tinggalkan Checkout?</h3>
               <p>
                 Data checkout yang sedang Anda isi belum selesai. Jika keluar

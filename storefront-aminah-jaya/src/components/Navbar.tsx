@@ -403,8 +403,8 @@ export default function Navbar() {
             {/* About */}
             <li>
               <a
-                href="#produk"
-                onClick={(e) => handleAnchorClick(e, "#produk")}
+                href="#tentang"
+                onClick={(e) => handleAnchorClick(e, "#tentang")}
               >
                 About
               </a>

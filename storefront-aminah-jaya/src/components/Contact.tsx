@@ -34,7 +34,10 @@ export default function Contact() {
               </div>
               <div>
                 <div class="contact-item-label">Lokasi</div>
-                <div class="contact-item-val">Kediri (Online Store)</div>
+                <div class="contact-item-val">
+                  Jl Raya Gampeng RT 01 RW 03, Gampengrejo, Kediri, Jawa Timur,
+                  Indonesia
+                </div>
               </div>
             </div>
 
