@@ -1165,6 +1165,32 @@
               ]
             }
           }
+        },
+        {
+          "name": "Get Products by Category Slug",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories/slug/:slug/products",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "categories",
+                "slug",
+                ":slug",
+                "products"
+              ],
+              "variable": [
+                {
+                  "key": "slug",
+                  "value": "gamis-premium"
+                }
+              ]
+            }
+          }
         }
       ]
     },

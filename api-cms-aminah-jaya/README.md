@@ -378,6 +378,7 @@ Produk memiliki field `weight_gram` untuk perhitungan ongkir Biteship.
 | POST   | `/api/categories`     | Buat kategori  |
 | PATCH  | `/api/categories/:id` | Update         |
 | DELETE | `/api/categories/:id` | Hapus          |
+| GET    | `/api/categories/slug/:slug/products` | Produk dalam kategori |
 
 ### Collections
 

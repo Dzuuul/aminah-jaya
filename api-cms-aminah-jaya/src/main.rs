@@ -183,6 +183,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/categories/:id",
             patch(routes::products::update_category).delete(routes::products::delete_category),
         )
+        .route(
+            "/api/categories/slug/:slug/products",
+            get(routes::products::get_products_by_category_slug),
+        )
         // Collections
         .route(
             "/api/collections",

@@ -1035,3 +1035,135 @@
   gap: 16px;
   justify-content: center;
 }
+
+/* ==============================
+   DUITKU PAYMENT MODAL
+============================== */
+
+.duitku-modal {
+  max-width: 480px;
+  width: calc(100% - 32px);
+
+  h3 {
+    margin: 0 0 6px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--ink, #111827);
+  }
+}
+
+.duitku-modal-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.duitku-modal-order {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.duitku-va-block,
+.duitku-qr-block {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.duitku-va-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.duitku-va-number {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  padding: 10px 14px;
+
+  span {
+    flex: 1;
+    font-size: 1.25rem;
+    font-weight: 800;
+    font-family: "Courier New", monospace;
+    letter-spacing: 0.08em;
+    color: #111827;
+    word-break: break-all;
+  }
+}
+
+.duitku-copy-btn {
+  flex-shrink: 0;
+  background: var(--green-600, #16a34a);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s;
+
+  &:hover {
+    background: var(--green-700, #15803d);
+  }
+}
+
+.duitku-amount {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--green-700, #15803d);
+}
+
+.duitku-info {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.duitku-qr-info {
+  font-size: 0.85rem;
+  color: #374151;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.duitku-open-btn {
+  display: inline-block;
+  background: var(--green-600, #16a34a);
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  transition: background 0.18s;
+
+  &:hover {
+    background: var(--green-700, #15803d);
+  }
+}
+
+.duitku-reference {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  text-align: center;
+  margin-bottom: 4px;
+
+  strong {
+    color: #6b7280;
+    font-family: "Courier New", monospace;
+  }
+}

@@ -105,13 +105,12 @@ export default function Navbar() {
     window.location.href = "/login";
   };
 
-  const truncate = (text: string, maxLength = 45) => {
+  const truncate = (text: string, maxLength = 30) => {
+    if (!text) return "";
     if (text.length <= maxLength) return text;
-
     const truncated = text.slice(0, maxLength);
     const lastSpace = truncated.lastIndexOf(" ");
-
-    return `${truncated.slice(0, lastSpace)}...`;
+    return `${lastSpace > 0 ? truncated.slice(0, lastSpace) : truncated}...`;
   };
 
   onMount(async () => {
@@ -327,14 +326,14 @@ export default function Navbar() {
                             return (
                               <div class="mega-col">
                                 <A href={`/shop?collection=${collection.slug}`}>
-                                  <h4>{collection.name}</h4>
+                                  <h4 title={collection.name}>{truncate(collection.name, 28)}</h4>
                                 </A>
                                 <ul>
                                   <For each={collection.products || []}>
                                     {(product: any) => (
                                       <li>
-                                        <A href={`/product/${product.slug}`}>
-                                          {product.name}
+                                        <A href={`/product/${product.slug}`} title={product.name}>
+                                          {truncate(product.name, 28)}
                                         </A>
                                       </li>
                                     )}

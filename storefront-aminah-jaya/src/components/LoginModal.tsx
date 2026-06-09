@@ -2,6 +2,7 @@ import { createSignal, Show, onMount, createEffect } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { loginCustomer, googleLogin } from "~/lib/api";
 import { showLoginModal, setShowLoginModal, setCustomerProfile } from "~/lib/auth-store";
+import { refetchCartCount } from "~/lib/cart-store";
 
 export default function LoginModal() {
   const [step, setStep] = createSignal(1);
@@ -31,6 +32,8 @@ export default function LoginModal() {
       localStorage.setItem("customer_profile", JSON.stringify(data.user));
       setCustomerProfile(data.user);
       setShowLoginModal(false);
+      // Fetch cart count immediately after login
+      refetchCartCount();
     } catch (err: any) {
       const errMsg = err.message || "";
       if (
@@ -65,6 +68,8 @@ export default function LoginModal() {
       localStorage.setItem("customer_profile", JSON.stringify(data.user));
       setCustomerProfile(data.user);
       setShowLoginModal(false);
+      // Fetch cart count immediately after Google login
+      refetchCartCount();
     } catch (err: any) {
       setError(err.message || "Gagal masuk dengan Google.");
     } finally {

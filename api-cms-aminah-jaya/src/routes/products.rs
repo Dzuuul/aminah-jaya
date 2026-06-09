@@ -164,6 +164,40 @@ pub async fn get_product_by_slug(
     }
 }
 
+/// GET /api/categories/slug/:slug/products
+pub async fn get_products_by_category_slug(
+    State(state): State<AppState>,
+    Path(slug): Path<String>,
+) -> impl IntoResponse {
+    let pool = &state.pool;
+
+    let products: Vec<Product> = sqlx::query_as(
+        r#"
+        SELECT
+            p.id, p.name, p.slug, p.weight_gram, p.description, p.category_id,
+            COALESCE(c.name, 'Uncategorized') AS category_name,
+            p.price::FLOAT8, p.price_compare::FLOAT8, p.stock,
+            CASE WHEN p.stock = 0 THEN 'Out of Stock'
+                 WHEN p.stock <= 15 THEN 'Low Stock'
+                 ELSE 'In Stock' END AS status,
+            p.sku,
+            (SELECT url FROM product_images WHERE product_id = p.id ORDER BY sort_order ASC LIMIT 1) AS thumbnail_url,
+            p.subtitle, p.rating::FLOAT8, p.reviews_count, p.sold_count,
+            p.certifications, p.variants_chips, p.ingredients, p.how_to_use,
+            p.story, p.macro_detail, p.benefits, p.dosage, p.discount_label,
+            p.wa_message_template, p.is_featured
+        FROM products p
+        LEFT JOIN categories c ON c.id = p.category_id
+        WHERE c.slug = $1 AND p.status != 'inactive'
+        ORDER BY p.name ASC
+        "#
+    )
+    .bind(slug)
+    .fetch_all(pool).await.unwrap_or_default();
+
+    Json(ApiResponse::success(products))
+}
+
 /// POST /api/products
 pub async fn create_product(
     State(state): State<AppState>,

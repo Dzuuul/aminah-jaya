@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
 
 pub const DUITKU_SUCCESS_STATUS: &str = "00";
 
-/// Path resmi Duitku v2 inquiry (digabung dengan `DUITKU_BASE_URL`).
-pub const INQUIRY_PATH: &str = "/api/merchant/v2/inquiry";
+/// Path resmi Duitku v2 inquiry (digabung dengan base_url config).
+pub const INQUIRY_PATH: &str = "/webapi/api/merchant/v2/inquiry";
 
-/// Request internal dari storefront / chatbot sebelum diteruskan ke Duitku.
+/// Request internal dari storefront sebelum diteruskan ke Duitku.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreatePaymentRequest {
@@ -93,33 +95,39 @@ impl DuitkuCallbackPayload {
     }
 }
 
-/// Signature inquiry: MD5(merchantCode + merchantOrderId + paymentAmount + apiKey)
+/// Signature inquiry: HMAC_SHA256(merchantCode + merchantOrderId + paymentAmount, apiKey)
+/// Sesuai dokumentasi Duitku v2 terbaru — metode MD5 sudah obsolete.
 pub fn generate_inquiry_signature(
     merchant_code: &str,
     merchant_order_id: &str,
     payment_amount: i64,
     api_key: &str,
 ) -> String {
-    let raw = format!(
-        "{}{}{}{}",
-        merchant_code, merchant_order_id, payment_amount, api_key
-    );
-    md5_hex(&raw)
+    let raw = format!("{}{}{}", merchant_code, merchant_order_id, payment_amount);
+    hmac_sha256_hex(&raw, api_key)
 }
 
-/// Signature callback: MD5(merchantCode + amount + merchantOrderId + apiKey)
+/// Signature callback: HMAC_SHA256(merchantcode + amount + merchantOrderId, apiKey)
+/// Sesuai dokumentasi Duitku v2 terbaru — metode MD5 sudah obsolete.
 pub fn generate_callback_signature(
     merchant_code: &str,
     amount: &str,
     merchant_order_id: &str,
     api_key: &str,
 ) -> String {
-    let raw = format!("{}{}{}{}", merchant_code, amount, merchant_order_id, api_key);
-    md5_hex(&raw)
+    let raw = format!("{}{}{}", merchant_code, amount, merchant_order_id);
+    hmac_sha256_hex(&raw, api_key)
 }
 
-fn md5_hex(input: &str) -> String {
-    format!("{:x}", md5::compute(input.as_bytes()))
+/// HMAC-SHA256 dengan output hex lowercase (64 karakter).
+fn hmac_sha256_hex(message: &str, key: &str) -> String {
+    type HmacSha256 = Hmac<Sha256>;
+    let mut mac = HmacSha256::new_from_slice(key.as_bytes())
+        .expect("HMAC menerima kunci dengan panjang berapa pun");
+    mac.update(message.as_bytes());
+    let result = mac.finalize();
+    let bytes = result.into_bytes();
+    bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
 #[cfg(test)]
@@ -127,16 +135,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn inquiry_signature_matches_concatenation_order() {
+    fn inquiry_signature_is_64_hex_chars() {
         let sig = generate_inquiry_signature("D0001", "ORDER-1", 150000, "test-key");
-        let expected = format!("{:x}", md5::compute(b"D0001ORDER-1150000test-key"));
-        assert_eq!(sig, expected);
+        assert_eq!(sig.len(), 64);
+        assert!(sig.chars().all(|c| c.is_ascii_hexdigit()));
     }
 
     #[test]
-    fn callback_signature_matches_concatenation_order() {
+    fn callback_signature_is_64_hex_chars() {
         let sig = generate_callback_signature("D0001", "150000", "ORDER-1", "test-key");
-        let expected = format!("{:x}", md5::compute(b"D0001150000ORDER-1test-key"));
-        assert_eq!(sig, expected);
+        assert_eq!(sig.len(), 64);
+        assert!(sig.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn inquiry_and_callback_differ() {
+        // Memastikan urutan parameter berbeda menghasilkan signature berbeda
+        let inquiry = generate_inquiry_signature("D0001", "ORDER-1", 150000, "key");
+        let callback = generate_callback_signature("D0001", "150000", "ORDER-1", "key");
+        assert_ne!(inquiry, callback);
     }
 }

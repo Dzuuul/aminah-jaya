@@ -2,9 +2,9 @@
   "name": "storefront-aminah-jaya",
   "type": "module",
   "scripts": {
-    "dev": "vinxi dev --port 3002",
+    "dev": "NODE_OPTIONS=--dns-result-order=ipv4first vinxi dev --port 3002",
     "build": "vinxi build",
-    "start": "vinxi start",
+    "start": "NODE_OPTIONS=--dns-result-order=ipv4first vinxi start",
     "preview": "vinxi start"
   },
   "dependencies": {

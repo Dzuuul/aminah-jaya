@@ -238,8 +238,8 @@ ul.nav-links li.mobile-nav-header {
 
 .mega-menu-inner {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: 60px;
+  grid-template-columns: 220px 1fr;
+  gap: 40px;
 }
 
 .mega-menu-sidebar {
@@ -297,17 +297,30 @@ ul.nav-links li.mobile-nav-header {
 
 .mega-menu-content {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 30px;
+  width: 100%;
+}
+
+/* Collections grid: lebih lebar per kolom */
+.mega-menu-content.collections-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.mega-col {
+  min-width: 0; /* penting agar flex/grid children bisa shrink */
 }
 
 .mega-col h4 {
   font-size: 0.85rem;
   font-weight: 800;
   text-transform: uppercase;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   color: var(--ink);
   letter-spacing: 0.05em;
+  /* heading boleh wrap */
+  white-space: normal;
+  word-break: break-word;
 }
 
 .mega-col ul {
@@ -316,12 +329,25 @@ ul.nav-links li.mobile-nav-header {
   gap: 10px;
 }
 
+.mega-col li {
+  min-width: 0;
+}
+
 .mega-col li a {
   font-size: 0.85rem !important;
   color: var(--ink-light) !important;
   font-weight: 500 !important;
   text-transform: none !important;
   letter-spacing: normal !important;
+  /* Ellipsis untuk teks panjang */
+  display: block !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  height: auto !important;
+  padding: 0 !important;
+  line-height: 1.5 !important;
 }
 
 .mega-col li a:hover {

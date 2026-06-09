@@ -26,14 +26,14 @@ interface Product {
   total_reviews?: number;
 }
 
-const fetchProducts = async () => {
+const fetchProductsByCategory = async (slug: string) => {
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:8001";
   try {
-    const res = await fetch(`${apiUrl}/api/products?limit=100`);
+    const res = await fetch(`${apiUrl}/api/categories/slug/${slug}/products`);
     const json = await res.json();
     return json.success ? (json.data as Product[]) : [];
   } catch (e) {
-    console.error("Failed to fetch products", e);
+    console.error("Failed to fetch category products", e);
     return [];
   }
 };
@@ -63,10 +63,12 @@ const calculateDiscount = (price: number, priceCompare?: number) => {
 
 export default function CategoryPage() {
   const params = useParams();
-  const [products] = createResource<Product[]>(fetchProducts);
+  const [products] = createResource(() => params.slug, fetchProductsByCategory);
   const [categories] = createResource<Category[]>(fetchCategories);
 
   const [sortBy, setSortBy] = createSignal("newest");
+  const [filterStock, setFilterStock] = createSignal("all");
+  const [filterPromo, setFilterPromo] = createSignal(false);
 
   const categoryName = createMemo(() => {
     const slug = params.slug || "";
@@ -79,9 +81,13 @@ export default function CategoryPage() {
 
   const filteredProducts = createMemo(() => {
     let list = products() || [];
-    const slug = params.slug || "";
 
-    list = list.filter(p => p.category_name.toLowerCase().replace(/\s+/g, '-') === slug);
+    if (filterStock() === "in-stock") {
+      list = list.filter(p => p.stock > 0);
+    }
+    if (filterPromo()) {
+      list = list.filter(p => p.price_compare && p.price_compare > p.price);
+    }
 
     if (sortBy() === "price-low") {
       list = [...list].sort((a, b) => a.price - b.price);
@@ -120,13 +126,13 @@ export default function CategoryPage() {
             {(cat) => {
               const catSlug = cat.slug || cat.name.toLowerCase().replace(/\s+/g, '-');
               const isActive = catSlug === params.slug;
-              const productCount = products()?.filter(p => p.category_name === cat.name).length || 0;
+              const productCount = isActive ? products()?.length : null;
               return (
                 <A
                   href={`/category/${catSlug}`}
                   class={`pill ${isActive ? "active" : ""}`}
                 >
-                  {cat.name} <span class="count">{productCount}</span>
+                  {cat.name} {productCount != null && <span class="count">{productCount}</span>}
                 </A>
               );
             }}
@@ -136,18 +142,28 @@ export default function CategoryPage() {
         {/* Filter Bar */}
         <div class="category-filter-bar">
           <div class="filter-left">
-            <button class="btn-filter">
+            <button class="btn-filter" style={{ "pointer-events": "none", "background": "transparent" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
               Filter
             </button>
 
-            {/* Mock dropdowns for styling */}
-            {['Gender', 'Harga', 'Warna', 'Ukuran'].map(label => (
-              <div class="filter-dropdown">
-                {label}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-              </div>
-            ))}
+            <select
+              class="filter-dropdown-select"
+              value={filterStock()}
+              onChange={(e) => setFilterStock(e.currentTarget.value)}
+              style={{ "background": "transparent", "border": "1px solid var(--border)", "border-radius": "20px", "padding": "6px 16px", "font-size": "0.85rem", "cursor": "pointer", "outline": "none", "color": "var(--ink)", "font-weight": "500" }}
+            >
+              <option value="all">Semua Stok</option>
+              <option value="in-stock">Tersedia Saja</option>
+            </select>
+
+            <button
+              class={`filter-dropdown-select ${filterPromo() ? "active" : ""}`}
+              onClick={() => setFilterPromo(!filterPromo())}
+              style={{ "background": filterPromo() ? "var(--green-50)" : "transparent", "color": filterPromo() ? "var(--green-700)" : "var(--ink)", "border": "1px solid", "border-color": filterPromo() ? "var(--green-400)" : "var(--border)", "border-radius": "20px", "padding": "6px 16px", "font-size": "0.85rem", "cursor": "pointer", "transition": "all 0.2s", "font-weight": "500" }}
+            >
+              Promo / Diskon
+            </button>
           </div>
 
           <div class="filter-right">
