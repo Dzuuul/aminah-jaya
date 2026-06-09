@@ -35,7 +35,7 @@ import { refetchCartCount } from "~/lib/cart-store";
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
 import Loading from "~/components/ui/Loading";
-import { ChevronRight, X } from "lucide-solid";
+import { ChevronRight, ChevronDown, X } from "lucide-solid";
 import {
   SHIPPING_SPEED_GROUPS,
   courierLogoUrl,
@@ -112,65 +112,33 @@ const normalizeLocationPart = (value: string) =>
     .join(" ");
 
 const paymentMethods = [
+  // ── Dompet Digital ─────────────────────────────────────────────────────
+  { id: "qris", name: "QRIS", dbMethod: "qris", duitkuCode: "SP", category: "Dompet Digital", logo: "/payments/QRIS.png" },
+  { id: "shopeepay", name: "ShopeePay", dbMethod: "ewallet", duitkuCode: "SA", category: "Dompet Digital", logo: "/payments/SHOPEEPAY.png" },
+  { id: "ovo", name: "OVO", dbMethod: "ewallet", duitkuCode: "OV", category: "Dompet Digital", logo: "/payments/OVO.png" },
+  { id: "dana", name: "DANA", dbMethod: "ewallet", duitkuCode: "DA", category: "Dompet Digital", logo: "/payments/DANA.png" },
+  { id: "linkaja", name: "LinkAja", dbMethod: "ewallet", duitkuCode: "LA", category: "Dompet Digital", logo: "/payments/LINKAJA.png" },
+
   // ── Virtual Account ──────────────────────────────────────────────────────
-  {
-    id: "bca_va",
-    name: "BCA Virtual Account",
-    dbMethod: "transfer",
-    duitkuCode: "BC",
-    category: "va",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/5/5c/Bank_Central_Asia.svg",
-  },
-  {
-    id: "mandiri_va",
-    name: "Mandiri Virtual Account",
-    dbMethod: "transfer",
-    duitkuCode: "M2",
-    category: "va",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/a/ad/Bank_Mandiri_logo_2016.svg",
-  },
-  {
-    id: "bni_va",
-    name: "BNI Virtual Account",
-    dbMethod: "transfer",
-    duitkuCode: "I1",
-    category: "va",
-    logo: "https://upload.wikimedia.org/wikipedia/id/5/55/BNI_logo.svg",
-  },
-  {
-    id: "bri_va",
-    name: "BRI Virtual Account",
-    dbMethod: "transfer",
-    duitkuCode: "BR",
-    category: "va",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/6/68/BANK_BRI_logo.svg",
-  },
-  {
-    id: "permata_va",
-    name: "Permata Virtual Account",
-    dbMethod: "transfer",
-    duitkuCode: "BT",
-    category: "va",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/9/9b/Bank_Permata_logo.svg",
-  },
-  // ── E-Wallet / QRIS ─────────────────────────────────────────────────────
-  {
-    id: "qris",
-    name: "QRIS (GoPay / ShopeePay dll)",
-    dbMethod: "qris",
-    duitkuCode: "SP",
-    category: "ewallet",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Logo_QRIS.svg/320px-Logo_QRIS.svg.png",
-  },
-  // ── COD (tidak via Duitku) ───────────────────────────────────────────────
-  {
-    id: "cod",
-    name: "Bayar di Tempat (COD)",
-    dbMethod: "cod",
-    duitkuCode: null as null | string,
-    category: "cod",
-    logo: "https://cdn-icons-png.flaticon.com/512/6491/6491509.png",
-  },
+  { id: "bca_va", name: "BCA Virtual Account", dbMethod: "transfer", duitkuCode: "BC", category: "Virtual Account", logo: "/payments/BCA.SVG" },
+  { id: "mandiri_va", name: "Mandiri Virtual Account", dbMethod: "transfer", duitkuCode: "M2", category: "Virtual Account", logo: "/payments/MANDIRI.png" },
+  { id: "bni_va", name: "BNI Virtual Account", dbMethod: "transfer", duitkuCode: "I1", category: "Virtual Account", logo: "/payments/BNI.png" },
+  { id: "bri_va", name: "BRI Virtual Account", dbMethod: "transfer", duitkuCode: "BR", category: "Virtual Account", logo: "/payments/BRIVA.png" },
+  { id: "permata_va", name: "Permata Virtual Account", dbMethod: "transfer", duitkuCode: "BT", category: "Virtual Account", logo: "/payments/PERMATA.png" },
+  { id: "cimb_va", name: "CIMB Niaga Virtual Account", dbMethod: "transfer", duitkuCode: "B1", category: "Virtual Account", logo: "/payments/CIMB.png" },
+  { id: "bsi_va", name: "BSI Virtual Account", dbMethod: "transfer", duitkuCode: "BSI1", category: "Virtual Account", logo: "/payments/BSI.webp" },
+  { id: "atm_bersama", name: "ATM Bersama", dbMethod: "transfer", duitkuCode: "A1", category: "Virtual Account", logo: "/payments/ATMBERSAMA.png" },
+
+  // ── Pembayaran Instan ────────────────────────────────────────────────────
+  { id: "jenius", name: "Jenius Pay", dbMethod: "ewallet", duitkuCode: "B1", category: "Pembayaran Instan", logo: "/payments/JENIUS.webp" },
+  { id: "klik_bca", name: "KlikBCA", dbMethod: "transfer", duitkuCode: "B1", category: "Pembayaran Instan", logo: "/payments/BCA.SVG" },
+
+  // ── Retail / Gerai ───────────────────────────────────────────────────────
+  { id: "alfamart", name: "Alfamart / Alfamidi / Lawson / Dan+Dan", dbMethod: "retail", duitkuCode: "FT", category: "Retail / Gerai", logo: "/payments/RETAIL.png" },
+  { id: "indomaret", name: "Indomaret", dbMethod: "retail", duitkuCode: "IR", category: "Retail / Gerai", logo: "/payments/INDOMARET.png" },
+  
+  // ── Lainnya ──────────────────────────────────────────────────────────────
+  { id: "cod", name: "Bayar di Tempat (COD)", dbMethod: "cod", duitkuCode: null as null | string, category: "Lainnya", logo: "https://cdn-icons-png.flaticon.com/512/6491/6491509.png" },
 ] as const;
 
 type PaymentMethodId = (typeof paymentMethods)[number]["id"];
@@ -240,6 +208,62 @@ export default function CheckoutPage() {
   const [checkoutCompleted, setCheckoutCompleted] = createSignal(false);
 
   const [isConfirmingLeave, setIsConfirmingLeave] = createSignal(false);
+
+  /* ── Payment ── */
+  const [selectedPayment, setSelectedPayment] = createSignal<PaymentMethodId>("bca_va");
+
+  /* ── Payment Methods Modal ── */
+  const [showPaymentModal, setShowPaymentModal] = createSignal(false);
+  const [expandedPaymentCategory, setExpandedPaymentCategory] = createSignal<string | null>("Virtual Account");
+
+  const paymentCategories = createMemo(() => {
+    // Tentukan urutan kategori
+    const order = [
+      "Dompet Digital",
+      "Kartu Kredit / Debit / Cicilan",
+      "PayLater",
+      "Virtual Account",
+      "Debit Instan",
+      "Pembayaran Instan",
+      "Retail / Gerai",
+      "Lainnya"
+    ];
+    const groups = new Map<string, typeof paymentMethods[number][]>();
+    order.forEach(o => groups.set(o, []));
+    
+    for (const method of paymentMethods) {
+      if (groups.has(method.category)) {
+        groups.get(method.category)!.push(method);
+      } else {
+        if (!groups.has("Lainnya")) groups.set("Lainnya", []);
+        groups.get("Lainnya")!.push(method);
+      }
+    }
+    
+    return Array.from(groups.entries())
+      .filter(([_, methods]) => methods.length > 0)
+      .map(([name, methods]) => ({ name, methods }));
+  });
+
+  const togglePaymentCategory = (cat: string) => {
+    setExpandedPaymentCategory(prev => prev === cat ? null : cat);
+  };
+
+  const displayedPaymentMethods = createMemo(() => {
+    // 4 metode bayar pilihan awal
+    const defaultIds = ["bca_va", "qris", "shopeepay", "alfamart"];
+    const defaults = paymentMethods.filter(p => defaultIds.includes(p.id));
+    
+    // Jika user memilih metode lain, sertakan di list mengganti salah satu
+    const selectedId = selectedPayment();
+    if (selectedId && !defaultIds.includes(selectedId)) {
+      const selected = paymentMethods.find(p => p.id === selectedId);
+      if (selected) {
+        return [selected, ...defaults.slice(0, 3)];
+      }
+    }
+    return defaults.slice(0, 4);
+  });
 
   const shouldBlockLeaving = () => {
     if (checkoutCompleted()) return false;
@@ -776,7 +800,7 @@ export default function CheckoutPage() {
       const selectedMethod = paymentMethods.find((p) => p.id === selectedPayment());
       const dbMethod = selectedMethod?.dbMethod || "transfer";
       const duitkuCode = selectedMethod?.duitkuCode ?? null;
-      const isCod = selectedMethod?.category === "cod";
+      const isCod = selectedMethod?.dbMethod === "cod";
 
       // Single read to avoid race condition
       const currentCustomer = customer();
@@ -852,10 +876,6 @@ export default function CheckoutPage() {
       setSubmitting(false);
     }
   };
-
-  /* ── Payment ── */
-  const [selectedPayment, setSelectedPayment] = createSignal<PaymentMethodId>("bca_va");
-
   /* ── Modal instruksi Duitku (VA / QRIS) ── */
   const [duitkuResult, setDuitkuResult] = createSignal<DuitkuPaymentResponse | null>(null);
   const [showDuitkuModal, setShowDuitkuModal] = createSignal(false);
@@ -1393,22 +1413,28 @@ export default function CheckoutPage() {
 
                     {/* Metode Pembayaran */}
                     <div class="checkout-section">
-                      <div class="checkout-section-title">
-                        Metode Pembayaran
+                      <div class="checkout-section-title" style={{ display: "flex", "justify-content": "space-between", "align-items": "center" }}>
+                        <span>Metode Pembayaran</span>
+                        <span style={{ "font-size": "0.9rem", color: "var(--green-600)", cursor: "pointer", "font-weight": "600" }} onClick={() => setShowPaymentModal(true)}>Lihat Semua</span>
                       </div>
-                      <div class="payment-method-grid">
-                        <For each={paymentMethods}>
+                      <div class="checkout-payment-list">
+                        <For each={displayedPaymentMethods()}>
                           {(method) => (
-                            <div
-                              class="payment-method-card"
-                              classList={{
-                                active: selectedPayment() === method.id,
-                              }}
-                              onClick={() => setSelectedPayment(method.id)}
-                            >
-                              <img src={method.logo} alt={method.name} />
-                              <span>{method.name}</span>
-                            </div>
+                            <label class="checkout-payment-item" classList={{ active: selectedPayment() === method.id }}>
+                              <div class="payment-item-left">
+                                <img src={method.logo} alt={method.name} />
+                                <span class="payment-name">{method.name}</span>
+                              </div>
+                              <div class="payment-radio">
+                                <input
+                                  type="radio"
+                                  name="payment_method"
+                                  checked={selectedPayment() === method.id}
+                                  onChange={() => setSelectedPayment(method.id)}
+                                />
+                                <div class="radio-indicator"></div>
+                              </div>
+                            </label>
                           )}
                         </For>
                       </div>
@@ -1744,6 +1770,72 @@ export default function CheckoutPage() {
                     </For>
                   </div>
                 </Show>
+              </div>
+            </div>
+          </div>
+        </Show>
+
+        {/* Modal Semua Metode Pembayaran */}
+        <Show when={showPaymentModal()}>
+          <div class="voucher-modal-overlay" onClick={() => setShowPaymentModal(false)}>
+            <div class="voucher-modal payment-modal" onClick={(e) => e.stopPropagation()}>
+              <div class="voucher-modal-header" style={{ "border-bottom": "none", "padding-bottom": "0" }}>
+                <h3>Metode Pembayaran</h3>
+                <button
+                  type="button"
+                  class="voucher-modal-close"
+                  onClick={() => setShowPaymentModal(false)}
+                  aria-label="Tutup"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div class="voucher-modal-body" style={{ padding: "0 0 16px 0" }}>
+                <div class="payment-accordion-container">
+                  <For each={paymentCategories()}>
+                    {(cat) => (
+                      <div class="payment-accordion">
+                        <div
+                          class="payment-accordion-header"
+                          onClick={() => togglePaymentCategory(cat.name)}
+                        >
+                          <span>{cat.name}</span>
+                          <ChevronDown
+                            size={18}
+                            class="accordion-icon"
+                            classList={{ rotated: expandedPaymentCategory() === cat.name }}
+                          />
+                        </div>
+                        <Show when={expandedPaymentCategory() === cat.name}>
+                          <div class="payment-accordion-body">
+                            <For each={cat.methods}>
+                              {(method) => (
+                                <label class="payment-accordion-item">
+                                  <div class="payment-item-left">
+                                    <img src={method.logo} alt={method.name} />
+                                    <span>{method.name}</span>
+                                  </div>
+                                  <div class="payment-radio">
+                                    <input
+                                      type="radio"
+                                      name="modal_payment_method"
+                                      checked={selectedPayment() === method.id}
+                                      onChange={() => {
+                                        setSelectedPayment(method.id);
+                                        setShowPaymentModal(false);
+                                      }}
+                                    />
+                                    <div class="radio-indicator"></div>
+                                  </div>
+                                </label>
+                              )}
+                            </For>
+                          </div>
+                        </Show>
+                      </div>
+                    )}
+                  </For>
+                </div>
               </div>
             </div>
           </div>

@@ -806,37 +806,167 @@
    PAYMENT METHOD
 ============================== */
 
-.payment-method-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
-}
+/* ==============================
+   PAYMENT METHOD (NEW DESIGN)
+============================== */
 
-.payment-method-card {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 15px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.2s;
+.checkout-payment-list {
   display: flex;
   flex-direction: column;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.checkout-payment-item {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  &:hover {
+    background: #f9fafb;
+  }
 
   &.active {
-    border-color: var(--green-500);
-    background: var(--green-50);
+    background: #f0fdf4;
   }
+}
+
+.payment-item-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 
   img {
     height: 24px;
+    width: auto;
+    max-width: 60px;
     object-fit: contain;
   }
 
-  span {
-    font-size: 0.75rem;
-    font-weight: 600;
+  .payment-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #1f2937;
+  }
+}
+
+.payment-radio {
+  display: flex;
+  align-items: center;
+  
+  input[type="radio"] {
+    display: none;
+  }
+
+  .radio-indicator {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    border-radius: 50%;
+    border: 2px solid #d1d5db;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    
+    &::after {
+      content: '';
+      display: none;
+      width: 10px;
+      height: 8px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8'%3E%3Cpolyline points='1,4 3.5,6.5 9,1' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+    }
+  }
+
+  input[type="radio"]:checked + .radio-indicator {
+    background: var(--green-500, #2a8a60);
+    border-color: var(--green-500, #2a8a60);
+    
+    &::after {
+      display: block;
+    }
+  }
+}
+
+/* ==============================
+   PAYMENT MODAL ACCORDION
+============================== */
+
+.payment-modal {
+  max-width: 500px;
+  max-height: 90vh;
+}
+
+.payment-accordion-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.payment-accordion {
+  border-bottom: 1px solid #f3f4f6;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.payment-accordion-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #f9fafb;
+  }
+
+  .accordion-icon {
+    color: #6b7280;
+    transition: transform 0.2s;
+    
+    &.rotated {
+      transform: rotate(180deg);
+    }
+  }
+}
+
+.payment-accordion-body {
+  display: flex;
+  flex-direction: column;
+  background: #f9fafb;
+  border-top: 1px solid #f3f4f6;
+  padding: 4px 0;
+}
+
+.payment-accordion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px 14px 32px;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #f3f4f6;
   }
 }
 
