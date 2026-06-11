@@ -1,7 +1,6 @@
 // Base Styles
 @use "./styles/base/variables";
 @use "./styles/base/reset";
-@use "./styles/base/responsive";
 @use "./styles/base/transitions";
 
 // Component Styles
@@ -23,3 +22,6 @@
 @use "./styles/pages/auth";
 @use "./styles/pages/profile";
 @use "./styles/pages/category";
+
+// Responsive Styles (Must be last to override base styles)
+@use "./styles/base/responsive";

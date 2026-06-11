@@ -189,6 +189,12 @@
   background: var(--cream);
 }
 
+@media (max-width: 640px) {
+  .hero-slider {
+    padding: 16px 0 10px;
+  }
+}
+
 .hero-slide {
   width: 100%;
 }
