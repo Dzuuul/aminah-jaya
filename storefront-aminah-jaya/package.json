@@ -11,6 +11,7 @@
     "@solidjs/meta": "^0.29.4",
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.0.0",
+    "gsap": "^3.15.0",
     "lucide-solid": "^1.16.0",
     "maplibre-gl": "^5.24.0",
     "solid-js": "^1.9.5",

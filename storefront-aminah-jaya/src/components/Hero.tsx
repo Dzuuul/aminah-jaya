@@ -43,18 +43,24 @@ export default function Hero() {
         }>
           <div class="hero-slide">
             <div class="hero-banner-contained" style={{ position: "relative", overflow: "hidden" }}>
-              <div 
-                class="flex transition-transform duration-500 ease-out" 
-                style={{ transform: `translateX(-${currentIndex() * 100}%)` }}
+              <div
+                class="flex transition-transform duration-500 ease-out"
+                style={{
+                  display: "flex",
+                  "flex-wrap": "nowrap",
+                  transform: `translateX(-${currentIndex() * 100}%)`,
+                  transition: "transform 0.5s ease-out"
+                }}
               >
                 <For each={banners()}>
                   {(banner) => (
-                    <div class="min-w-full relative">
-                      <a href={banner.link_url || "#"} class="block">
-                        <img 
-                          src={banner.image_url} 
-                          alt="Banner" 
+                    <div class="min-w-full relative" style={{ flex: "0 0 100%", "min-width": "100%" }}>
+                      <a href={banner.link_url || "#"} class="block" style={{ display: "block" }}>
+                        <img
+                          src={banner.image_url}
+                          alt="Banner"
                           class="w-full h-auto block"
+                          style={{ width: "100%", height: "auto", display: "block" }}
                         />
                       </a>
                     </div>
@@ -64,19 +70,24 @@ export default function Hero() {
 
               {/* Slider Arrows */}
               <Show when={banners() && banners()!.length > 1}>
-                <button 
-                  class="slider-arrow prev" 
+                <button
+                  class="slider-arrow prev"
                   onClick={(e) => { e.preventDefault(); prevSlide(); }}
                   aria-label="Previous slide"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M15 19l-7-7 7-7" />
+                  </svg>
                 </button>
-                <button 
-                  class="slider-arrow next" 
+
+                <button
+                  class="slider-arrow next"
                   onClick={(e) => { e.preventDefault(); nextSlide(); }}
                   aria-label="Next slide"
                 >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6 6-6"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 5l7 7-7 7" />
+                  </svg>
                 </button>
               </Show>
 
@@ -85,7 +96,7 @@ export default function Hero() {
                 <div class="hero-dots">
                   <For each={banners()}>
                     {(_, i) => (
-                      <span 
+                      <span
                         class={`hero-dot ${currentIndex() === i() ? "active" : ""}`}
                         onClick={() => setCurrentIndex(i())}
                       ></span>

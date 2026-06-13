@@ -1,8 +1,14 @@
-import { createSignal, For, Show, onMount } from "solid-js";
+import { createSignal, createEffect, onCleanup, For, Show, onMount } from "solid-js";
 import { useParams, useNavigate, useLocation } from "@solidjs/router";
 import Navbar from "~/components/Navbar";
 import Footer from "~/components/Footer";
 import Loading from "~/components/ui/Loading";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 // --- Types ---
 
@@ -203,10 +209,10 @@ const fetchProductBySlug = async (slug: string): Promise<Product> => {
     }).format(p.price),
     originalPrice: p.price_compare
       ? new Intl.NumberFormat("id-ID", {
-          style: "currency",
-          currency: "IDR",
-          maximumFractionDigits: 0,
-        }).format(p.price_compare)
+        style: "currency",
+        currency: "IDR",
+        maximumFractionDigits: 0,
+      }).format(p.price_compare)
       : undefined,
     discount: p.discount_label,
     rating: p.rating || 4.9,
@@ -257,7 +263,7 @@ const Gallery = (props: { images: string[]; certs: string[]; id: string }) => {
       <div class="pd-main-img" style={{ "view-transition-name": `product-img-${props.id}` }}>
         <img src={activeImg()} alt="Main Product" />
       </div>
-      <div class="pd-thumb-row">
+      <div class="pd-thumb-col">
         <For each={props.images}>
           {(img) => (
             <div
@@ -487,9 +493,6 @@ const ProductInfo = (props: {
             <span class="pd-discount-badge">{props.product.discount}</span>
           </Show>
         </div>
-        <p class="pd-shipping-info">
-          Gratis ongkir seluruh Indonesia · 7 Hari pengembalian
-        </p>
       </div>
 
       {/* Variant Selector */}
@@ -629,7 +632,7 @@ export default function ProductDetail() {
   const params = useParams();
   const location = useLocation();
   const state = location.state as { fallbackImg?: string; fallbackId?: string } | undefined;
-  
+
   const [product, setProduct] = createSignal<Product | null>(null);
   const [loading, setLoading] = createSignal(true);
   const [error, setError] = createSignal<string | null>(null);
@@ -642,6 +645,90 @@ export default function ProductDetail() {
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
   };
+
+  let mainRef: HTMLElement | undefined;
+
+  createEffect(() => {
+    if (!loading() && !error() && product()) {
+      requestAnimationFrame(() => {
+        if (!mainRef) return;
+
+        // Hero Elements Stagger
+        const heroEls = mainRef.querySelectorAll(".breadcrumb, .pd-main-img, .pd-thumb, .cert-strip, .pd-info > *");
+        if (heroEls.length > 0) {
+          gsap.fromTo(
+            heroEls,
+            { opacity: 0, y: 30 },
+            { opacity: 1, y: 0, duration: 0.8, stagger: 0.05, ease: "power3.out", clearProps: "all" }
+          );
+        }
+
+        // Scroll Animations for Sections
+        const sections = mainRef.querySelectorAll(".pd-section:not(.pd-section-hero)");
+        sections.forEach((section) => {
+          if (section.classList.contains("story-block")) {
+            const els = section.querySelectorAll(".story-content > *, .story-picture");
+            gsap.fromTo(
+              els,
+              { opacity: 0, y: 40 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                stagger: 0.15,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: section,
+                  start: "top 80%",
+                  toggleActions: "play none none none"
+                },
+                clearProps: "all"
+              }
+            );
+          } else {
+            gsap.fromTo(
+              section,
+              { opacity: 0, y: 50 },
+              {
+                opacity: 1,
+                y: 0,
+                duration: 1,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: section,
+                  start: "top 85%",
+                  toggleActions: "play none none none"
+                },
+                clearProps: "all"
+              }
+            );
+          }
+        });
+      });
+
+      onCleanup(() => {
+        ScrollTrigger.getAll().forEach(t => t.kill());
+      });
+    }
+  });
+
+  // Tab change animation
+  createEffect(() => {
+    // Track activeTab dependency
+    activeTab();
+    if (!loading() && !error() && product() && mainRef) {
+      requestAnimationFrame(() => {
+        const tabContentEls = mainRef!.querySelectorAll(".tab-content > div");
+        if (tabContentEls.length > 0) {
+          gsap.fromTo(
+            tabContentEls,
+            { opacity: 0, y: 15 },
+            { opacity: 1, y: 0, duration: 0.4, ease: "power2.out", clearProps: "all" }
+          );
+        }
+      });
+    }
+  });
 
   onMount(async () => {
     try {
@@ -691,7 +778,7 @@ export default function ProductDetail() {
           </div>
         }
       >
-        <main>
+        <main ref={mainRef}>
           <Breadcrumb name={product()!.name} />
 
           {/* Hero: Gallery + Info */}
@@ -781,30 +868,33 @@ export default function ProductDetail() {
 
           {/* Story Block */}
           <Show when={product()!.story.image}>
-            <section class="story-block">
-              <picture class="story-picture">
-                <Show when={product()!.story.image_mobile}>
-                  <source
-                    media="(max-width: 768px)"
-                    srcset={product()!.story.image_mobile}
-                  />
-                </Show>
-                <img
-                  class="story-img"
-                  src={product()!.story.image}
-                  alt="Story"
-                />
-              </picture>
-              <div class="story-overlay" />
-              <div class="story-content">
-                <h2
-                  class="story-heading"
-                  innerHTML={applyReplaces(
-                    product()!.story.heading,
-                    config().storyHeadingReplace,
-                  )}
-                />
-                <p class="story-subheading">{product()!.story.subheading}</p>
+            <section class="story-block pd-section">
+              <div class="pd-container">
+                <div class="story-grid">
+                  <div class="story-content">
+                    <h2
+                      class="pd-title"
+                      innerHTML={applyReplaces(
+                        product()!.story.heading,
+                        config().storyHeadingReplace,
+                      )}
+                    />
+                    <p class="story-subheading">{product()!.story.subheading}</p>
+                  </div>
+                  <picture class="story-picture">
+                    <Show when={product()!.story.image_mobile}>
+                      <source
+                        media="(max-width: 768px)"
+                        srcset={product()!.story.image_mobile}
+                      />
+                    </Show>
+                    <img
+                      class="story-img"
+                      src={product()!.story.image}
+                      alt="Story"
+                    />
+                  </picture>
+                </div>
               </div>
             </section>
           </Show>

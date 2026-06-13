@@ -4,16 +4,12 @@
 .hero {
   background: var(--sand);
   background-image:
-    radial-gradient(
-      ellipse at 80% 0%,
+    radial-gradient(ellipse at 80% 0%,
       rgba(42, 138, 96, 0.08) 0%,
-      transparent 60%
-    ),
-    radial-gradient(
-      ellipse at 10% 80%,
+      transparent 60%),
+    radial-gradient(ellipse at 10% 80%,
       rgba(42, 138, 96, 0.05) 0%,
-      transparent 50%
-    );
+      transparent 50%);
   padding: 90px 0 80px;
   overflow: hidden;
 }
@@ -49,6 +45,7 @@
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
@@ -191,7 +188,7 @@
 
 @media (max-width: 640px) {
   .hero-slider {
-    padding: 16px 0 10px;
+    padding: 0;
   }
 }
 
@@ -233,6 +230,13 @@
   z-index: 5;
   transition: all 0.2s;
   color: var(--black);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hero-banner-contained:hover .slider-arrow {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 @media (max-width: 640px) {
@@ -410,22 +414,16 @@
 .flash-sale-box {
   background: var(--red-sale);
   background-image:
-    repeating-radial-gradient(
-      circle at 0 0,
+    repeating-radial-gradient(circle at 0 0,
       transparent 0,
       rgba(255, 255, 255, 0.03) 10px,
-      transparent 20px
-    ),
-    radial-gradient(
-      circle at 20% 20%,
+      transparent 20px),
+    radial-gradient(circle at 20% 20%,
       rgba(255, 255, 255, 0.05) 0%,
-      transparent 20%
-    ),
-    radial-gradient(
-      circle at 80% 80%,
+      transparent 20%),
+    radial-gradient(circle at 80% 80%,
       rgba(255, 255, 255, 0.05) 0%,
-      transparent 20%
-    );
+      transparent 20%);
   border-radius: clamp(12px, 2.5vw, 20px);
   padding: clamp(16px, 4vw, 40px);
   color: var(--white);
