@@ -81,10 +81,15 @@ impl DuitkuClient {
             INQUIRY_PATH
         );
 
+        tracing::info!("Mengirim request ke Duitku URL: {}", url);
+        let payload_json = serde_json::to_string(request).unwrap_or_default();
+        tracing::info!("Duitku Request Payload: {}", payload_json);
+
         let response = self.http.post(&url).json(request).send().await?;
 
         let status = response.status();
         let body = response.text().await?;
+        tracing::info!("Duitku Response HTTP {}: {}", status, body);
 
         // Duitku selalu mengembalikan JSON bahkan saat HTTP error.
         // Coba parse dulu — jika berhasil, kembalikan struct response

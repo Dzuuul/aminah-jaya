@@ -13,6 +13,7 @@ use crate::duitku::client::{DuitkuClient, DuitkuClientError};
 use crate::duitku::models::{
     CreatePaymentRequest, DuitkuCallbackPayload, generate_callback_signature,
 };
+use crate::services::email_service;
 
 pub async fn create_payment_handler(
     State(config): State<Arc<Config>>,
@@ -41,6 +42,17 @@ pub async fn create_payment_handler(
                     reference = ?response.reference,
                     "Duitku inquiry berhasil"
                 );
+                
+                // Send email instruction asynchronously
+                let resend_api_key = config.resend_api_key.clone();
+                let to_email = inquiry_request.email.clone();
+                let order_id = inquiry_request.merchant_order_id.clone();
+                let response_clone = response.clone();
+                tokio::spawn(async move {
+                    email_service::send_payment_instruction(resend_api_key, to_email, order_id, response_clone).await;
+                });
+
+                (StatusCode::OK, Json(response)).into_response()
             } else {
                 warn!(
                     order_id = %inquiry_request.merchant_order_id,
@@ -48,12 +60,14 @@ pub async fn create_payment_handler(
                     status_message = ?response.status_message,
                     "Duitku inquiry ditolak oleh Duitku"
                 );
+                (
+                    StatusCode::BAD_REQUEST,
+                    Json(serde_json::json!({
+                        "error": "Pembayaran ditolak oleh gateway",
+                        "detail": response.status_message.as_deref().unwrap_or("Payment channel not available / Gateway Error")
+                    })),
+                ).into_response()
             }
-            // Selalu teruskan respons Duitku ke storefront dengan HTTP 200.
-            // Storefront membaca statusCode ("00" = sukses) untuk memutuskan alur berikutnya.
-            // Mengembalikan 502 di sini hanya menyebabkan storefront menerima error opaque
-            // tanpa bisa membaca statusMessage dari Duitku.
-            (StatusCode::OK, Json(response)).into_response()
         }
         Err(DuitkuClientError::Network(e)) => {
             error!("Koneksi ke Duitku gagal: {}", e);

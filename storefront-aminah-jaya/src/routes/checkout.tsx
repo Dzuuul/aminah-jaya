@@ -840,7 +840,7 @@ export default function CheckoutPage() {
       }
 
       // Metode Duitku: buat transaksi pembayaran
-      const returnUrl = `${window.location.origin}/success?order_number=${res.order_number}&amount=${res.grand_total}&payment_method=${dbMethod}&shipping=${encodeURIComponent(rate.name)}`;
+      const returnUrl = `${window.location.origin}/profile?tab=orders`;
 
       const productSummary = safeCartItems()
         .slice(0, 2)
@@ -859,15 +859,32 @@ export default function CheckoutPage() {
         expiryPeriod: 60,
       });
 
+      // Simpan instruksi pembayaran ke localStorage agar bisa diakses dari halaman profil
+      try {
+        const paymentCache = {
+          vaNumber: duitkuRes.vaNumber,
+          qrString: duitkuRes.qrString,
+          paymentUrl: duitkuRes.paymentUrl,
+          reference: duitkuRes.reference,
+          amount: duitkuRes.amount || String(res.grand_total),
+          methodName: selectedMethod?.name || "",
+          savedAt: Date.now(),
+        };
+        localStorage.setItem(
+          `duitku_payment_${res.order_number}`,
+          JSON.stringify(paymentCache),
+        );
+      } catch {
+        // quota / private mode — abaikan
+      }
+
       if (duitkuRes.paymentUrl) {
-        // Redirect ke halaman pembayaran Duitku
         window.location.href = duitkuRes.paymentUrl;
         return;
       }
 
-      // VA atau QR: tampilkan modal instruksi
-      setDuitkuResult(duitkuRes);
-      setShowDuitkuModal(true);
+      // Fallback jika tidak ada URL dari Duitku
+      window.location.href = "/profile?tab=orders";
     } catch (err: any) {
       setErrorMessage(
         err.message || "Gagal memproses pesanan, silakan coba lagi.",
@@ -875,15 +892,6 @@ export default function CheckoutPage() {
     } finally {
       setSubmitting(false);
     }
-  };
-  /* ── Modal instruksi Duitku (VA / QRIS) ── */
-  const [duitkuResult, setDuitkuResult] = createSignal<DuitkuPaymentResponse | null>(null);
-  const [showDuitkuModal, setShowDuitkuModal] = createSignal(false);
-
-  const closeDuitkuModal = () => {
-    setShowDuitkuModal(false);
-    // Setelah user menutup modal, arahkan ke halaman pesanan
-    window.location.href = "/profile?tab=orders";
   };
 
   /* ── Init ── */
@@ -1841,95 +1849,6 @@ export default function CheckoutPage() {
           </div>
         </Show>
 
-        {/* ── Modal instruksi pembayaran Duitku ── */}
-        <Show when={showDuitkuModal() && duitkuResult()}>
-          {(result) => (
-            <div class="modal-overlay">
-              <div class="modal-content duitku-modal" onClick={(e) => e.stopPropagation()}>
-                <div class="duitku-modal-header">
-                  <h3>Instruksi Pembayaran</h3>
-                  <p class="duitku-modal-order">
-                    Pesanan Anda telah dibuat. Selesaikan pembayaran sebelum transaksi kedaluwarsa.
-                  </p>
-                </div>
-
-                <Show when={result().vaNumber}>
-                  <div class="duitku-va-block">
-                    <div class="duitku-va-label">Nomor Virtual Account</div>
-                    <div class="duitku-va-number">
-                      <span id="duitku-va-number-text">{result().vaNumber}</span>
-                      <button
-                        type="button"
-                        class="duitku-copy-btn"
-                        onClick={() => {
-                          const va = result().vaNumber ?? "";
-                          navigator.clipboard?.writeText(va).catch(() => {});
-                        }}
-                      >
-                        Salin
-                      </button>
-                    </div>
-                    <Show when={result().amount}>
-                      <div class="duitku-va-label" style={{ "margin-top": "12px" }}>
-                        Total Pembayaran
-                      </div>
-                      <div class="duitku-amount">
-                        {formatCurrency(Number(result().amount) || 0)}
-                      </div>
-                    </Show>
-                    <div class="duitku-info">
-                      Transfer tepat sesuai nominal di atas. Pembayaran akan dikonfirmasi
-                      otomatis oleh sistem dalam beberapa menit.
-                    </div>
-                  </div>
-                </Show>
-
-                <Show when={result().qrString && !result().vaNumber}>
-                  <div class="duitku-qr-block">
-                    <div class="duitku-va-label">Scan QR Code</div>
-                    <div class="duitku-qr-info">
-                      Buka aplikasi GoPay, ShopeePay, atau dompet digital lainnya
-                      dan scan QR Code dari halaman pembayaran Duitku.
-                    </div>
-                    <Show when={result().paymentUrl}>
-                      <a
-                        href={result().paymentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="duitku-open-btn"
-                      >
-                        Buka Halaman Pembayaran →
-                      </a>
-                    </Show>
-                  </div>
-                </Show>
-
-                <Show when={result().reference}>
-                  <div class="duitku-reference">
-                    Referensi: <strong>{result().reference}</strong>
-                  </div>
-                </Show>
-
-                <div class="modal-actions" style={{ "margin-top": "20px" }}>
-                  <Show when={result().paymentUrl}>
-                    <a
-                      href={result().paymentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="checkout-btn primary"
-                      style={{ display: "inline-block", "text-align": "center", "text-decoration": "none" }}
-                    >
-                      Bayar via Duitku
-                    </a>
-                  </Show>
-                  <button type="button" onClick={closeDuitkuModal}>
-                    Lihat Pesanan Saya
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </Show>
 
         {/* Leave confirmation modal */}
         <Show when={showLeaveModal()}>

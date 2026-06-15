@@ -27,6 +27,7 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://aminahjaya.com,https://www.aminahjaya.com,https://int.aminahjaya.com}
       - CMS_API_URL=${CMS_API_URL:-http://api-cms-aminah-jaya:8001}
       - WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      - RESEND_API_KEY=${RESEND_API_KEY}
     networks:
       - aminah-network
 networks:

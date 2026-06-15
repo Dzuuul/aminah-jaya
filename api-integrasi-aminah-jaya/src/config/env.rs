@@ -20,6 +20,7 @@ pub struct Config {
     pub allowed_origins: Vec<String>,
     pub cms_api_url: String,
     pub webhook_secret: String,
+    pub resend_api_key: String,
 }
 
 impl Config {
@@ -60,6 +61,9 @@ impl Config {
         let webhook_secret = env::var("WEBHOOK_SECRET")
             .expect("WEBHOOK_SECRET must be set");
 
+        let resend_api_key = env::var("RESEND_API_KEY")
+            .unwrap_or_else(|_| "".to_string());
+
         Config {
             port,
             verify_token,
@@ -69,6 +73,7 @@ impl Config {
             allowed_origins,
             cms_api_url,
             webhook_secret,
+            resend_api_key,
         }
     }
 }

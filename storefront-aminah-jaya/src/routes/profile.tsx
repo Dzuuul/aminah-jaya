@@ -113,6 +113,22 @@ export default function Profile() {
   const [editIsDefault, setEditIsDefault] =
     createSignal(false);
 
+  const openPaymentInstruction = (orderNumber: string) => {
+    try {
+      const cached = localStorage.getItem(`duitku_payment_${orderNumber}`);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.paymentUrl) {
+          window.location.href = parsed.paymentUrl;
+          return;
+        }
+      }
+      alert("Halaman pembayaran tidak ditemukan untuk pesanan ini. Jika Anda masih ingin membayar, silakan hubungi admin.");
+    } catch (e) {
+      alert("Gagal memuat instruksi pembayaran.");
+    }
+  };
+
   /*
    |--------------------------------------------------------------------------
    | RESOURCES
@@ -636,11 +652,10 @@ export default function Profile() {
 
                 <nav class="profile-nav">
                   <button
-                    class={`profile-nav-item ${
-                      activeTab() === "profile"
+                    class={`profile-nav-item ${activeTab() === "profile"
                         ? "active"
                         : ""
-                    }`}
+                      }`}
                     onClick={() => {
                       setActiveTab("profile");
                       setIsEditingProfile(false);
@@ -654,11 +669,10 @@ export default function Profile() {
                   </button>
 
                   <button
-                    class={`profile-nav-item ${
-                      activeTab() === "orders"
+                    class={`profile-nav-item ${activeTab() === "orders"
                         ? "active"
                         : ""
-                    }`}
+                      }`}
                     onClick={() =>
                       setActiveTab("orders")
                     }
@@ -671,11 +685,10 @@ export default function Profile() {
                   </button>
 
                   <button
-                    class={`profile-nav-item ${
-                      activeTab() === "wishlist"
+                    class={`profile-nav-item ${activeTab() === "wishlist"
                         ? "active"
                         : ""
-                    }`}
+                      }`}
                     onClick={() =>
                       setActiveTab("wishlist")
                     }
@@ -688,11 +701,10 @@ export default function Profile() {
                   </button>
 
                   <button
-                    class={`profile-nav-item ${
-                      activeTab() === "shipping"
+                    class={`profile-nav-item ${activeTab() === "shipping"
                         ? "active"
                         : ""
-                    }`}
+                      }`}
                     onClick={() => {
                       setActiveTab("shipping");
                       setIsEditingShipping(false);
@@ -919,15 +931,27 @@ export default function Profile() {
                                   </For>
                                 </div>
 
-                                <div class="profile-order-footer">
-                                  <span class="profile-order-total-label">
-                                    Total Pembayaran
-                                  </span>
-                                  <span class="profile-order-total-price">
-                                    {formatCurrency(
-                                      order.grand_total,
-                                    )}
-                                  </span>
+                                <div class="profile-order-footer" style={{ display: "flex", "justify-content": "space-between", "align-items": "center" }}>
+                                  <div>
+                                    <span class="profile-order-total-label" style={{ display: "block" }}>
+                                      Total Pembayaran
+                                    </span>
+                                    <span class="profile-order-total-price" style={{ display: "block", "font-weight": "bold", "font-size": "16px", color: "#e11d48" }}>
+                                      {formatCurrency(
+                                        order.grand_total,
+                                      )}
+                                    </span>
+                                  </div>
+                                  <Show when={order.status === "pending"}>
+                                    <button
+                                      type="button"
+                                      class="profile-btn-primary"
+                                      style={{ padding: "8px 16px", "font-size": "14px", "border-radius": "8px", "background-color": "#e11d48" }}
+                                      onClick={() => openPaymentInstruction(order.order_number)}
+                                    >
+                                      Bayar Sekarang
+                                    </button>
+                                  </Show>
                                 </div>
                               </div>
                             )}
@@ -1008,8 +1032,8 @@ export default function Profile() {
                                   <div class="wishlist-card-price">
                                     {fav.product_price != null
                                       ? formatCurrency(
-                                          fav.product_price,
-                                        )
+                                        fav.product_price,
+                                      )
                                       : "-"}
                                   </div>
                                 </div>
@@ -1155,7 +1179,7 @@ export default function Profile() {
                                             }}
                                           >
                                             {settingDefaultAddressId() ===
-                                            address.id
+                                              address.id
                                               ? "Memproses..."
                                               : "Jadikan Utama"}
                                           </button>
@@ -1448,6 +1472,8 @@ export default function Profile() {
           </Show>
         </Show>
       </main>
+
+
 
       <Footer />
     </div>
