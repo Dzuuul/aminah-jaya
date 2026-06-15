@@ -292,8 +292,19 @@ export default function Profile() {
       delivered: "Selesai",
       cancelled: "Dibatalkan",
       refunded: "Dikembalikan",
+      expired: "Kadaluarsa",
+      failed: "Gagal",
     };
     return labels[getOrderStatusClass(status)] || status;
+  };
+
+  // Determines the label to display for an order, considering payment status for pending orders
+  const getOrderDisplayLabel = (order: any) => {
+    if (order.status === "pending") {
+      if (order.payment_status === "expired") return "Kadaluarsa";
+      if (order.payment_status === "failed") return "Gagal";
+    }
+    return getOrderStatusLabel(order.status);
   };
 
   const buildAddressPayload = (): CreateCustomerAddressPayload => ({
@@ -902,9 +913,7 @@ export default function Profile() {
                                   <span
                                     class={`profile-order-badge ${getOrderStatusClass(order.status)}`}
                                   >
-                                    {getOrderStatusLabel(
-                                      order.status,
-                                    )}
+                                    {getOrderDisplayLabel(order)}
                                   </span>
                                 </div>
 
@@ -942,7 +951,7 @@ export default function Profile() {
                                       )}
                                     </span>
                                   </div>
-                                  <Show when={order.status === "pending"}>
+                                  <Show when={order.status === "pending" && order.payment_status !== "expired" && order.payment_status !== "failed"}>
                                     <button
                                       type="button"
                                       class="profile-btn-primary"

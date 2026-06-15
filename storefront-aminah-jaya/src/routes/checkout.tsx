@@ -29,6 +29,7 @@ import {
 } from "~/lib/api";
 import {
   createDuitkuPayment,
+  getDuitkuPaymentMethods,
   type DuitkuPaymentResponse,
 } from "~/lib/integrasi-api";
 import { refetchCartCount } from "~/lib/cart-store";
@@ -111,37 +112,7 @@ const normalizeLocationPart = (value: string) =>
     .filter(Boolean)
     .join(" ");
 
-const paymentMethods = [
-  // ── Dompet Digital ─────────────────────────────────────────────────────
-  { id: "qris", name: "QRIS", dbMethod: "qris", duitkuCode: "SP", category: "Dompet Digital", logo: "/payments/QRIS.png" },
-  { id: "shopeepay", name: "ShopeePay", dbMethod: "ewallet", duitkuCode: "SA", category: "Dompet Digital", logo: "/payments/SHOPEEPAY.png" },
-  { id: "ovo", name: "OVO", dbMethod: "ewallet", duitkuCode: "OV", category: "Dompet Digital", logo: "/payments/OVO.png" },
-  { id: "dana", name: "DANA", dbMethod: "ewallet", duitkuCode: "DA", category: "Dompet Digital", logo: "/payments/DANA.png" },
-  { id: "linkaja", name: "LinkAja", dbMethod: "ewallet", duitkuCode: "LA", category: "Dompet Digital", logo: "/payments/LINKAJA.png" },
-
-  // ── Virtual Account ──────────────────────────────────────────────────────
-  { id: "bca_va", name: "BCA Virtual Account", dbMethod: "transfer", duitkuCode: "BC", category: "Virtual Account", logo: "/payments/BCA.SVG" },
-  { id: "mandiri_va", name: "Mandiri Virtual Account", dbMethod: "transfer", duitkuCode: "M2", category: "Virtual Account", logo: "/payments/MANDIRI.png" },
-  { id: "bni_va", name: "BNI Virtual Account", dbMethod: "transfer", duitkuCode: "I1", category: "Virtual Account", logo: "/payments/BNI.png" },
-  { id: "bri_va", name: "BRI Virtual Account", dbMethod: "transfer", duitkuCode: "BR", category: "Virtual Account", logo: "/payments/BRIVA.png" },
-  { id: "permata_va", name: "Permata Virtual Account", dbMethod: "transfer", duitkuCode: "BT", category: "Virtual Account", logo: "/payments/PERMATA.png" },
-  { id: "cimb_va", name: "CIMB Niaga Virtual Account", dbMethod: "transfer", duitkuCode: "B1", category: "Virtual Account", logo: "/payments/CIMB.png" },
-  { id: "bsi_va", name: "BSI Virtual Account", dbMethod: "transfer", duitkuCode: "BSI1", category: "Virtual Account", logo: "/payments/BSI.webp" },
-  { id: "atm_bersama", name: "ATM Bersama", dbMethod: "transfer", duitkuCode: "A1", category: "Virtual Account", logo: "/payments/ATMBERSAMA.png" },
-
-  // ── Pembayaran Instan ────────────────────────────────────────────────────
-  { id: "jenius", name: "Jenius Pay", dbMethod: "ewallet", duitkuCode: "B1", category: "Pembayaran Instan", logo: "/payments/JENIUS.webp" },
-  { id: "klik_bca", name: "KlikBCA", dbMethod: "transfer", duitkuCode: "B1", category: "Pembayaran Instan", logo: "/payments/BCA.SVG" },
-
-  // ── Retail / Gerai ───────────────────────────────────────────────────────
-  { id: "alfamart", name: "Alfamart / Alfamidi / Lawson / Dan+Dan", dbMethod: "retail", duitkuCode: "FT", category: "Retail / Gerai", logo: "/payments/RETAIL.png" },
-  { id: "indomaret", name: "Indomaret", dbMethod: "retail", duitkuCode: "IR", category: "Retail / Gerai", logo: "/payments/INDOMARET.png" },
-  
-  // ── Lainnya ──────────────────────────────────────────────────────────────
-  { id: "cod", name: "Bayar di Tempat (COD)", dbMethod: "cod", duitkuCode: null as null | string, category: "Lainnya", logo: "https://cdn-icons-png.flaticon.com/512/6491/6491509.png" },
-] as const;
-
-type PaymentMethodId = (typeof paymentMethods)[number]["id"];
+type PaymentMethodId = string;
 
 
 export const ssr = false;
@@ -216,54 +187,7 @@ export default function CheckoutPage() {
   const [showPaymentModal, setShowPaymentModal] = createSignal(false);
   const [expandedPaymentCategory, setExpandedPaymentCategory] = createSignal<string | null>("Virtual Account");
 
-  const paymentCategories = createMemo(() => {
-    // Tentukan urutan kategori
-    const order = [
-      "Dompet Digital",
-      "Kartu Kredit / Debit / Cicilan",
-      "PayLater",
-      "Virtual Account",
-      "Debit Instan",
-      "Pembayaran Instan",
-      "Retail / Gerai",
-      "Lainnya"
-    ];
-    const groups = new Map<string, typeof paymentMethods[number][]>();
-    order.forEach(o => groups.set(o, []));
-    
-    for (const method of paymentMethods) {
-      if (groups.has(method.category)) {
-        groups.get(method.category)!.push(method);
-      } else {
-        if (!groups.has("Lainnya")) groups.set("Lainnya", []);
-        groups.get("Lainnya")!.push(method);
-      }
-    }
-    
-    return Array.from(groups.entries())
-      .filter(([_, methods]) => methods.length > 0)
-      .map(([name, methods]) => ({ name, methods }));
-  });
-
-  const togglePaymentCategory = (cat: string) => {
-    setExpandedPaymentCategory(prev => prev === cat ? null : cat);
-  };
-
-  const displayedPaymentMethods = createMemo(() => {
-    // 4 metode bayar pilihan awal
-    const defaultIds = ["bca_va", "qris", "shopeepay", "alfamart"];
-    const defaults = paymentMethods.filter(p => defaultIds.includes(p.id));
-    
-    // Jika user memilih metode lain, sertakan di list mengganti salah satu
-    const selectedId = selectedPayment();
-    if (selectedId && !defaultIds.includes(selectedId)) {
-      const selected = paymentMethods.find(p => p.id === selectedId);
-      if (selected) {
-        return [selected, ...defaults.slice(0, 3)];
-      }
-    }
-    return defaults.slice(0, 4);
-  });
+  // Payment categories will be defined further below after displayedTotal is defined.
 
   const shouldBlockLeaving = () => {
     if (checkoutCompleted()) return false;
@@ -696,6 +620,106 @@ export default function CheckoutPage() {
 
   const displayedTotal = () => subtotal() + shippingPrice() - discount();
 
+  // --- Payment Methods ---
+  const [duitkuMethods] = createResource(
+    () => {
+      const amount = displayedTotal();
+      if (amount < 10000) return null;
+      return amount;
+    },
+    async (amount) => {
+      return await getDuitkuPaymentMethods(amount);
+    }
+  );
+
+  const paymentMethods = createMemo(() => {
+    const methods = duitkuMethods() || [];
+    const base = methods.map((m) => {
+      let category = "Lainnya";
+      let dbMethod = "transfer";
+      const paymentCode = m.paymentMethod;
+      const lowerName = m.paymentName.toLowerCase();
+      
+      if (["SP", "SA", "OV", "DA", "LA"].includes(paymentCode)) {
+        category = "Dompet Digital";
+        dbMethod = "ewallet";
+      } else if (lowerName.includes("virtual account") || (paymentCode.length === 2 && !["FT", "IR"].includes(paymentCode))) {
+        category = "Virtual Account";
+        dbMethod = "transfer";
+      } else if (["FT", "IR"].includes(paymentCode)) {
+        category = "Retail / Gerai";
+        dbMethod = "retail";
+      }
+
+      return {
+        id: paymentCode,
+        name: m.paymentName,
+        dbMethod,
+        duitkuCode: paymentCode,
+        category,
+        logo: m.paymentImage,
+        totalFee: m.totalFee,
+      };
+    });
+
+    base.push({
+      id: "cod",
+      name: "Bayar di Tempat (COD)",
+      dbMethod: "cod",
+      duitkuCode: null as unknown as string,
+      category: "Lainnya",
+      logo: "https://cdn-icons-png.flaticon.com/512/6491/6491509.png",
+      totalFee: "0",
+    });
+
+    return base;
+  });
+
+  const paymentCategories = createMemo(() => {
+    const order = [
+      "Dompet Digital",
+      "Virtual Account",
+      "Retail / Gerai",
+      "Pembayaran Instan",
+      "Lainnya"
+    ];
+    const groups = new Map<string, ReturnType<typeof paymentMethods>[number][]>();
+    order.forEach(o => groups.set(o, []));
+    
+    for (const method of paymentMethods()) {
+      if (groups.has(method.category)) {
+        groups.get(method.category)!.push(method);
+      } else {
+        if (!groups.has("Lainnya")) groups.set("Lainnya", []);
+        groups.get("Lainnya")!.push(method);
+      }
+    }
+    
+    return Array.from(groups.entries())
+      .filter(([_, methods]) => methods.length > 0)
+      .map(([name, methods]) => ({ name, methods }));
+  });
+
+  const togglePaymentCategory = (cat: string) => {
+    setExpandedPaymentCategory(prev => prev === cat ? null : cat);
+  };
+
+  const displayedPaymentMethods = createMemo(() => {
+    const defaultIds = ["BC", "SP", "SA", "FT"]; // Default duitku codes + maybe something else
+    const methods = paymentMethods();
+    const defaults = methods.filter(p => defaultIds.includes(p.id));
+    
+    const selectedId = selectedPayment();
+    if (selectedId && !defaultIds.includes(selectedId)) {
+      const selected = methods.find(p => p.id === selectedId);
+      if (selected) {
+        return [selected, ...defaults.slice(0, 3)];
+      }
+    }
+    return defaults.slice(0, 4);
+  });
+
+
   const formatCouponLabel = (coupon: CustomerCoupon) => {
     if (coupon.discount_type.toLowerCase() === "percentage") {
       const max =
@@ -750,9 +774,15 @@ export default function CheckoutPage() {
     !!city().trim() &&
     !!province().trim();
 
-  const isPaymentSelected = () =>
-    !!selectedPayment() &&
-    paymentMethods.some((method) => method.id === selectedPayment());
+  const isPaymentSelected = () => {
+    if (
+      selectedPayment() &&
+      !paymentMethods().some((method: any) => method.id === selectedPayment())
+    ) {
+      setSelectedPayment("");
+    }
+    return !!selectedPayment();
+  };
 
   const isShippingSelected = () => selectedShippingRate() != null;
 
@@ -797,7 +827,7 @@ export default function CheckoutPage() {
     setErrorMessage(null);
 
     try {
-      const selectedMethod = paymentMethods.find((p) => p.id === selectedPayment());
+      const selectedMethod = paymentMethods().find((p: any) => p.id === selectedPayment());
       const dbMethod = selectedMethod?.dbMethod || "transfer";
       const duitkuCode = selectedMethod?.duitkuCode ?? null;
       const isCod = selectedMethod?.dbMethod === "cod";

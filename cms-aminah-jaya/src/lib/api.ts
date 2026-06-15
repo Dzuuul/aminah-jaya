@@ -365,7 +365,7 @@ export interface Order {
   ordered_at: string;
 }
 
-export const getOrders = () => fetchApi<Order[]>("/orders");
+export const getOrders = () => fetchApi<Order[]>('/orders');
 
 // ── Customers ──────────────────────────────────────────────────────────────
 

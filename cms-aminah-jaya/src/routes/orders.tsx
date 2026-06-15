@@ -39,18 +39,30 @@ export default function Orders() {
     {
       header: "Status",
       accessor: "status",
-      render: (item) => (
-        <span class={`badge ${
-          item.status === 'paid' || item.status === 'delivered' ? 'badge-green' : 
-          item.status === 'shipped' ? 'badge-blue' : 
-          item.status === 'pending' ? 'badge-orange' : 'badge-red'
-        }`}>
-          {item.status === 'paid' ? 'Dibayar' : 
-           item.status === 'shipped' ? 'Dikirim' : 
-           item.status === 'delivered' ? 'Diterima' :
-           item.status === 'pending' ? 'Menunggu' : 'Dibatalkan'}
-        </span>
-      )
+      render: (item) => {
+        const getLabel = () => {
+          if (item.status === 'pending') {
+            if (item.payment_status === 'expired') return { text: 'Kadaluarsa', color: 'badge-red' };
+            if (item.payment_status === 'failed') return { text: 'Gagal', color: 'badge-red' };
+          }
+          switch (item.status) {
+            case 'paid':
+              return { text: 'Dibayar', color: 'badge-green' };
+            case 'shipped':
+              return { text: 'Dikirim', color: 'badge-blue' };
+            case 'delivered':
+              return { text: 'Diterima', color: 'badge-green' };
+            case 'pending':
+              return { text: 'Menunggu', color: 'badge-orange' };
+            case 'cancelled':
+              return { text: 'Dibatalkan', color: 'badge-red' };
+            default:
+              return { text: item.status, color: 'badge-red' };
+          }
+        };
+        const { text, color } = getLabel();
+        return <span class={`badge ${color}`}>{text}</span>;
+      }
     },
     {
       header: "Aksi",
@@ -73,6 +85,8 @@ export default function Orders() {
         { label: "Dikirim", value: "shipped" },
         { label: "Diterima", value: "delivered" },
         { label: "Dibatalkan", value: "cancelled" },
+        { label: "Kadaluarsa", value: "expired" },
+        { label: "Gagal", value: "failed" },
       ]
     }
   ];
@@ -88,8 +102,7 @@ export default function Orders() {
 
       <Show when={orders()} fallback={<div style={{ padding: "2rem", "text-align": "center", color: "var(--color-muted)" }}>Memuat pesanan...</div>}>
         <DataTable 
-          columns={columns} 
-          data={orders()!} 
+          columns={columns}           data={orders() ?? []} 
           searchPlaceholder="Cari pesanan..."
           filters={filters}
           // The search/filter logic works on string values, so format it early if exact date matching is needed,

@@ -93,6 +93,10 @@ async fn main() {
         .route("/webhook", get(routes::webhook::verify_webhook))
         .route("/webhook", post(routes::webhook::handle_webhook))
         .route(
+            "/payments/duitku/methods",
+            get(duitku::handlers::get_payment_methods_handler),
+        )
+        .route(
             "/payments/duitku",
             post(duitku::handlers::create_payment_handler),
         )

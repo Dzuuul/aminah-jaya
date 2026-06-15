@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use axum::{
-    extract::{Form, State},
+    extract::{Form, Json, Query, State},
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
+use serde::Deserialize;
 use tracing::{error, info, warn};
 
 use crate::config::env::Config;
@@ -13,7 +13,42 @@ use crate::duitku::client::{DuitkuClient, DuitkuClientError};
 use crate::duitku::models::{
     CreatePaymentRequest, DuitkuCallbackPayload, generate_callback_signature,
 };
+use crate::models::response::ApiResponse;
 use crate::services::email_service;
+
+#[derive(Deserialize)]
+pub struct GetPaymentMethodsQuery {
+    pub amount: i64,
+}
+
+pub async fn get_payment_methods_handler(
+    State(config): State<Arc<Config>>,
+    Query(query): Query<GetPaymentMethodsQuery>,
+) -> impl IntoResponse {
+    let client = DuitkuClient::new(config.duitku.clone());
+    match client.get_payment_methods(query.amount).await {
+        Ok(response) => {
+            let fees = response.payment_fee.unwrap_or_default();
+            (StatusCode::OK, Json(ApiResponse::success(fees))).into_response()
+        }
+        Err(DuitkuClientError::Network(e)) => {
+            error!("Koneksi ke Duitku gagal: {}", e);
+            (
+                StatusCode::BAD_GATEWAY,
+                Json(ApiResponse::<()>::error("Gagal menghubungi payment gateway", None)),
+            )
+                .into_response()
+        }
+        Err(e) => {
+            error!("Gagal mendapatkan payment methods: {:?}", e);
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<()>::error("Gagal memuat metode pembayaran", None)),
+            )
+                .into_response()
+        }
+    }
+}
 
 pub async fn create_payment_handler(
     State(config): State<Arc<Config>>,

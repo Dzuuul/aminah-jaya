@@ -7,6 +7,9 @@ pub const DUITKU_SUCCESS_STATUS: &str = "00";
 /// Path resmi Duitku v2 inquiry (digabung dengan base_url config).
 pub const INQUIRY_PATH: &str = "/api/merchant/v2/inquiry";
 
+/// Path untuk Get Payment Method Duitku
+pub const GET_PAYMENT_METHOD_PATH: &str = "/api/merchant/paymentmethod/getpaymentmethod";
+
 /// Request internal dari storefront sebelum diteruskan ke Duitku.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -95,6 +98,41 @@ impl DuitkuCallbackPayload {
     }
 }
 
+// --- GET PAYMENT METHOD MODELS ---
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DuitkuPaymentMethodRequest {
+    pub merchantcode: String,
+    pub amount: i64,
+    pub datetime: String,
+    pub signature: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DuitkuPaymentMethodItem {
+    #[serde(rename = "paymentMethod")]
+    pub payment_method: String,
+    #[serde(rename = "paymentName")]
+    pub payment_name: String,
+    #[serde(rename = "paymentImage")]
+    pub payment_image: String,
+    #[serde(rename = "totalFee")]
+    pub total_fee: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DuitkuPaymentMethodResponse {
+    #[serde(rename = "paymentFee")]
+    pub payment_fee: Option<Vec<DuitkuPaymentMethodItem>>,
+    #[serde(rename = "responseCode")]
+    pub response_code: String,
+    #[serde(rename = "responseMessage")]
+    pub response_message: String,
+}
+
 /// Signature inquiry: HMAC_SHA256(merchantCode + merchantOrderId + paymentAmount, apiKey)
 /// Sesuai dokumentasi Duitku v2 terbaru — metode MD5 sudah obsolete.
 pub fn generate_inquiry_signature(
@@ -117,6 +155,20 @@ pub fn generate_callback_signature(
 ) -> String {
     let raw = format!("{}{}{}", merchant_code, amount, merchant_order_id);
     hmac_sha256_hex(&raw, api_key)
+}
+
+/// Signature get payment method: SHA256(merchantcode + amount + datetime + apiKey)
+pub fn generate_payment_method_signature(
+    merchant_code: &str,
+    amount: i64,
+    datetime: &str,
+    api_key: &str,
+) -> String {
+    let raw = format!("{}{}{}{}", merchant_code, amount, datetime, api_key);
+    use sha2::Digest;
+    let mut hasher = Sha256::new();
+    hasher.update(raw.as_bytes());
+    format!("{:x}", hasher.finalize())
 }
 
 /// HMAC-SHA256 dengan output hex lowercase (64 karakter).

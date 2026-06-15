@@ -126,3 +126,38 @@ export async function createDuitkuPayment(
 
   return json as DuitkuPaymentResponse;
 }
+
+export interface DuitkuPaymentMethodItem {
+  paymentMethod: string;
+  paymentName: string;
+  paymentImage: string;
+  totalFee: string;
+}
+
+export async function getDuitkuPaymentMethods(amount: number): Promise<DuitkuPaymentMethodItem[]> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/payments/duitku/methods?amount=${amount}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    let json: any;
+    try {
+      json = await response.json();
+    } catch {
+      json = null;
+    }
+
+    if (!response.ok || !json || !json.success) {
+      throw new Error(json?.message || `HTTP Error ${response.status}`);
+    }
+
+    return json.data || [];
+  } catch (error) {
+    console.error("Gagal mengambil metode pembayaran Duitku", error);
+    return [];
+  }
+}
+

@@ -3,6 +3,7 @@ use serde_json::Value;
 use sqlx::FromRow;
 use chrono::{DateTime, Utc};
 use uuid::Uuid;
+use rust_decimal::Decimal;
 
 #[derive(Debug, Serialize)]
 pub struct ApiResponse<T> {
@@ -232,7 +233,7 @@ pub struct Order {
     pub order_number: String,
     pub customer_name: String,
     pub product_name: String,   // first product name from order_items
-    pub grand_total: f64,
+    pub grand_total: Decimal,
     pub status: String,
     pub payment_status: String,
     pub ordered_at: DateTime<Utc>,

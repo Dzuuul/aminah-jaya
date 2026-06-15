@@ -716,7 +716,7 @@ pub async fn create_order(
     .bind(coupon_id)
     .bind(&coupon_code)
     .bind(grand_total)
-    .bind(pm)
+    .bind(&pm)
     .bind(&payload.shipping_address)
     .bind(&payload.shipping_city)
     .bind(&payload.shipping_province)
@@ -851,6 +851,9 @@ pub async fn create_order(
                 if let Ok(code) = postal.parse::<i64>() {
                     body["destination_postal_code"] = json!(code);
                 }
+            }
+            if pm == "cod" {
+                body["is_cod"] = json!(true);
             }
 
             integrasi.create_biteship_order(body).await

@@ -4,8 +4,9 @@ use tracing::error;
 use crate::config::env::DuitkuConfig;
 
 use super::models::{
-    DuitkuInquiryRequest, DuitkuInquiryResponse, INQUIRY_PATH,
-    generate_inquiry_signature,
+    DuitkuInquiryRequest, DuitkuInquiryResponse, DuitkuPaymentMethodRequest,
+    DuitkuPaymentMethodResponse, INQUIRY_PATH, GET_PAYMENT_METHOD_PATH,
+    generate_inquiry_signature, generate_payment_method_signature,
 };
 
 #[derive(Debug)]
@@ -118,5 +119,61 @@ impl DuitkuClient {
         })?;
 
         Ok(parsed)
+    }
+
+    /// Mendapatkan daftar metode pembayaran yang aktif
+    pub async fn get_payment_methods(
+        &self,
+        amount: i64,
+    ) -> Result<DuitkuPaymentMethodResponse, DuitkuClientError> {
+        let now = chrono::Local::now();
+        let datetime_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
+
+        let signature = crate::duitku::models::generate_payment_method_signature(
+            &self.config.merchant_code,
+            amount,
+            &datetime_str,
+            &self.config.api_key,
+        );
+
+        let payload = DuitkuPaymentMethodRequest {
+            merchantcode: self.config.merchant_code.clone(),
+            amount,
+            datetime: datetime_str,
+            signature,
+        };
+
+        let url = format!(
+            "{}{}",
+            self.config.base_url,
+            crate::duitku::models::GET_PAYMENT_METHOD_PATH
+        );
+
+        let response = match self.http.post(&url).json(&payload).send().await {
+            Ok(res) => res,
+            Err(e) => return Err(DuitkuClientError::Network(e)),
+        };
+
+        let status = response.status();
+        let body_text = match response.text().await {
+            Ok(t) => t,
+            Err(e) => return Err(DuitkuClientError::Network(e)),
+        };
+
+        if !status.is_success() {
+            return Err(DuitkuClientError::Http(status, body_text));
+        }
+
+        match serde_json::from_str::<DuitkuPaymentMethodResponse>(&body_text) {
+            Ok(data) => Ok(data),
+            Err(e) => {
+                tracing::error!(
+                    "Gagal parse respons get payment method dari Duitku: {}\nBody: {}",
+                    e,
+                    body_text
+                );
+                Err(DuitkuClientError::Parse(e))
+            }
+        }
     }
 }
