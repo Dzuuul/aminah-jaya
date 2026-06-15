@@ -86,11 +86,27 @@ impl DuitkuClient {
         let status = response.status();
         let body = response.text().await?;
 
+        // Duitku selalu mengembalikan JSON bahkan saat HTTP error.
+        // Coba parse dulu — jika berhasil, kembalikan struct response
+        // sehingga handler di atasnya bisa membaca statusCode & statusMessage
+        // dan menampilkan pesan error yang bermakna ke storefront.
+        if let Ok(parsed) = serde_json::from_str::<DuitkuInquiryResponse>(&body) {
+            if !status.is_success() {
+                error!(
+                    "Duitku inquiry HTTP {} dengan body JSON: {:?}",
+                    status, parsed
+                );
+            }
+            return Ok(parsed);
+        }
+
+        // Body bukan JSON valid — kembalikan error mentah
         if !status.is_success() {
-            error!("Duitku inquiry HTTP {}: {}", status, body);
+            error!("Duitku inquiry HTTP {} (non-JSON body): {}", status, body);
             return Err(DuitkuClientError::Http(status, body));
         }
 
+        // HTTP 200 tapi body tidak bisa di-parse
         let parsed: DuitkuInquiryResponse = serde_json::from_str(&body).map_err(|e| {
             error!("Duitku inquiry parse error: {} — body: {}", e, body);
             DuitkuClientError::Parse(e)

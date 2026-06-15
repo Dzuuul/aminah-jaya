@@ -108,9 +108,19 @@ export async function createDuitkuPayment(
   }
 
   if (!response.ok) {
+    // Network/server error — backend gagal total
     const msg =
       json?.error || json?.statusMessage || json?.message ||
       `Gagal membuat transaksi Duitku (HTTP ${response.status})`;
+    throw new Error(msg);
+  }
+
+  // Backend selalu return HTTP 200.
+  // Periksa statusCode dari Duitku — "00" = berhasil, selain itu = ditolak.
+  if (json && json.statusCode && json.statusCode !== "00") {
+    const msg =
+      json.statusMessage ||
+      `Pembayaran ditolak (kode: ${json.statusCode})`;
     throw new Error(msg);
   }
 

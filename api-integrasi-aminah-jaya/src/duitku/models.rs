@@ -5,7 +5,7 @@ use sha2::Sha256;
 pub const DUITKU_SUCCESS_STATUS: &str = "00";
 
 /// Path resmi Duitku v2 inquiry (digabung dengan base_url config).
-pub const INQUIRY_PATH: &str = "/webapi/api/merchant/v2/inquiry";
+pub const INQUIRY_PATH: &str = "/api/merchant/v2/inquiry";
 
 /// Request internal dari storefront sebelum diteruskan ke Duitku.
 #[derive(Debug, Deserialize)]

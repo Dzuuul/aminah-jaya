@@ -379,6 +379,64 @@ pub async fn get_orders(
     Json(ApiResponse::success(orders)).into_response()
 }
 
+pub async fn get_order_by_number(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    axum::extract::Path(order_number): axum::extract::Path<String>,
+) -> impl IntoResponse {
+    let auth_header = match headers.get("Authorization").and_then(|h| h.to_str().ok()) {
+        Some(h) if h.starts_with("Bearer ") => &h[7..],
+        _ => return (StatusCode::UNAUTHORIZED, Json(ApiResponse::error("Missing or invalid token", None))).into_response(),
+    };
+
+    let claims = match verify_jwt(auth_header) {
+        Ok(c) => c,
+        Err(_) => return (StatusCode::UNAUTHORIZED, Json(ApiResponse::error("Invalid token", None))).into_response(),
+    };
+
+    let customer_id = match Uuid::parse_str(&claims.sub) {
+        Ok(id) => id,
+        Err(_) => return (StatusCode::BAD_REQUEST, Json(ApiResponse::error("Invalid customer ID in token", None))).into_response(),
+    };
+
+    let pool = &state.pool;
+
+    let order: Option<CustomerOrder> = sqlx::query_as(
+        r#"SELECT 
+            id, order_number, grand_total::DOUBLE PRECISION AS grand_total, 
+            status::TEXT AS status, payment_status::TEXT AS payment_status, 
+            shipping_address, ordered_at 
+           FROM orders 
+           WHERE customer_id = $1 AND order_number = $2
+           LIMIT 1"#
+    )
+    .bind(customer_id)
+    .bind(&order_number)
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+
+    match order {
+        Some(mut o) => {
+            let items: Vec<CustomerOrderItem> = sqlx::query_as(
+                r#"SELECT 
+                    id, product_id, product_name, variant_label, quantity, 
+                    unit_price::DOUBLE PRECISION AS unit_price, subtotal::DOUBLE PRECISION AS subtotal 
+                   FROM order_items 
+                   WHERE order_id = $1"#
+            )
+            .bind(o.id)
+            .fetch_all(pool)
+            .await
+            .unwrap_or_default();
+
+            o.items = items;
+            Json(ApiResponse::success(o)).into_response()
+        }
+        None => (StatusCode::NOT_FOUND, Json(ApiResponse::error("Pesanan tidak ditemukan", None))).into_response(),
+    }
+}
+
 #[derive(Debug, serde::Deserialize)]
 pub struct CreateOrderPayload {
     pub shipping_address: String,

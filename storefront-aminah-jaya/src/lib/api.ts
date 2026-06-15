@@ -117,6 +117,7 @@ export const setDefaultAddress = (id: string) =>
     body: JSON.stringify({}),
   });
 export const getCustomerOrders = () => fetchApi<any>("/customer/orders");
+export const getOrderByNumber = (orderNumber: string) => fetchApi<any>(`/customer/orders/number/${orderNumber}`);
 export interface CustomerCoupon {
   id: string;
   code: string;

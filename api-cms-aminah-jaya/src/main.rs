@@ -320,6 +320,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/api/customer/orders",
             get(routes::customer_auth::get_orders).post(routes::customer_auth::create_order),
         )
+        .route(
+            "/api/customer/orders/number/:order_number",
+            get(routes::customer_auth::get_order_by_number),
+        )
         // Customer Coupons / Vouchers
         .route(
             "/api/customer/coupons",
@@ -361,6 +365,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/api/customer/favorites/folders",
             get(routes::favorites::get_favorite_folders),
+        )
+        // Webhook
+        .route(
+            "/api/webhook/duitku",
+            post(routes::webhook::handle_duitku_webhook),
         )
         .layer(TraceLayer::new_for_http())
         .layer(cors)

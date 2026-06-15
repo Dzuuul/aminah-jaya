@@ -3,6 +3,7 @@ import { createSignal, Show, onMount } from "solid-js";
 import { LogIn, Lock, Mail, Eye, EyeOff, Loader2, Quote } from "lucide-solid";
 import { login, updateToken } from "../lib/api";
 import { useNavigate } from "@solidjs/router";
+import gsap from "gsap";
 
 const getHadith = () => {
   const hour = new Date().getHours();
@@ -44,6 +45,51 @@ export default function LoginPage() {
       navigate("/", { replace: true });
     } else {
       setIsChecking(false);
+      
+      // Wait for SolidJS to render the UI before animating
+      setTimeout(() => {
+        const tl = gsap.timeline();
+        
+        tl.fromTo(".login-bg-pattern", 
+          { opacity: 0 }, 
+          { opacity: 1, duration: 1, ease: "power2.inOut" }
+        )
+        .fromTo(".login-content", 
+          { opacity: 0, y: 40 }, 
+          { opacity: 1, y: 0, duration: 0.8, ease: "back.out(1.2)" },
+          "-=0.5"
+        )
+        .fromTo(".login-logo-container", 
+          { scale: 0, rotation: -180 }, 
+          { scale: 1, rotation: 0, duration: 0.8, ease: "back.out(1.5)" },
+          "-=0.6"
+        )
+        .fromTo(".login-title, .login-subtitle", 
+          { opacity: 0, y: 20 }, 
+          { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, ease: "power2.out" },
+          "-=0.4"
+        )
+        .fromTo(".login-card", 
+          { opacity: 0, y: 30, scale: 0.95 }, 
+          { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" },
+          "-=0.3"
+        )
+        .fromTo(".login-field, .login-remember-row, .login-btn", 
+          { opacity: 0, x: -20 }, 
+          { opacity: 1, x: 0, duration: 0.4, stagger: 0.1, ease: "power2.out" },
+          "-=0.2"
+        )
+        .fromTo(".login-quote-box", 
+          { opacity: 0, y: 20 }, 
+          { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" },
+          "-=0.1"
+        )
+        .fromTo(".login-footer-text", 
+          { opacity: 0 }, 
+          { opacity: 1, duration: 0.5, ease: "power2.out" },
+          "-=0.2"
+        );
+      }, 50);
     }
   });
 

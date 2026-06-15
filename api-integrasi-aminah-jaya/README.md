@@ -2,7 +2,7 @@
 
 Backend layanan **integrasi pihak ketiga** untuk ekosistem Aminah Jaya, dibangun dengan **Rust** dan **Axum**.
 
-Menangani proxy **Biteship** (ongkir & fulfillment), **Duitku** (payment gateway), dan **Meta WhatsApp Cloud API** (webhook & chatbot). Tidak memiliki database sendiri — state bisnis (cart, order) tetap di `api-cms-aminah-jaya`.
+Menangani proxy **Biteship** (ongkir & fulfillment), **Duitku** (payment gateway v2), dan **Meta WhatsApp Cloud API** (webhook & chatbot). Tidak memiliki database sendiri — state bisnis (cart, order) tetap di `api-cms-aminah-jaya`.
 
 ---
 
@@ -30,13 +30,14 @@ cp .env .env.backup   # opsional
 | -------- | ----- | --------- |
 | `PORT` | Tidak | Port HTTP (default `3000`, produksi umumnya `8002`) |
 | `RUST_LOG` | Tidak | Level log (mis. `info`, `debug`) |
+| `ALLOWED_ORIGINS` | Disarankan | Daftar origin CORS yang diizinkan, dipisah koma (mis. `https://aminahjaya.com,https://www.aminahjaya.com`). Default: `https://aminahjaya.com,https://www.aminahjaya.com` |
 | **WhatsApp** | | |
 | `VERIFY_TOKEN` | Ya | Token verifikasi webhook Meta (harus sama dengan yang didaftarkan di Meta App) |
 | `WHATSAPP_TOKEN` | Ya | Access token WhatsApp Cloud API |
 | `PHONE_NUMBER_ID` | Ya | ID nomor WhatsApp Business |
 | **Duitku** | | |
 | `DUITKU_MERCHANT_CODE` | Ya | Kode merchant Duitku |
-| `DUITKU_API_KEY` | Ya | API key / merchant key Duitku |
+| `DUITKU_API_KEY` | Ya | API key / merchant key Duitku (digunakan sebagai kunci HMAC-SHA256) |
 | `DUITKU_BASE_URL` | Tidak | Base URL API (default sandbox `https://sandbox.duitku.com/webapi`) |
 | `DUITKU_CALLBACK_URL` | Ya | URL publik callback, mis. `https://integrasi.example.com/payments/duitku/callback` |
 | **Biteship** | | |
@@ -65,9 +66,9 @@ cargo build --release
 
 ---
 
-## Response format
+## Response Format
 
-### Endpoint Biteship & WhatsApp (di bawah `/api/...`)
+### Endpoint Biteship & WhatsApp (di bawah `/api/...` dan `/webhook`)
 
 JSON dengan bentuk umum (sama dengan api-cms):
 
@@ -76,7 +77,7 @@ JSON dengan bentuk umum (sama dengan api-cms):
   "success": true,
   "message": "OK",
   "data": { },
-  "meta": {},
+  "meta": null,
   "errors": null
 }
 ```
@@ -88,7 +89,7 @@ Jika gagal, `success: false` dan `message` berisi penjelasan error.
 | Endpoint | Format respons |
 | -------- | -------------- |
 | `POST /payments/duitku` | JSON langsung objek Duitku (`statusCode`, `vaNumber`, `qrString`, dll.) — **bukan** wrapper `success/data` |
-| `POST /payments/duitku/callback` | Plain text `OK` + HTTP `200` (wajib untuk Duitku) |
+| `POST /payments/duitku/callback` | Plain text `OK` + HTTP `200` (wajib untuk Duitku agar tidak retry) |
 
 ---
 
@@ -102,7 +103,7 @@ Base URL contoh lokal: `http://localhost:8002`
 | `/payments/duitku*` | Duitku |
 | `/webhook` | Meta WhatsApp |
 
-CORS diaktifkan untuk semua origin (storefront memanggil langsung).
+CORS diaktifkan untuk origin yang dikonfigurasi di `ALLOWED_ORIGINS`.
 
 ---
 
@@ -114,15 +115,13 @@ Proxy ke [Biteship API](https://biteship.com/id/docs). API key hanya di server i
 | ------ | -------- | ---- | ----------- |
 | GET | `/api/shipping/couriers` | Tidak | Daftar kurir Biteship |
 | GET | `/api/shipping/maps/areas?input=` | Tidak | Pencarian area (min. 3 karakter) |
-| POST | `/api/shipping/rates` | Tidak* | Hitung ongkir dari `cart_items` |
-| POST | `/api/shipping/draft-orders` | Tidak* | Buat draft order Biteship |
-| GET | `/api/shipping/draft-orders/:id/rates` | Tidak* | Tarif untuk draft order |
-| POST | `/api/shipping/draft-orders/:id/confirm` | Tidak* | Konfirmasi draft → order |
+| POST | `/api/shipping/rates` | Tidak | Hitung ongkir dari `cart_items` |
+| POST | `/api/shipping/draft-orders` | Tidak | Buat draft order Biteship |
+| GET | `/api/shipping/draft-orders/:id/rates` | Tidak | Tarif untuk draft order |
+| POST | `/api/shipping/draft-orders/:id/confirm` | Tidak | Konfirmasi draft → order aktif |
 | POST | `/api/shipping/orders` | Internal | Buat order Biteship (dipanggil api-cms) |
 | GET | `/api/shipping/orders/:id` | Internal | Detail order Biteship |
 | GET | `/api/shipping/tracking/:id` | Internal | Lacak by tracking ID |
-
-\*Bearer token opsional (diteruskan jika ada); validasi cart dilakukan di client dengan mengirim `cart_items`.
 
 #### `POST /api/shipping/rates`
 
@@ -155,7 +154,7 @@ Proxy ke [Biteship API](https://biteship.com/id/docs). API key hanya di server i
 | `destination_area_id` | | Mode area ID (jika `BITESHIP_ORIGIN_AREA_ID` juga diset) |
 | `destination_city`, `destination_province` | Disarankan | Untuk kunci cache di client |
 | `couriers` | Tidak | Override daftar kurir; default `BITESHIP_DEFAULT_COURIERS` |
-| `cart_items` | **Ya** | Array item; berat dihitung di server |
+| `cart_items` | **Ya** | Array item; berat dihitung di server. Tidak boleh kosong |
 
 **Perhitungan berat:**
 
@@ -168,6 +167,7 @@ Proxy ke [Biteship API](https://biteship.com/id/docs). API key hanya di server i
 ```json
 {
   "success": true,
+  "message": "OK",
   "data": {
     "rates": [
       {
@@ -186,7 +186,9 @@ Proxy ke [Biteship API](https://biteship.com/id/docs). API key hanya di server i
     "cached": false,
     "cache_key": "coord:-7.770,112.026|coord:-6.914,107.610|2kg|jne,sicepat,...",
     "weight_kg": 2
-  }
+  },
+  "meta": null,
+  "errors": null
 }
 ```
 
@@ -199,7 +201,7 @@ Proxy ke [Biteship API](https://biteship.com/id/docs). API key hanya di server i
 
 #### Mode Rates API (otomatis di `src/biteship.rs`)
 
-Backend memilih **satu** mode per request:
+Backend memilih **satu** mode per request berdasarkan prioritas:
 
 1. **Area ID** — `origin_area_id` + `destination_area_id`  
 2. **Koordinat** — lat/lng asal & tujuan  
@@ -208,11 +210,19 @@ Backend memilih **satu** mode per request:
 
 #### `POST /api/shipping/draft-orders`
 
-Sama seperti rates, wajib menyertakan `cart_items` plus data penerima (`destination_contact_name`, `destination_address`, dll.).
+Sama seperti rates, wajib menyertakan `cart_items` plus data penerima (`destination_contact_name`, `destination_contact_phone`, `destination_address`). Data asal (`origin_*`) diisi otomatis dari env `BITESHIP_ORIGIN_*`.
+
+#### `GET /api/shipping/draft-orders/:id/rates`
+
+Respons berisi dua field: `rates` (normalized, sama seperti endpoint rates) dan `raw` (data asli Biteship untuk debugging).
+
+#### `POST /api/shipping/draft-orders/:id/confirm`
+
+Body bisa kosong (`{}`). Mengubah status draft order menjadi order aktif di Biteship.
 
 #### `POST /api/shipping/orders` (server-to-server)
 
-Dipanggil oleh **api-cms** saat checkout (`INTEGRASI_API_URL`). Body berisi data tujuan + `items`; server integrasi melengkapi field asal (`origin_*`) dari environment.
+Dipanggil oleh **api-cms** saat checkout (`INTEGRASI_API_URL`). Body berisi data tujuan + `items`; server integrasi melengkapi field asal (`origin_*`) dari environment secara otomatis jika tidak ada di body.
 
 ---
 
@@ -220,9 +230,11 @@ Dipanggil oleh **api-cms** saat checkout (`INTEGRASI_API_URL`). Body berisi data
 
 Integrasi [Duitku API v2](https://docs.duitku.com/). Inquiry path: `{DUITKU_BASE_URL}/api/merchant/v2/inquiry`.
 
+> **Penting:** Signature menggunakan **HMAC-SHA256** (bukan MD5). Pastikan client menggunakan implementasi yang sesuai.
+
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
-| POST | `/payments/duitku` | Buat tagihan (VA / QRIS) |
+| POST | `/payments/duitku` | Buat tagihan (VA / QRIS / dll) |
 | POST | `/payments/duitku/callback` | Webhook status pembayaran dari Duitku |
 
 #### `POST /payments/duitku`
@@ -238,26 +250,43 @@ Integrasi [Duitku API v2](https://docs.duitku.com/). Inquiry path: `{DUITKU_BASE
   "email": "customer@example.com",
   "phoneNumber": "081234567890",
   "customerVaName": "Budi Santoso",
-  "returnUrl": "https://toko.example.com/success",
+  "additionalParam": null,
+  "returnUrl": "https://aminahjaya.com/pesanan/sukses",
   "expiryPeriod": 60
 }
 ```
 
+| Field | Wajib | Keterangan |
+| ----- | ----- | ---------- |
+| `merchantOrderId` | Ya | ID order unik (harus unik per transaksi) |
+| `paymentAmount` | Ya | Nominal dalam rupiah (integer) |
+| `paymentMethod` | Ya | Kode metode pembayaran |
+| `productDetails` | Ya | Deskripsi produk |
+| `email` | Ya | Email pelanggan |
+| `phoneNumber` | Ya | Nomor HP pelanggan |
+| `customerVaName` | Ya | Nama pemegang VA |
+| `additionalParam` | Tidak | Parameter tambahan opsional |
+| `returnUrl` | Tidak | URL redirect setelah pembayaran |
+| `expiryPeriod` | Tidak | Durasi kedaluwarsa dalam menit |
+
 | `paymentMethod` (contoh) | Keterangan |
 | ------------------------ | ---------- |
 | `SP` | ShopeePay / QRIS |
-| `BC`, `M2`, `VA`, dll. | Sesuai dokumentasi Duitku |
+| `BC` | BCA Virtual Account |
+| `M2` | Mandiri Virtual Account |
+| `VA` | Maybank Virtual Account |
 
-**Signature inquiry:** `MD5(merchantCode + merchantOrderId + paymentAmount + apiKey)`
+**Signature inquiry (dihitung server):** `HMAC-SHA256(merchantCode + merchantOrderId + paymentAmount, apiKey)`
 
-**Response sukses:** `statusCode` = `"00"`, plus `vaNumber`, `qrString`, `paymentUrl`, `reference`, dll.
+**Response sukses:** `statusCode: "00"`, plus `vaNumber`, `qrString`, `paymentUrl`, `reference`, dll. (format Duitku langsung, bukan wrapper `ApiResponse`).
 
 #### `POST /payments/duitku/callback`
 
-- Content-Type: `application/x-www-form-urlencoded`  
-- **Signature:** `MD5(merchantCode + amount + merchantOrderId + apiKey)`  
-- Jika signature valid dan `resultCode` = `00` → log placeholder update DB & notifikasi WhatsApp  
-- Respons wajib: HTTP `200` + body plain text **`OK`**
+- **Content-Type:** `application/x-www-form-urlencoded`  
+- **Signature verifikasi:** `HMAC-SHA256(merchantCode + amount + merchantOrderId, apiKey)` — 64 karakter hex lowercase  
+- Jika signature tidak cocok → HTTP `401 Unauthorized`  
+- Jika signature valid dan `resultCode == "00"` → log pembayaran sukses & placeholder notifikasi WhatsApp  
+- **Respons wajib:** HTTP `200` + body plain text **`OK`** (wajib agar Duitku tidak retry)
 
 ---
 
@@ -268,13 +297,17 @@ Integrasi [Duitku API v2](https://docs.duitku.com/). Inquiry path: `{DUITKU_BASE
 | GET | `/webhook` | Verifikasi webhook Meta (`hub.mode`, `hub.verify_token`, `hub.challenge`) |
 | POST | `/webhook` | Terima pesan masuk; balas otomatis via chatbot sederhana |
 
-Query verifikasi (GET):
+**Verifikasi (GET):**
 
 ```
 /webhook?hub.mode=subscribe&hub.verify_token={VERIFY_TOKEN}&hub.challenge={challenge}
 ```
 
-Jika token cocok, server mengembalikan nilai `hub.challenge` sebagai plain text.
+Jika token cocok, server mengembalikan nilai `hub.challenge` sebagai plain text (HTTP 200). Jika tidak cocok → HTTP 403.
+
+**Handle webhook (POST):**
+
+Server mem-parse payload Meta, mengekstrak pesan teks, memanggil `chatbot_service::generate_reply`, lalu mengirim balasan secara asinkron via `whatsapp_service::send_message`. Selalu merespons HTTP 200 (wajib, agar Meta tidak retry). Status delivery update (tanpa field `messages`) hanya dicatat sebagai log.
 
 ---
 
@@ -284,7 +317,7 @@ Jika token cocok, server mengembalikan nilai `hub.challenge` sebagai plain text.
 | ---- | --------- | ------------------ |
 | Hitung ongkir checkout | Storefront | `POST /api/shipping/rates` |
 | Pencarian area peta | Storefront | `GET /api/shipping/maps/areas` |
-| Buat shipment setelah order | api-cms | `POST /api/shipping/orders` atau confirm draft |
+| Buat shipment setelah order | api-cms | `POST /api/shipping/orders` atau `POST /api/shipping/draft-orders/:id/confirm` |
 | Lacak paket | api-cms | `GET /api/shipping/tracking/:id` |
 | Pembayaran online | Storefront / chatbot | `POST /payments/duitku` |
 
@@ -298,15 +331,16 @@ Tanpa URL ini, order tetap tersimpan di PostgreSQL tetapi shipment Biteship tida
 
 ---
 
-## Project structure
+## Project Structure
 
 ```
 src/
 ├── main.rs              # Router, CORS, nest /api
 ├── biteship.rs          # Client Biteship + normalisasi rates
-├── config/env.rs        # Config WhatsApp & Duitku
+├── config/env.rs        # Config WhatsApp, Duitku, CORS
 ├── duitku/
-│   ├── models.rs        # Struct + signature MD5
+│   ├── mod.rs
+│   ├── models.rs        # Struct + signature HMAC-SHA256
 │   ├── client.rs        # HTTP ke Duitku
 │   └── handlers.rs      # Checkout & callback
 ├── routes/
@@ -333,18 +367,19 @@ src/
 
 ### Duitku
 
-- Inquiry v2 (VA & QRIS)  
-- Validasi signature callback  
+- Inquiry v2 (VA, QRIS, dan metode lain)  
+- Signature HMAC-SHA256 untuk inquiry dan verifikasi callback  
 - Respons callback `OK` sesuai spesifikasi Duitku  
 
 ### WhatsApp
 
 - Verifikasi & webhook Meta Cloud API  
 - Auto-reply dasar (extensible di `chatbot_service`)  
+- Async reply — server segera merespons 200 sebelum mengirim balasan  
 
 ---
 
-## Technology stack
+## Technology Stack
 
 | Teknologi | Penggunaan |
 | --------- | ---------- |
@@ -353,18 +388,19 @@ src/
 | Tokio | Async runtime |
 | Reqwest | HTTP client (Biteship, Duitku) |
 | Serde / JSON | Serialisasi API |
-| MD5 | Signature Duitku |
+| HMAC-SHA256 (hmac + sha2) | Signature Duitku v2 |
 | Tower HTTP | CORS, tracing |
 | dotenvy | Environment variables |
 | tracing | Structured logging |
 
 ---
 
-## Architecture notes
+## Architecture Notes
 
 - **Stateless** — tidak ada PostgreSQL/SQLx di service ini  
 - **Pemisahan concern** — `api-cms` = domain bisnis; `api-integrasi` = gateway pihak ketiga  
 - API key Biteship & Duitku **tidak** diekspos ke browser  
+- CORS dikonfigurasi via `ALLOWED_ORIGINS` (bukan wildcard) untuk keamanan  
 - Storefront: `VITE_INTEGRASI_API_BASE` (mis. `http://localhost:8002/api`) untuk shipping  
 - Storefront: `VITE_API_BASE` (mis. `http://localhost:8001/api`) untuk cart, auth, order  
 - Port default development: integrasi **8002**, cms **8001**  
@@ -374,7 +410,7 @@ src/
 
 ## Testing
 
-**Unit test signature Duitku:**
+**Unit test signature Duitku (HMAC-SHA256):**
 
 ```bash
 cargo test duitku::models
@@ -386,11 +422,19 @@ cargo test duitku::models
 cargo test biteship::tests
 ```
 
-**Postman:** koleksi contoh WhatsApp di `Aminah_Jaya_Integration.postman_collection.json`.
+**Semua unit test:**
+
+```bash
+cargo test
+```
+
+**Postman:** Import koleksi `Aminah_Jaya_Integration.postman_collection.json`. Set Collection Variable `base_url` ke `http://localhost:8002` (default) dan sesuaikan `verify_token`, `duitku_merchant_code` dengan nilai `.env` aktif.
+
+> **Catatan simulasi callback Duitku:** Signature pada Postman collection perlu digenerate manual dengan `HMAC-SHA256(merchantCode + amount + merchantOrderId, apiKey)` menggunakan API key dari `.env`.
 
 ---
 
-## Related projects
+## Related Projects
 
 | Project | Peran |
 | ------- | ----- |

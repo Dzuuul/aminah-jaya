@@ -252,11 +252,11 @@ export default function ProductForm(props: ProductFormProps) {
           <div class="form-grid-3">
             <div class="form-group">
               <label class="form-label">Harga (Rp)</label>
-              <input type="number" required class="form-input" value={formData().price} onInput={e => setFormData({ ...formData(), price: parseFloat(e.currentTarget.value) })} />
+              <input type="text" required class="form-input" value={formData().price != null ? formData().price.toLocaleString('id-ID') : ""} onInput={e => setFormData({ ...formData(), price: parseInt(e.currentTarget.value.replace(/\D/g, '') || "0", 10) })} />
             </div>
             <div class="form-group">
               <label class="form-label">Harga Coret (Rp)</label>
-              <input type="number" class="form-input" value={formData().price_compare || 0} onInput={e => setFormData({ ...formData(), price_compare: parseFloat(e.currentTarget.value) })} />
+              <input type="text" class="form-input" value={formData().price_compare != null ? formData().price_compare.toLocaleString('id-ID') : ""} onInput={e => setFormData({ ...formData(), price_compare: parseInt(e.currentTarget.value.replace(/\D/g, '') || "0", 10) })} />
             </div>
             <div class="form-group">
               <label class="form-label">Stok</label>

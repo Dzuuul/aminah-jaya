@@ -20,6 +20,7 @@ services:
       - R2_BUCKET=${R2_BUCKET}
       - R2_PUBLIC_URL=${R2_PUBLIC_URL}
       - INTEGRASI_API_URL=${INTEGRASI_API_URL:-http://api-integrasi-aminah-jaya:8002}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET}
     networks:
       - aminah-network
 networks:

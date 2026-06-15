@@ -2,12 +2,13 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-4a5b-bc6d-e7f8g9h0i1j2",
     "name": "Aminah Jaya Integration API",
-    "description": "API Integrasi Aminah Jaya — Biteship (ongkir), Duitku (pembayaran), Meta WhatsApp Cloud API.\n\nBase lokal: port 8002. Shipping di bawah `/api/shipping/*`.",
+    "description": "API Integrasi Aminah Jaya — Biteship (ongkir & fulfillment), Duitku (payment gateway), Meta WhatsApp Cloud API.\n\nBase lokal: port **8002**. Shipping di bawah `/api/shipping/*`, payment di `/payments/duitku*`, webhook WhatsApp di `/webhook`.\n\n**Signature Duitku:** HMAC-SHA256 (bukan MD5). Lihat detail di masing-masing endpoint.\n\nSet variabel `base_url`, `verify_token`, dan credential lainnya di Collection Variables sebelum menggunakan.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
       "name": "WhatsApp",
+      "description": "Endpoint Meta WhatsApp Cloud API — verifikasi webhook dan penerimaan pesan masuk.",
       "item": [
         {
           "name": "Verify Webhook (GET)",
@@ -19,26 +20,72 @@
               "host": ["{{base_url}}"],
               "path": ["webhook"],
               "query": [
-                { "key": "hub.mode", "value": "subscribe" },
-                { "key": "hub.verify_token", "value": "{{verify_token}}" },
-                { "key": "hub.challenge", "value": "123456" }
+                {
+                  "key": "hub.mode",
+                  "value": "subscribe",
+                  "description": "Harus bernilai 'subscribe'"
+                },
+                {
+                  "key": "hub.verify_token",
+                  "value": "{{verify_token}}",
+                  "description": "Harus cocok dengan VERIFY_TOKEN di .env"
+                },
+                {
+                  "key": "hub.challenge",
+                  "value": "123456",
+                  "description": "Nilai challenge yang akan dikembalikan server jika verifikasi berhasil"
+                }
               ]
             },
-            "description": "Verifikasi webhook Meta. Respons sukses: plain text challenge."
+            "description": "Verifikasi webhook Meta. Server mengecek `hub.mode == 'subscribe'` dan `hub.verify_token` cocok dengan env `VERIFY_TOKEN`. Jika cocok, server mengembalikan nilai `hub.challenge` sebagai plain text dengan HTTP 200. Jika tidak cocok, HTTP 403 Forbidden."
           },
           "response": [
             {
-              "name": "Success Challenge",
-              "originalRequest": {},
+              "name": "Verifikasi Berhasil",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/webhook?hub.mode=subscribe&hub.verify_token={{verify_token}}&hub.challenge=123456",
+                  "host": ["{{base_url}}"],
+                  "path": ["webhook"],
+                  "query": [
+                    { "key": "hub.mode", "value": "subscribe" },
+                    { "key": "hub.verify_token", "value": "{{verify_token}}" },
+                    { "key": "hub.challenge", "value": "123456" }
+                  ]
+                }
+              },
               "status": "200 OK",
               "code": 200,
-              "header": [],
+              "header": [{ "key": "Content-Type", "value": "text/plain" }],
               "body": "123456"
+            },
+            {
+              "name": "Token Tidak Cocok",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/webhook?hub.mode=subscribe&hub.verify_token=wrong_token&hub.challenge=123456",
+                  "host": ["{{base_url}}"],
+                  "path": ["webhook"],
+                  "query": [
+                    { "key": "hub.mode", "value": "subscribe" },
+                    { "key": "hub.verify_token", "value": "wrong_token" },
+                    { "key": "hub.challenge", "value": "123456" }
+                  ]
+                }
+              },
+              "status": "403 Forbidden",
+              "code": 403,
+              "header": [{ "key": "Content-Type", "value": "text/plain" }],
+              "body": "Forbidden"
             }
           ]
         },
         {
-          "name": "Handle Webhook (POST)",
+          "name": "Handle Webhook — Pesan Teks (POST)",
           "request": {
             "method": "POST",
             "header": [
@@ -46,23 +93,54 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [\n    {\n      \"id\": \"123456789\",\n      \"changes\": [\n        {\n          \"value\": {\n            \"messaging_product\": \"whatsapp\",\n            \"metadata\": {\n              \"display_phone_number\": \"123456789\",\n              \"phone_number_id\": \"{{phone_number_id}}\"\n            },\n            \"contacts\": [\n              {\n                \"profile\": { \"name\": \"Customer Name\" },\n                \"wa_id\": \"628123456789\"\n              }\n            ],\n            \"messages\": [\n              {\n                \"from\": \"628123456789\",\n                \"id\": \"msg-123\",\n                \"timestamp\": \"1625000000\",\n                \"text\": { \"body\": \"Halo Aminah Jaya\" },\n                \"type\": \"text\"\n              }\n            ]\n          },\n          \"field\": \"messages\"\n        }\n      ]\n    }\n  ]\n}"
+              "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [\n    {\n      \"id\": \"123456789\",\n      \"changes\": [\n        {\n          \"value\": {\n            \"messaging_product\": \"whatsapp\",\n            \"metadata\": {\n              \"display_phone_number\": \"628100001111\",\n              \"phone_number_id\": \"{{phone_number_id}}\"\n            },\n            \"contacts\": [\n              {\n                \"profile\": { \"name\": \"Budi Santoso\" },\n                \"wa_id\": \"628123456789\"\n              }\n            ],\n            \"messages\": [\n              {\n                \"from\": \"628123456789\",\n                \"id\": \"wamid.HBgLNjI4MTIzNDU2Nzg5FQIAERgSMzFCQTg3M0ZBQTI4REZERDY4AA==\",\n                \"timestamp\": \"1718400000\",\n                \"text\": { \"body\": \"Halo Aminah Jaya\" },\n                \"type\": \"text\"\n              }\n            ]\n          },\n          \"field\": \"messages\"\n        }\n      ]\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{base_url}}/webhook",
               "host": ["{{base_url}}"],
               "path": ["webhook"]
             },
-            "description": "Menerima pesan masuk dari Meta. Server membalas via WhatsApp API (async)."
+            "description": "Menerima pesan masuk dari Meta. Server mem-parse payload, memanggil `chatbot_service::generate_reply`, lalu mengirim balasan secara async via `whatsapp_service::send_message`. Selalu merespons HTTP 200 (wajib oleh Meta, agar tidak retry)."
           },
           "response": [
             {
-              "name": "Webhook Received",
+              "name": "Webhook Diterima",
               "originalRequest": {},
               "status": "200 OK",
               "code": 200,
               "header": [],
-              "body": "{ \"status\": \"processed\" }"
+              "body": ""
+            }
+          ]
+        },
+        {
+          "name": "Handle Webhook — Status Update (POST)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"object\": \"whatsapp_business_account\",\n  \"entry\": [\n    {\n      \"id\": \"123456789\",\n      \"changes\": [\n        {\n          \"value\": {\n            \"messaging_product\": \"whatsapp\",\n            \"metadata\": {\n              \"display_phone_number\": \"628100001111\",\n              \"phone_number_id\": \"{{phone_number_id}}\"\n            },\n            \"statuses\": [\n              {\n                \"id\": \"wamid.HBgLNjI4MTIzNDU2Nzg5FQIAERgSMzFCQTg3M0ZBQTI4REZERDY4AA==\",\n                \"status\": \"delivered\",\n                \"timestamp\": \"1718400010\",\n                \"recipient_id\": \"628123456789\"\n              }\n            ]\n          },\n          \"field\": \"messages\"\n        }\n      ]\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/webhook",
+              "host": ["{{base_url}}"],
+              "path": ["webhook"]
+            },
+            "description": "Simulasi status delivery update dari Meta (bukan pesan baru). Server mendeteksi tidak ada field `messages` dan hanya mencatat log. Tetap merespons HTTP 200."
+          },
+          "response": [
+            {
+              "name": "Status Update Diterima",
+              "originalRequest": {},
+              "status": "200 OK",
+              "code": 200,
+              "header": [],
+              "body": ""
             }
           ]
         }
@@ -70,6 +148,7 @@
     },
     {
       "name": "Shipping (Biteship)",
+      "description": "Proxy ke Biteship API. API key Biteship hanya disimpan di server — storefront memanggil service ini via `VITE_INTEGRASI_API_BASE`, bukan langsung ke Biteship.",
       "item": [
         {
           "name": "List Couriers",
@@ -80,16 +159,25 @@
               "raw": "{{base_url}}/api/shipping/couriers",
               "host": ["{{base_url}}"],
               "path": ["api", "shipping", "couriers"]
-            }
+            },
+            "description": "Mengambil daftar kurir yang tersedia dari Biteship. Respons dibungkus dalam `ApiResponse<T>` dengan field `data` berisi array kurir."
           },
           "response": [
             {
-              "name": "Couriers List",
+              "name": "Berhasil",
               "originalRequest": {},
               "status": "200 OK",
               "code": 200,
-              "header": [],
-              "body": "{ \"couriers\": [\"jne\", \"sicepat\", \"grab\"] }"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": [\n    { \"courier_code\": \"jne\", \"courier_name\": \"JNE\" },\n    { \"courier_code\": \"sicepat\", \"courier_name\": \"SiCepat\" },\n    { \"courier_code\": \"grab\", \"courier_name\": \"Grab Express\" }\n  ],\n  \"meta\": null,\n  \"errors\": null\n}"
+            },
+            {
+              "name": "Biteship Tidak Tersedia",
+              "originalRequest": {},
+              "status": "502 Bad Gateway",
+              "code": 502,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Biteship API error\",\n  \"data\": null,\n  \"meta\": null,\n  \"errors\": null\n}"
             }
           ]
         },
@@ -103,18 +191,31 @@
               "host": ["{{base_url}}"],
               "path": ["api", "shipping", "maps", "areas"],
               "query": [
-                { "key": "input", "value": "Kediri", "description": "Min. 3 karakter" }
+                {
+                  "key": "input",
+                  "value": "Kediri",
+                  "description": "Kata kunci pencarian area — minimal 3 karakter"
+                }
               ]
-            }
+            },
+            "description": "Pencarian area pengiriman Biteship berdasarkan kata kunci. Parameter `input` wajib minimal 3 karakter; jika kurang dari itu server mengembalikan HTTP 400."
           },
           "response": [
             {
-              "name": "Area Search Results",
+              "name": "Hasil Pencarian",
               "originalRequest": {},
               "status": "200 OK",
               "code": 200,
-              "header": [],
-              "body": "{ \"areas\": [\"Kediri\", \"Kediri Barat\"] }"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": [\n    {\n      \"id\": \"IDNP12IDNC205\",\n      \"name\": \"Kota Kediri\",\n      \"country_name\": \"Indonesia\",\n      \"country_code\": \"ID\",\n      \"administrative_division_level_1_name\": \"Jawa Timur\",\n      \"administrative_division_level_1_type\": \"province\",\n      \"administrative_division_level_2_name\": \"Kota Kediri\",\n      \"administrative_division_level_2_type\": \"city\",\n      \"postal_code\": \"64100\"\n    }\n  ],\n  \"meta\": null,\n  \"errors\": null\n}"
+            },
+            {
+              "name": "Input Terlalu Pendek (< 3 karakter)",
+              "originalRequest": {},
+              "status": "400 Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Masukkan minimal 3 karakter pencarian\",\n  \"data\": null,\n  \"meta\": null,\n  \"errors\": null\n}"
             }
           ]
         },
@@ -123,33 +224,44 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{customer_token}}",
-                "description": "Opsional",
-                "disabled": true
-              }
+              { "key": "Content-Type", "value": "application/json" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"destination_lat\": -7.7702,\n  \"destination_lng\": 112.0262,\n  \"destination_postal_code\": \"64182\",\n  \"destination_city\": \"Kediri\",\n  \"destination_province\": \"Jawa Timur\",\n  \"couriers\": \"jne,sicepat,grab\",\n  \"cart_items\": [\n    {\n      \"quantity\": 2,\n      \"product_weight_gram\": 500,\n      \"product_price\": 75000,\n      \"product_name\": \"Hijab Premium\"\n    }\n  ]\n}"
+              "raw": "{\n  \"destination_lat\": -7.7702,\n  \"destination_lng\": 112.0262,\n  \"destination_postal_code\": \"64182\",\n  \"destination_city\": \"Kediri\",\n  \"destination_province\": \"Jawa Timur\",\n  \"destination_area_id\": null,\n  \"couriers\": \"jne,sicepat,grab\",\n  \"cart_items\": [\n    {\n      \"quantity\": 2,\n      \"product_weight_gram\": 500,\n      \"product_price\": 75000,\n      \"product_name\": \"Hijab Premium\"\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{base_url}}/api/shipping/rates",
               "host": ["{{base_url}}"],
               "path": ["api", "shipping", "rates"]
             },
-            "description": "Hitung ongkir. Wajib `cart_items`. Respons: `{ success, data: { rates, weight_kg, cache_key } }`."
+            "description": "Hitung ongkir berdasarkan `cart_items` dan tujuan pengiriman.\n\n**Perhitungan berat:**\n1. Total gram = Σ(`product_weight_gram` × `quantity`); jika berat kosong → 500 g/unit\n2. Dibulatkan ke bucket kg (ceil, min. 1 kg)\n3. Request ke Biteship memakai satu item sintetis dengan berat bucket tersebut\n\n**Mode koordinat otomatis:** server memilih mode Area ID → Koordinat → Kode Pos → Mix berdasarkan field yang tersedia.\n\nField `cart_items` **wajib** dan tidak boleh kosong."
           },
           "response": [
             {
-              "name": "Rates Result",
+              "name": "Rates Berhasil",
               "originalRequest": {},
               "status": "200 OK",
               "code": 200,
-              "header": [],
-              "body": "{ \"success\": true, \"data\": { \"rates\": [], \"weight_kg\": 2 } }"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": {\n    \"rates\": [\n      {\n        \"id\": \"jne_reg\",\n        \"courier_company\": \"jne\",\n        \"courier_type\": \"reg\",\n        \"name\": \"JNE Reguler\",\n        \"price\": 18000,\n        \"duration\": \"2 - 3 days\",\n        \"shipment_duration_range\": \"2 - 3\",\n        \"shipment_duration_unit\": \"days\",\n        \"speed_group\": \"reguler\",\n        \"courier_logo\": \"https://assets.biteship.com/icons/courier-jne.png\"\n      },\n      {\n        \"id\": \"sicepat_reg\",\n        \"courier_company\": \"sicepat\",\n        \"courier_type\": \"reg\",\n        \"name\": \"SiCepat Reguler\",\n        \"price\": 15000,\n        \"duration\": \"1 - 2 days\",\n        \"shipment_duration_range\": \"1 - 2\",\n        \"shipment_duration_unit\": \"days\",\n        \"speed_group\": \"reguler\",\n        \"courier_logo\": \"https://assets.biteship.com/icons/courier-sicepat.png\"\n      }\n    ],\n    \"cached\": false,\n    \"cache_key\": \"coord:-7.770,112.026|coord:-6.914,107.610|2kg|jne,sicepat,grab\",\n    \"weight_kg\": 2\n  },\n  \"meta\": null,\n  \"errors\": null\n}"
+            },
+            {
+              "name": "Keranjang Kosong",
+              "originalRequest": {},
+              "status": "400 Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Keranjang kosong\",\n  \"data\": null,\n  \"meta\": null,\n  \"errors\": null\n}"
+            },
+            {
+              "name": "Biteship Error",
+              "originalRequest": {},
+              "status": "502 Bad Gateway",
+              "code": 502,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Biteship API error: ...\",\n  \"data\": null,\n  \"meta\": null,\n  \"errors\": null\n}"
             }
           ]
         },
@@ -162,22 +274,32 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"destination_contact_name\": \"Budi Santoso\",\n  \"destination_contact_phone\": \"081234567890\",\n  \"destination_address\": \"Jl. Contoh No. 1, Kediri\",\n  \"destination_note\": \"Tolong hubungi sebelum kirim\",\n  \"destination_lat\": -7.7702,\n  \"destination_lng\": 112.0262,\n  \"destination_postal_code\": \"64182\",\n  \"courier_company\": \"jne\",\n  \"courier_type\": \"reg\",\n  \"cart_items\": [\n    {\n      \"quantity\": 1,\n      \"product_weight_gram\": 500,\n      \"product_price\": 150000,\n      \"product_name\": \"Produk Aminah\"\n    }\n  ]\n}"
+              "raw": "{\n  \"destination_contact_name\": \"Budi Santoso\",\n  \"destination_contact_phone\": \"081234567890\",\n  \"destination_address\": \"Jl. Contoh No. 1, Kediri\",\n  \"destination_note\": \"Tolong hubungi sebelum kirim\",\n  \"destination_lat\": -7.7702,\n  \"destination_lng\": 112.0262,\n  \"destination_postal_code\": \"64182\",\n  \"destination_area_id\": null,\n  \"courier_company\": \"jne\",\n  \"courier_type\": \"reg\",\n  \"cart_items\": [\n    {\n      \"quantity\": 1,\n      \"product_weight_gram\": 500,\n      \"product_price\": 150000,\n      \"product_name\": \"Produk Aminah\"\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{base_url}}/api/shipping/draft-orders",
               "host": ["{{base_url}}"],
               "path": ["api", "shipping", "draft-orders"]
-            }
+            },
+            "description": "Membuat draft order di Biteship. Data asal (origin) diisi otomatis dari env `BITESHIP_ORIGIN_*`. Field `cart_items` **wajib**. Simpan `id` dari respons sebagai `draft_order_id` untuk endpoint berikutnya."
           },
           "response": [
             {
-              "name": "Draft Created",
+              "name": "Draft Dibuat",
               "originalRequest": {},
               "status": "201 Created",
               "code": 201,
-              "header": [],
-              "body": "{ \"draft_order_id\": \"draft123\" }"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": {\n    \"id\": \"DRFT-A1B2C3D4\",\n    \"status\": \"draft\",\n    \"shipper_contact_name\": \"Aminah Jaya\",\n    \"destination_contact_name\": \"Budi Santoso\",\n    \"destination_address\": \"Jl. Contoh No. 1, Kediri\"\n  },\n  \"meta\": null,\n  \"errors\": null\n}"
+            },
+            {
+              "name": "Keranjang Kosong",
+              "originalRequest": {},
+              "status": "400 Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Keranjang kosong\",\n  \"data\": null,\n  \"meta\": null,\n  \"errors\": null\n}"
             }
           ]
         },
@@ -190,16 +312,25 @@
               "raw": "{{base_url}}/api/shipping/draft-orders/{{draft_order_id}}/rates",
               "host": ["{{base_url}}"],
               "path": ["api", "shipping", "draft-orders", "{{draft_order_id}}", "rates"]
-            }
+            },
+            "description": "Mendapatkan daftar tarif kurir untuk draft order yang sudah dibuat. Respons berisi `rates` (normalized) dan `raw` (data asli dari Biteship)."
           },
           "response": [
             {
-              "name": "Draft Rates",
+              "name": "Draft Rates Berhasil",
               "originalRequest": {},
               "status": "200 OK",
               "code": 200,
-              "header": [],
-              "body": "{ \"rates\": [] }"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": {\n    \"rates\": [\n      {\n        \"id\": \"jne_reg\",\n        \"courier_company\": \"jne\",\n        \"courier_type\": \"reg\",\n        \"name\": \"JNE Reguler\",\n        \"price\": 18000,\n        \"duration\": \"2 - 3 days\",\n        \"speed_group\": \"reguler\"\n      }\n    ],\n    \"raw\": {}\n  },\n  \"meta\": null,\n  \"errors\": null\n}"
+            },
+            {
+              "name": "Draft Tidak Ditemukan",
+              "originalRequest": {},
+              "status": "502 Bad Gateway",
+              "code": 502,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Biteship API error: Draft order not found\",\n  \"data\": null,\n  \"meta\": null,\n  \"errors\": null\n}"
             }
           ]
         },
@@ -212,28 +343,37 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{}"
+              "raw": "{}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{base_url}}/api/shipping/draft-orders/{{draft_order_id}}/confirm",
               "host": ["{{base_url}}"],
               "path": ["api", "shipping", "draft-orders", "{{draft_order_id}}", "confirm"]
             },
-            "description": "Dipanggil api-cms saat checkout dengan biteship_draft_order_id."
+            "description": "Mengkonfirmasi draft order menjadi order aktif di Biteship. Dipanggil oleh `api-cms` saat checkout ketika menggunakan flow draft order. Body bisa kosong (`{}`)."
           },
           "response": [
             {
-              "name": "Confirm Success",
+              "name": "Konfirmasi Berhasil",
               "originalRequest": {},
               "status": "200 OK",
               "code": 200,
-              "header": [],
-              "body": "{ \"status\": \"confirmed\" }"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": {\n    \"id\": \"DRFT-A1B2C3D4\",\n    \"status\": \"confirmed\",\n    \"courier_company\": \"jne\",\n    \"courier_type\": \"reg\"\n  },\n  \"meta\": null,\n  \"errors\": null\n}"
+            },
+            {
+              "name": "Draft Tidak Ditemukan",
+              "originalRequest": {},
+              "status": "502 Bad Gateway",
+              "code": 502,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Biteship API error: Draft order not found\",\n  \"data\": null,\n  \"meta\": null,\n  \"errors\": null\n}"
             }
           ]
         },
         {
-          "name": "Create Biteship Order (CMS)",
+          "name": "Create Biteship Order (server-to-server)",
           "request": {
             "method": "POST",
             "header": [
@@ -241,23 +381,32 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"destination_contact_name\": \"Budi Santoso\",\n  \"destination_contact_phone\": \"081234567890\",\n  \"destination_address\": \"Fikri | 08123456789 | Jl. Sudirman No. 1\",\n  \"destination_note\": \"Catatan pengiriman\",\n  \"destination_lat\": -7.7702,\n  \"destination_lng\": 112.0262,\n  \"destination_postal_code\": \"64182\",\n  \"courier_company\": \"jne\",\n  \"courier_type\": \"reg\",\n  \"delivery_type\": \"now\",\n  \"reference_id\": \"{{merchant_order_id}}\",\n  \"items\": [\n    {\n      \"name\": \"Produk Aminah\",\n      \"description\": \"Produk Aminah Jaya\",\n      \"value\": 150000,\n      \"weight\": 500,\n      \"quantity\": 1,\n      \"length\": 10,\n      \"width\": 10,\n      \"height\": 10\n    }\n  ]\n}"
+              "raw": "{\n  \"destination_contact_name\": \"Budi Santoso\",\n  \"destination_contact_phone\": \"081234567890\",\n  \"destination_address\": \"Jl. Sudirman No. 1, Kediri\",\n  \"destination_note\": \"Catatan pengiriman\",\n  \"destination_coordinate\": {\n    \"latitude\": -7.7702,\n    \"longitude\": 112.0262\n  },\n  \"destination_postal_code\": 64182,\n  \"courier_company\": \"jne\",\n  \"courier_type\": \"reg\",\n  \"delivery_type\": \"now\",\n  \"reference_id\": \"{{merchant_order_id}}\",\n  \"items\": [\n    {\n      \"name\": \"Produk Aminah\",\n      \"description\": \"Produk Aminah Jaya\",\n      \"value\": 150000,\n      \"weight\": 500,\n      \"quantity\": 1,\n      \"length\": 10,\n      \"width\": 10,\n      \"height\": 10\n    }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{base_url}}/api/shipping/orders",
               "host": ["{{base_url}}"],
               "path": ["api", "shipping", "orders"]
             },
-            "description": "Server-to-server dari api-cms. Origin diisi otomatis dari env BITESHIP_ORIGIN_*."
+            "description": "Membuat order pengiriman Biteship. Endpoint ini dipanggil server-to-server dari `api-cms` (bukan dari browser/storefront) saat checkout selesai.\n\nField asal (`shipper_contact_name`, `origin_contact_name`, `origin_contact_phone`, `origin_address`, `origin_coordinate`, `origin_area_id`, `origin_postal_code`) diisi otomatis dari env `BITESHIP_ORIGIN_*` jika tidak disertakan dalam body.\n\nRespons dibungkus `ApiResponse<T>` dengan HTTP 201."
           },
           "response": [
             {
-              "name": "Order Created",
+              "name": "Order Dibuat",
               "originalRequest": {},
               "status": "201 Created",
               "code": 201,
-              "header": [],
-              "body": "{ \"order_id\": \"order123\" }"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": {\n    \"id\": \"ORD-BSP-A1B2C3\",\n    \"status\": \"confirmed\",\n    \"courier\": {\n      \"company\": \"jne\",\n      \"type\": \"reg\",\n      \"tracking_id\": \"JNE-TRK-0001\",\n      \"waybill_id\": \"JNE00123456789\"\n    },\n    \"price\": 18000\n  },\n  \"meta\": null,\n  \"errors\": null\n}"
+            },
+            {
+              "name": "Biteship Error",
+              "originalRequest": {},
+              "status": "502 Bad Gateway",
+              "code": 502,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Biteship API error: ...\",\n  \"data\": null,\n  \"meta\": null,\n  \"errors\": null\n}"
             }
           ]
         },
@@ -270,16 +419,25 @@
               "raw": "{{base_url}}/api/shipping/orders/{{biteship_order_id}}",
               "host": ["{{base_url}}"],
               "path": ["api", "shipping", "orders", "{{biteship_order_id}}"]
-            }
+            },
+            "description": "Mendapatkan detail order Biteship berdasarkan ID. Dipanggil oleh `api-cms` untuk sinkronisasi status pengiriman. Respons dibungkus `ApiResponse<T>`."
           },
           "response": [
             {
-              "name": "Order Details",
+              "name": "Detail Order",
               "originalRequest": {},
               "status": "200 OK",
               "code": 200,
-              "header": [],
-              "body": "{ \"status\": \"delivered\" }"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": {\n    \"id\": \"ORD-BSP-A1B2C3\",\n    \"status\": \"delivered\",\n    \"courier\": {\n      \"company\": \"jne\",\n      \"type\": \"reg\",\n      \"tracking_id\": \"JNE-TRK-0001\",\n      \"waybill_id\": \"JNE00123456789\"\n    }\n  },\n  \"meta\": null,\n  \"errors\": null\n}"
+            },
+            {
+              "name": "Order Tidak Ditemukan",
+              "originalRequest": {},
+              "status": "502 Bad Gateway",
+              "code": 502,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Biteship API error: Order not found\",\n  \"data\": null,\n  \"meta\": null,\n  \"errors\": null\n}"
             }
           ]
         },
@@ -293,7 +451,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "shipping", "tracking", "{{tracking_id}}"]
             },
-            "description": "Dipanggil api-cms untuk GET /api/customer/orders/:id/tracking."
+            "description": "Lacak status pengiriman berdasarkan tracking ID Biteship. Dipanggil oleh `api-cms` untuk endpoint `GET /api/customer/orders/:id/tracking`. Respons dibungkus `ApiResponse<T>`."
           },
           "response": [
             {
@@ -301,18 +459,27 @@
               "originalRequest": {},
               "status": "200 OK",
               "code": 200,
-              "header": [],
-              "body": "{ \"status\": \"in_transit\" }"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": true,\n  \"message\": \"OK\",\n  \"data\": {\n    \"id\": \"JNE-TRK-0001\",\n    \"waybill_id\": \"JNE00123456789\",\n    \"courier\": { \"company\": \"jne\", \"type\": \"reg\" },\n    \"status\": \"in_transit\",\n    \"origin\": { \"name\": \"Jakarta Pusat\" },\n    \"destination\": { \"name\": \"Kediri\" },\n    \"history\": [\n      {\n        \"note\": \"Paket sedang dalam perjalanan\",\n        \"updated_at\": \"2026-06-15T07:00:00Z\"\n      }\n    ]\n  },\n  \"meta\": null,\n  \"errors\": null\n}"
+            },
+            {
+              "name": "Tracking Tidak Ditemukan",
+              "originalRequest": {},
+              "status": "502 Bad Gateway",
+              "code": 502,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Biteship API error: Tracking not found\",\n  \"data\": null,\n  \"meta\": null,\n  \"errors\": null\n}"
             }
           ]
         }
       ]
     },
     {
-      "name": "Duitku",
+      "name": "Payment (Duitku)",
+      "description": "Integrasi Duitku API v2. Signature menggunakan HMAC-SHA256 (bukan MD5). Inquiry path: `{DUITKU_BASE_URL}/api/merchant/v2/inquiry`.",
       "item": [
         {
-          "name": "Create Payment (Inquiry)",
+          "name": "Create Payment — Inquiry (POST)",
           "request": {
             "method": "POST",
             "header": [
@@ -320,51 +487,115 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"merchantOrderId\": \"{{merchant_order_id}}\",\n  \"paymentAmount\": 150000,\n  \"paymentMethod\": \"SP\",\n  \"productDetails\": \"Pesanan Aminah Jaya\",\n  \"email\": \"customer@example.com\",\n  \"phoneNumber\": \"081234567890\",\n  \"customerVaName\": \"Budi Santoso\",\n  \"returnUrl\": \"http://localhost:3000/success\",\n  \"expiryPeriod\": 60\n}"
+              "raw": "{\n  \"merchantOrderId\": \"{{merchant_order_id}}\",\n  \"paymentAmount\": 150000,\n  \"paymentMethod\": \"SP\",\n  \"productDetails\": \"Pesanan Aminah Jaya #{{merchant_order_id}}\",\n  \"email\": \"customer@example.com\",\n  \"phoneNumber\": \"081234567890\",\n  \"customerVaName\": \"Budi Santoso\",\n  \"additionalParam\": null,\n  \"returnUrl\": \"https://aminahjaya.com/pesanan/sukses\",\n  \"expiryPeriod\": 60\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{base_url}}/payments/duitku",
               "host": ["{{base_url}}"],
               "path": ["payments", "duitku"]
             },
-            "description": "Buat tagihan VA/QRIS. Respons JSON Duitku langsung (statusCode 00 = sukses). paymentMethod: SP (QRIS), BC, VA, dll."
+            "description": "Membuat tagihan pembayaran (VA / QRIS / dll) via Duitku v2.\n\n**Signature inquiry** dihitung server: `HMAC-SHA256(merchantCode + merchantOrderId + paymentAmount, apiKey)`\n\n**paymentMethod:** `SP` (ShopeePay/QRIS), `BC` (BCA VA), `M2` (Mandiri VA), `VA` (Maybank VA), dll. — lihat dokumentasi Duitku.\n\nRespons berisi objek Duitku langsung (**bukan** wrapper `success/data`) dengan field `statusCode`, `paymentUrl`, `vaNumber`, `qrString`, dll. `statusCode: \"00\"` = berhasil."
           },
           "response": [
             {
-              "name": "Inquiry Success",
+              "name": "Inquiry Berhasil (QRIS)",
               "originalRequest": {},
               "status": "200 OK",
               "code": 200,
-              "header": [],
-              "body": "{ \"statusCode\": \"00\", \"paymentUrl\": \"https://payment.example.com\" }"
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"merchantCode\": \"DS12345\",\n  \"reference\": \"DUITKU-REF-0001\",\n  \"paymentUrl\": \"https://sandbox.duitku.com/topup/v2/pay?ref=...\",\n  \"vaNumber\": null,\n  \"qrString\": \"00020101021226...\",\n  \"amount\": \"150000\",\n  \"statusCode\": \"00\",\n  \"statusMessage\": \"SUCCESS\"\n}"
+            },
+            {
+              "name": "Inquiry Berhasil (Virtual Account)",
+              "originalRequest": {},
+              "status": "200 OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"merchantCode\": \"DS12345\",\n  \"reference\": \"DUITKU-REF-0002\",\n  \"paymentUrl\": \"https://sandbox.duitku.com/topup/v2/pay?ref=...\",\n  \"vaNumber\": \"8880082123456789\",\n  \"qrString\": null,\n  \"amount\": \"150000\",\n  \"statusCode\": \"00\",\n  \"statusMessage\": \"SUCCESS\"\n}"
+            },
+            {
+              "name": "Inquiry Ditolak Duitku",
+              "originalRequest": {},
+              "status": "200 OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"merchantCode\": \"DS12345\",\n  \"reference\": null,\n  \"paymentUrl\": null,\n  \"vaNumber\": null,\n  \"qrString\": null,\n  \"amount\": null,\n  \"statusCode\": \"01\",\n  \"statusMessage\": \"Invalid Signature\"\n}"
+            },
+            {
+              "name": "Gagal Koneksi ke Duitku",
+              "originalRequest": {},
+              "status": "502 Bad Gateway",
+              "code": 502,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Gagal menghubungi payment gateway\"\n}"
             }
           ]
         },
         {
-          "name": "Payment Callback (Webhook)",
+          "name": "Payment Callback — Webhook Duitku (POST)",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/x-www-form-urlencoded"
-              }
+              { "key": "Content-Type", "value": "application/x-www-form-urlencoded" }
             ],
             "body": {
               "mode": "urlencoded",
               "urlencoded": [
-                { "key": "merchantCode", "value": "{{duitku_merchant_code}}", "type": "text" },
-                { "key": "amount", "value": "150000", "type": "text" },
-                { "key": "merchantOrderId", "value": "{{merchant_order_id}}", "type": "text" },
-                { "key": "productDetail", "value": "Pesanan Aminah Jaya", "type": "text" },
-                { "key": "paymentCode", "value": "SP", "type": "text" },
-                { "key": "resultCode", "value": "00", "type": "text" },
-                { "key": "reference", "value": "DUITKU-REF-001", "type": "text" },
+                {
+                  "key": "merchantCode",
+                  "value": "{{duitku_merchant_code}}",
+                  "type": "text",
+                  "description": "Kode merchant dari Duitku dashboard"
+                },
+                {
+                  "key": "amount",
+                  "value": "150000",
+                  "type": "text"
+                },
+                {
+                  "key": "merchantOrderId",
+                  "value": "{{merchant_order_id}}",
+                  "type": "text"
+                },
+                {
+                  "key": "productDetail",
+                  "value": "Pesanan Aminah Jaya",
+                  "type": "text"
+                },
+                {
+                  "key": "additionalParam",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "paymentCode",
+                  "value": "SP",
+                  "type": "text"
+                },
+                {
+                  "key": "resultCode",
+                  "value": "00",
+                  "type": "text",
+                  "description": "00 = sukses, 01 = pending, lainnya = gagal"
+                },
+                {
+                  "key": "merchantUserId",
+                  "value": "",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "reference",
+                  "value": "DUITKU-REF-0001",
+                  "type": "text"
+                },
                 {
                   "key": "signature",
-                  "value": "ganti_dengan_md5_valid",
+                  "value": "ganti_dengan_hmac_sha256_valid",
                   "type": "text",
-                  "description": "MD5(merchantCode + amount + merchantOrderId + apiKey)"
+                  "description": "HMAC-SHA256(merchantCode + amount + merchantOrderId, apiKey) — 64 karakter hex lowercase"
                 }
               ]
             },
@@ -373,16 +604,32 @@
               "host": ["{{base_url}}"],
               "path": ["payments", "duitku", "callback"]
             },
-            "description": "Simulasi callback Duitku. Respons wajib: HTTP 200 + body plain text OK."
+            "description": "Simulasi callback/webhook status pembayaran dari Duitku. Dikirim oleh Duitku server ke `DUITKU_CALLBACK_URL`.\n\n**Content-Type:** `application/x-www-form-urlencoded`\n\n**Verifikasi signature:** server menghitung `HMAC-SHA256(merchantCode + amount + merchantOrderId, apiKey)` dan membandingkan dengan field `signature`. Jika tidak cocok → HTTP 401.\n\nJika `resultCode == \"00\"` → pembayaran sukses (server mencatat log & placeholder notifikasi WhatsApp).\n\nRespons wajib: HTTP `200` + body plain text `OK` (wajib oleh Duitku agar tidak retry)."
           },
           "response": [
             {
-              "name": "Callback OK",
+              "name": "Callback Pembayaran Sukses",
               "originalRequest": {},
               "status": "200 OK",
               "code": 200,
-              "header": [],
+              "header": [{ "key": "Content-Type", "value": "text/plain" }],
               "body": "OK"
+            },
+            {
+              "name": "Callback Pembayaran Pending",
+              "originalRequest": {},
+              "status": "200 OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "text/plain" }],
+              "body": "OK"
+            },
+            {
+              "name": "Signature Tidak Valid",
+              "originalRequest": {},
+              "status": "401 Unauthorized",
+              "code": 401,
+              "header": [],
+              "body": ""
             }
           ]
         }
@@ -390,14 +637,53 @@
     }
   ],
   "variable": [
-    { "key": "base_url", "value": "http://localhost:8002", "type": "string" },
-    { "key": "verify_token", "value": "7X8AP2DM73ovv6qOb9wZ5so6MF2ipHtK3XjsxWgs5K84c5XDbv0qBfhz95I0qI0t", "type": "string" },
-    { "key": "phone_number_id", "value": "your_phone_number_id", "type": "string" },
-    { "key": "customer_token", "value": "", "type": "string" },
-    { "key": "merchant_order_id", "value": "ORD-TEST-001", "type": "string" },
-    { "key": "draft_order_id", "value": "draft_order_id_dari_biteship", "type": "string" },
-    { "key": "biteship_order_id", "value": "biteship_order_id", "type": "string" },
-    { "key": "tracking_id", "value": "tracking_id", "type": "string" },
-    { "key": "duitku_merchant_code", "value": "your_merchant_code", "type": "string" }
+    {
+      "key": "base_url",
+      "value": "http://localhost:8002",
+      "type": "string",
+      "description": "Base URL server integrasi. Port default dev: 8002."
+    },
+    {
+      "key": "verify_token",
+      "value": "7X8AP2DM73ovv6qOb9wZ5so6MF2ipHtK3XjsxWgs5K84c5XDbv0qBfhz95I0qI0t",
+      "type": "string",
+      "description": "Harus sama dengan VERIFY_TOKEN di .env"
+    },
+    {
+      "key": "phone_number_id",
+      "value": "your_phone_number_id",
+      "type": "string",
+      "description": "ID nomor WhatsApp Business dari Meta for Developers"
+    },
+    {
+      "key": "merchant_order_id",
+      "value": "ORD-TEST-001",
+      "type": "string",
+      "description": "ID order unik untuk pengujian — gunakan nilai berbeda setiap percobaan di Duitku"
+    },
+    {
+      "key": "draft_order_id",
+      "value": "DRFT-A1B2C3D4",
+      "type": "string",
+      "description": "ID draft order Biteship — didapat dari respons Create Draft Order"
+    },
+    {
+      "key": "biteship_order_id",
+      "value": "ORD-BSP-A1B2C3",
+      "type": "string",
+      "description": "ID order Biteship — didapat dari respons Create Biteship Order"
+    },
+    {
+      "key": "tracking_id",
+      "value": "JNE-TRK-0001",
+      "type": "string",
+      "description": "Tracking ID Biteship — didapat dari field courier.tracking_id pada order"
+    },
+    {
+      "key": "duitku_merchant_code",
+      "value": "DS12345",
+      "type": "string",
+      "description": "Kode merchant Duitku — sama dengan DUITKU_MERCHANT_CODE di .env"
+    }
   ]
 }

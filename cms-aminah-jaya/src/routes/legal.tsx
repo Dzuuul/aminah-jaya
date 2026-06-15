@@ -105,10 +105,10 @@ export default function LegalSettings() {
           <div class="legal-info-card">
             <div class="flex items-center gap-2 mb-2 text-green-600">
               <Globe size={16} />
-              <span class="font-bold text-xs uppercase tracking-wider">Tips Midtrans</span>
+              <span class="font-bold text-xs uppercase tracking-wider"> Tips Duitku</span>
             </div>
             <p class="text-xs text-slate-500 leading-relaxed">
-              Pastikan menyertakan informasi kontak yang jelas, kebijakan pengiriman, dan instruksi refund untuk memenuhi standar verifikasi Midtrans.
+              Pastikan menyertakan informasi kontak yang jelas, kebijakan pengiriman, dan instruksi refund untuk memenuhi standar verifikasi Duitku.
             </p>
           </div>
         </div>

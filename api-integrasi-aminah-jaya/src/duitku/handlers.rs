@@ -41,16 +41,19 @@ pub async fn create_payment_handler(
                     reference = ?response.reference,
                     "Duitku inquiry berhasil"
                 );
-                (StatusCode::OK, Json(response)).into_response()
             } else {
                 warn!(
                     order_id = %inquiry_request.merchant_order_id,
                     status_code = ?response.status_code,
                     status_message = ?response.status_message,
-                    "Duitku inquiry ditolak"
+                    "Duitku inquiry ditolak oleh Duitku"
                 );
-                (StatusCode::BAD_GATEWAY, Json(response)).into_response()
             }
+            // Selalu teruskan respons Duitku ke storefront dengan HTTP 200.
+            // Storefront membaca statusCode ("00" = sukses) untuk memutuskan alur berikutnya.
+            // Mengembalikan 502 di sini hanya menyebabkan storefront menerima error opaque
+            // tanpa bisa membaca statusMessage dari Duitku.
+            (StatusCode::OK, Json(response)).into_response()
         }
         Err(DuitkuClientError::Network(e)) => {
             error!("Koneksi ke Duitku gagal: {}", e);
@@ -104,13 +107,32 @@ pub async fn duitku_callback_handler(
             amount = %payload.amount,
             reference = ?payload.reference,
             payment_code = ?payload.payment_code,
-            "Pembayaran Duitku sukses — placeholder update DB"
+            "Pembayaran Duitku sukses — memanggil webhook CMS"
         );
-        // TODO: update status pesanan di database (api-cms / shared store)
-        info!(
-            order_id = %payload.merchant_order_id,
-            "Placeholder: kirim notifikasi WhatsApp ke pelanggan"
-        );
+        
+        let client = reqwest::Client::new();
+        let webhook_payload = serde_json::json!({
+            "order_number": payload.merchant_order_id,
+            "amount": payload.amount,
+        });
+
+        let webhook_url = format!("{}/api/webhook/duitku", config.cms_api_url);
+        match client.post(&webhook_url)
+            .header("Authorization", format!("Bearer {}", config.webhook_secret))
+            .json(&webhook_payload)
+            .send()
+            .await {
+                Ok(res) => {
+                    if res.status().is_success() {
+                        info!(order_id = %payload.merchant_order_id, "Berhasil update status di CMS");
+                    } else {
+                        warn!(order_id = %payload.merchant_order_id, status = %res.status(), "Gagal update status di CMS");
+                    }
+                }
+                Err(e) => {
+                    error!(order_id = %payload.merchant_order_id, error = %e, "Gagal memanggil webhook CMS");
+                }
+            }
     } else {
         info!(
             order_id = %payload.merchant_order_id,

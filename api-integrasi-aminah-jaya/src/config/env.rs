@@ -17,6 +17,9 @@ pub struct Config {
     pub whatsapp_token: String,
     pub phone_number_id: String,
     pub duitku: DuitkuConfig,
+    pub allowed_origins: Vec<String>,
+    pub cms_api_url: String,
+    pub webhook_secret: String,
 }
 
 impl Config {
@@ -42,12 +45,30 @@ impl Config {
                 .expect("DUITKU_CALLBACK_URL must be set"),
         };
 
+        let allowed_origins = env::var("ALLOWED_ORIGINS")
+            .unwrap_or_else(|_| {
+                "https://aminahjaya.com,https://www.aminahjaya.com".to_string()
+            })
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        let cms_api_url = env::var("CMS_API_URL")
+            .unwrap_or_else(|_| "http://api-cms-aminah-jaya:8001".to_string());
+        
+        let webhook_secret = env::var("WEBHOOK_SECRET")
+            .expect("WEBHOOK_SECRET must be set");
+
         Config {
             port,
             verify_token,
             whatsapp_token,
             phone_number_id,
             duitku,
+            allowed_origins,
+            cms_api_url,
+            webhook_secret,
         }
     }
 }
