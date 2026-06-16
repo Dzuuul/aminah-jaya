@@ -1,5 +1,5 @@
-import { For, createSignal, JSX, Show } from "solid-js";
-import { Search, Check } from "lucide-solid";
+import { For, createSignal, JSX, Show, createEffect, createMemo } from "solid-js";
+import { Search, Check, ChevronLeft, ChevronRight } from "lucide-solid";
 
 export interface Column<T> {
   header: string;
@@ -25,12 +25,56 @@ export interface DataTableProps<T> {
   searchable?: boolean;
   filters?: FilterDef[];
   dateFilter?: { key: keyof T | string; label?: string };
+  pagination?: boolean;
+  defaultItemsPerPage?: number;
+  
+  // External/Server-side pagination props
+  serverSide?: boolean;
+  totalItems?: number;
+  currentPage?: number;
+  itemsPerPage?: number;
+  onPageChange?: (page: number) => void;
+  onItemsPerPageChange?: (size: number) => void;
 }
 
 export default function DataTable<T extends Record<string, any>>(props: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = createSignal("");
   const [activeFilters, setActiveFilters] = createSignal<Record<string, string[]>>({});
   const [dateRange, setDateRange] = createSignal({ start: "", end: "" });
+
+  // Local pagination states (used if serverSide is false)
+  const [localCurrentPage, setLocalCurrentPage] = createSignal(1);
+  const [localItemsPerPage, setLocalItemsPerPage] = createSignal(props.defaultItemsPerPage || 10);
+
+  // Unified pagination accessors
+  const currentPage = () => props.serverSide ? (props.currentPage ?? 1) : localCurrentPage();
+  const itemsPerPage = () => props.serverSide ? (props.itemsPerPage ?? 10) : localItemsPerPage();
+
+  const setCurrentPage = (page: number | ((prev: number) => number)) => {
+    const nextVal = typeof page === 'function' ? page(currentPage()) : page;
+    if (props.serverSide) {
+      props.onPageChange?.(nextVal);
+    } else {
+      setLocalCurrentPage(nextVal);
+    }
+  };
+
+  const setItemsPerPage = (size: number) => {
+    if (props.serverSide) {
+      props.onItemsPerPageChange?.(size);
+    } else {
+      setLocalItemsPerPage(size);
+      setLocalCurrentPage(1);
+    }
+  };
+
+  // Reset current page when filters or search query changes
+  createEffect(() => {
+    searchQuery();
+    activeFilters();
+    dateRange();
+    setCurrentPage(1);
+  });
 
   const filteredData = () => {
     return props.data.filter((item) => {
@@ -61,6 +105,41 @@ export default function DataTable<T extends Record<string, any>>(props: DataTabl
 
       return matchesSearch && matchesFilters && matchesDate;
     });
+  };
+
+  const isPaginationEnabled = () => props.pagination !== false;
+
+  const totalItems = () => props.serverSide ? (props.totalItems ?? props.data.length) : filteredData().length;
+
+  const totalPages = () => Math.max(1, Math.ceil(totalItems() / itemsPerPage()));
+
+  const paginatedData = () => {
+    if (!isPaginationEnabled()) return filteredData();
+    if (props.serverSide) return props.data; // Server already sliced/paginated the data
+    const start = (currentPage() - 1) * itemsPerPage();
+    const end = start + itemsPerPage();
+    return filteredData().slice(start, end);
+  };
+
+  const pageNumbers = () => {
+    const total = totalPages();
+    const current = currentPage();
+    const range: (number | string)[] = [];
+
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) {
+        range.push(i);
+      }
+    } else {
+      if (current <= 4) {
+        range.push(1, 2, 3, 4, 5, "...", total);
+      } else if (current >= total - 3) {
+        range.push(1, "...", total - 4, total - 3, total - 2, total - 1, total);
+      } else {
+        range.push(1, "...", current - 1, current, current + 1, "...", total);
+      }
+    }
+    return range;
   };
 
   const toggleFilter = (key: string, value: string) => {
@@ -191,7 +270,7 @@ export default function DataTable<T extends Record<string, any>>(props: DataTabl
           </thead>
           <tbody>
             <Show 
-              when={filteredData().length > 0} 
+              when={totalItems() > 0} 
               fallback={
                 <tr>
                   <td colspan={props.columns.length} class="data-table-empty">
@@ -206,7 +285,7 @@ export default function DataTable<T extends Record<string, any>>(props: DataTabl
                 </tr>
               }
             >
-              <For each={filteredData()}>
+              <For each={paginatedData()}>
                 {(row) => (
                   <tr>
                     <For each={props.columns}>
@@ -223,6 +302,66 @@ export default function DataTable<T extends Record<string, any>>(props: DataTabl
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Footer */}
+      <Show when={isPaginationEnabled() && totalItems() > 0}>
+        <div class="data-table-pagination">
+          <div style={{ display: "flex", "align-items": "center", gap: "1rem", "flex-wrap": "wrap" }}>
+            <div class="data-table-pagination-info">
+              Menampilkan <strong>{Math.min((currentPage() - 1) * itemsPerPage() + 1, totalItems())}</strong> hingga <strong>{Math.min(currentPage() * itemsPerPage(), totalItems())}</strong> dari <strong>{totalItems()}</strong> entri
+            </div>
+            <div style={{ display: "flex", "align-items": "center", gap: "0.5rem" }}>
+              <span style={{ "font-size": "0.875rem", color: "var(--color-muted)" }}>Tampilkan:</span>
+              <select
+                class="pagination-size-select"
+                value={itemsPerPage()}
+                onChange={(e) => {
+                  setItemsPerPage(parseInt(e.currentTarget.value));
+                }}
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+          <div class="data-table-pagination-controls">
+            <button 
+              class="pagination-btn" 
+              disabled={currentPage() === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              title="Halaman Sebelumnya"
+            >
+              <ChevronLeft size={16} />
+              <span>Sebelumnya</span>
+            </button>
+            <div class="pagination-pages">
+              <For each={pageNumbers()}>
+                {(num) => (
+                  <button
+                    class={`pagination-page-btn ${num === currentPage() ? 'active' : ''} ${num === '...' ? 'dots' : ''}`}
+                    disabled={num === '...'}
+                    onClick={() => typeof num === 'number' && setCurrentPage(num)}
+                  >
+                    {num}
+                  </button>
+                )}
+              </For>
+            </div>
+            <button 
+              class="pagination-btn" 
+              disabled={currentPage() >= totalPages()}
+              onClick={() => setCurrentPage(p => Math.min(totalPages(), p + 1))}
+              title="Halaman Berikutnya"
+            >
+              <span>Berikutnya</span>
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      </Show>
     </div>
   );
 }

@@ -23,6 +23,10 @@
 
   --radius-xl: 14px;
   --radius-lg: 12px;
+
+  /* Sticky layout offsets */
+  --navbar-height: 4.25rem;
+  --page-header-height: 5.5rem;
 }
 
 body {
@@ -312,7 +316,7 @@ h6 {
 
 .content-area {
   padding: 0 2rem;
-  overflow-x: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -1048,8 +1052,10 @@ h6 {
 }
 
 .data-table-toolbar {
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid rgba(229, 224, 216, 0.4);
+  background-color: #ffffff;
+  /* toolbar stays naturally at the top since only .data-table-wrapper scrolls */
 }
 
 .data-table-toolbar-inner {
@@ -1093,8 +1099,30 @@ h6 {
 
 .data-table-wrapper {
   overflow-x: auto;
+  overflow-y: auto;
+  /* viewport - navbar - page-header - toolbar (~3rem) - pagination (~3.5rem) - some buffer */
+  max-height: max(300px, calc(100vh - var(--navbar-height) - var(--page-header-height) - 3rem - 3.5rem - 2rem));
   position: relative;
   z-index: 10;
+}
+
+/* Custom scrollbar for premium feel */
+.data-table-wrapper::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.data-table-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.data-table-wrapper::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.data-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
 }
 
 .data-table {
@@ -1113,7 +1141,12 @@ h6 {
 }
 
 .data-table th {
-  padding: 1rem 1.5rem;
+  padding: 0.5rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: var(--color-cream);
+  border-bottom: 2px solid var(--color-border);
 }
 
 
@@ -1129,7 +1162,7 @@ h6 {
 }
 
 .data-table td {
-  padding: 1rem 1.5rem;
+  padding: 0.5rem 1rem;
 }
 
 .data-table-empty {
@@ -1181,7 +1214,19 @@ h6 {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  background-color: rgba(253, 252, 250, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding-top: 1.25rem;
+  padding-bottom: 1rem;
+  margin-left: -2rem;
+  margin-right: -2rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
 }
 
 @media (min-width: 640px) {
@@ -1189,6 +1234,15 @@ h6 {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-header {
+    margin-left: -1rem;
+    margin-right: -1rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 
@@ -1207,6 +1261,7 @@ h6 {
 .page-subtitle {
   color: var(--color-ink-light);
   margin-top: 0.25rem;
+  margin-bottom: 0;
 }
 
 
@@ -2347,3 +2402,110 @@ h6 {
 }
 
 /* Spotlight Search removed - moved to SpotlightSearch.css */
+
+/* ==============================
+   DATA TABLE PAGINATION
+   ============================== */
+.data-table-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-cream);
+  border-top: 1px solid rgba(229, 224, 216, 0.4);
+  gap: 1rem;
+}
+
+.data-table-pagination-info {
+  font-size: 0.875rem;
+  color: var(--color-ink-light);
+}
+
+.data-table-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background-color: #ffffff;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: var(--color-green-500);
+  background-color: var(--color-green-50);
+  color: var(--color-green-700);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--color-sand);
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pagination-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--color-ink-light);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-page-btn:hover:not(.active):not(.dots) {
+  background-color: rgba(229, 224, 216, 0.3);
+  color: var(--color-ink);
+}
+
+.pagination-page-btn.active {
+  background-color: var(--color-green-500);
+  color: #ffffff;
+  border-color: var(--color-green-500);
+}
+
+.pagination-page-btn.dots {
+  cursor: default;
+  color: var(--color-muted);
+}
+
+.pagination-size-select {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background-color: #ffffff;
+  font-size: 0.875rem;
+  color: var(--color-ink);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.pagination-size-select:focus {
+  border-color: var(--color-green-500);
+}

@@ -73,6 +73,59 @@ export async function fetchApi<T>(endpoint: string, options?: RequestInit): Prom
   return json.data as T;
 }
 
+export interface PaginatedData<T> {
+  data: T;
+  meta: {
+    current_page: number;
+    total_pages: number;
+    total_items: number;
+    items_per_page: number;
+  };
+}
+
+export async function fetchApiPaginated<T>(endpoint: string, options?: RequestInit): Promise<PaginatedData<T>> {
+  const token = authToken();
+
+  const headers = new Headers({
+    "Content-Type": "application/json",
+    ...options?.headers,
+  });
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
+  const response = await fetch(`${API_BASE}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      updateToken(null);
+    }
+
+    try {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `API Error: ${response.status} ${response.statusText}`);
+    } catch (e: any) {
+      if (e.message && e.message.startsWith("API Error")) throw e;
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+  }
+
+  const json = await response.json();
+  if (!json.success) {
+    throw new Error(json.message || "API request failed");
+  }
+
+  return {
+    data: json.data as T,
+    meta: json.meta
+  };
+}
+
+
 // ── Auth ───────────────────────────────────────────────────────────────────
 
 export interface UserProfile {
@@ -365,7 +418,13 @@ export interface Order {
   ordered_at: string;
 }
 
-export const getOrders = () => fetchApi<Order[]>('/orders');
+export const getOrders = (page = 1, limit = 10) => fetchApiPaginated<Order[]>(`/orders?page=${page}&limit=${limit}`);
+export const getOrder = (id: string) => fetchApi<Order>(`/orders/${id}`);
+export const updateOrderStatus = (id: string, status: string) =>
+  fetchApi<void>(`/orders/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status })
+  });
 
 // ── Customers ──────────────────────────────────────────────────────────────
 
