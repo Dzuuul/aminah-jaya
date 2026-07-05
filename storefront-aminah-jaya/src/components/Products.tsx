@@ -99,13 +99,12 @@ export default function Products() {
                           -{discount}%
                         </div>
                       </Show>
-                      <p>{product.name.split(' ').slice(0, 2).join(' ')}</p>
                     </div>
                     <div class="prod-body">
                       <div class="prod-cat">{product.category_name}</div>
                       <div class="prod-name">{product.name}</div>
                       <p class="prod-desc">{product.subtitle || "Produk berkualitas dari Aminah Jaya."}</p>
-                      
+
                       <Show when={product.average_rating && product.average_rating > 0}>
                         <div style={{ "margin-bottom": "12px" }}>
                           {renderStars(product.average_rating, product.total_reviews)}

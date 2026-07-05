@@ -89,7 +89,7 @@ export default function WaiteuLandingPage() {
                     </div>
                     <div class="hero-visual">
                         <div class="hero-img-wrap">
-                            <img src="https://waiteu.lailibrand.id/assets/images/laili-waiteu-2000x695.png"
+                            <img src="/waiteu.png"
                                 alt="Laili WAITEU Product" style="border-radius:14px;" />
                         </div>
                         <div class="hero-stats">
@@ -119,14 +119,14 @@ export default function WaiteuLandingPage() {
 
                 <div class="pain-grid reveal">
                     <div class="pain-card">
-                        <img src="https://waiteu.lailibrand.id/assets/images/mbr-561x374.jpg" alt="Jerawat" />
+                        <img src="/jerawat.png" alt="Jerawat" />
                         <div class="pain-card-body">
                             <div class="pain-card-title">😣 Jerawat Membandel</div>
                             <div class="pain-card-desc">Sudah coba banyak produk tapi jerawat terus muncul kembali?</div>
                         </div>
                     </div>
                     <div class="pain-card">
-                        <img src="https://waiteu.lailibrand.id/assets/images/everything-you-need-to-know-about-hyperpigmentation-vs-melasma-506x506.png"
+                        <img src="/flex.png"
                             alt="Flek Hitam" />
                         <div class="pain-card-body">
                             <div class="pain-card-title">🌑 Flek & Hiperpigmentasi</div>
@@ -135,7 +135,7 @@ export default function WaiteuLandingPage() {
                         </div>
                     </div>
                     <div class="pain-card">
-                        <img src="https://waiteu.lailibrand.id/assets/images/sensitive-skin-what-it-looks-like-what-can-cause-it-and-what-you-can-do-to-make-it-stop-506x759.jpeg"
+                        <img src="/merah.png"
                             alt="Kulit Sensitif" />
                         <div class="pain-card-body">
                             <div class="pain-card-title">🌅 Kulit Sensitif & Merah</div>
@@ -143,7 +143,7 @@ export default function WaiteuLandingPage() {
                         </div>
                     </div>
                     <div class="pain-card">
-                        <img src="https://waiteu.lailibrand.id/assets/images/skin-cancer-on-the-lip-is-especially-dangerous-506x314.jpg"
+                        <img src="/kanker.png"
                             alt="Kanker Kulit" />
                         <div class="pain-card-body">
                             <div class="pain-card-title">⚠️ Risiko Kanker Kulit</div>
@@ -162,7 +162,7 @@ export default function WaiteuLandingPage() {
                     "Minuman Kolagen Premium dengan kandungan setara<br />3 kali suntik putih di klinik kecantikan"
                 </p>
                 <div class="product-showcase reveal">
-                    <img src="https://waiteu.lailibrand.id/assets/images/produk-2-backup-597x1223.png" alt="Produk Laili WAITEU"
+                    <img src="/1box3suntik.png" alt="Produk Laili WAITEU"
                         style="max-width:320px;margin:0 auto;display:block;" />
                 </div>
                 <a href="https://api.whatsapp.com/send?phone=62895634039130&text=Halo Kak, Saya dapat info dari Landing Page, saya mau order Laili Waiteu agar kulit saya licin, kinclong and sehat. Tolong segera balas chat ini ya Kak 🙏😊"
