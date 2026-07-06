@@ -386,7 +386,7 @@ function OrderForm(): JSX.Element {
                 <h3 class="mm-form-title">Pesan Sekarang</h3>
                 <p class="mm-form-desc">Isi form di bawah dan langsung terhubung ke WhatsApp kami</p>
 
-                <form onSubmit={handleSubmit} class="mm-form">
+                <form onSubmit={handleSubmit} class="mm-form" style={{ "margin-top": "20px" }}>
                     {/* Nama */}
                     <div class="mm-form-group">
                         <label for="name" class="mm-form-label">Nama Lengkap *</label>
@@ -1013,16 +1013,13 @@ export default function MilkmeeLandingPage(): JSX.Element {
                                 </div>
                             </div>
                         </div>
-                        <p class="mm-testi-note">
-                            Testimoni di atas contoh tampilan — ganti dengan ulasan asli dari pembeli Shopee sebelum publikasi.
-                        </p>
                     </div>
                 </section>
 
                 {/* ================= PROMO & ORDER FORM ================= */}
                 <section class="mm-section" id="order">
                     <div class="mm-container">
-                        <div class="mm-promo-wrap" style={{ "text-align": "left" }}>
+                        <div class="mm-promo-wrap">
                             <div class="mm-promo-form-grid">
                                 <div>
                                     <span class="mm-eyebrow" style={{ color: "var(--gold-300)" }}>
@@ -1039,7 +1036,7 @@ export default function MilkmeeLandingPage(): JSX.Element {
                                     </div>
 
                                     <p class="mm-promo-sub" style={{ "margin-top": "24px" }}>
-                                        *Isi form di samping untuk klaim harga promo sekarang.
+                                        *Isi form di bawah untuk klaim harga promo sekarang.
                                     </p>
                                 </div>
                                 <div>
@@ -1083,12 +1080,6 @@ export default function MilkmeeLandingPage(): JSX.Element {
                                     Indonesia. Halaman ini adalah materi promosi dan bukan pengganti anjuran tenaga
                                     medis atau ahli gizi.
                                 </p>
-                            </div>
-                            <div>
-                                <p class="mm-footer-contact-title">Hubungi kami</p>
-                                <a href={waUrl} target="_blank" rel="noopener" class="mm-footer-wa-link">
-                                    Chat via WhatsApp →
-                                </a>
                             </div>
                         </div>
                         <div class="mm-footer-bottom">

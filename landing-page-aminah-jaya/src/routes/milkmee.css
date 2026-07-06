@@ -120,6 +120,20 @@ html {
     position: relative;
     overflow: hidden;
     padding: 56px 0 40px;
+    background-color: #ffffff;
+}
+
+.mm-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url('/susu-transparent.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.15;
+    pointer-events: none;
+    z-index: 1;
 }
 
 .mm-hero-grid {
@@ -127,11 +141,13 @@ html {
     grid-template-columns: 1fr;
     gap: 40px;
     align-items: center;
+    position: relative;
+    z-index: 2;
 }
 
 @media(min-width:300px) {
     .mm-hero {
-    padding: 26px 0 20px;
+        padding: 26px 0 20px;
     }
 }
 
@@ -298,6 +314,7 @@ html {
     .mm-desktop-visual {
         display: none !important;
     }
+
     .mm-mobile-visual {
         display: flex !important;
         min-height: auto;
@@ -413,7 +430,8 @@ html {
     background: var(--ruby-gradient);
     color: var(--milk-100);
     padding: 16px 0;
-    overflow: hidden; /* Menyembunyikan konten yang keluar batas layar */
+    overflow: hidden;
+    /* Menyembunyikan konten yang keluar batas layar */
     display: flex;
     user-select: none;
 }
@@ -427,10 +445,13 @@ html {
     display: flex;
     align-items: center;
     justify-content: space-around;
-    gap: 24px; /* Jarak antar item */
-    padding-right: 24px; /* Jarak penyeimbang di akhir grup */
+    gap: 24px;
+    /* Jarak antar item */
+    padding-right: 24px;
+    /* Jarak penyeimbang di akhir grup */
     min-width: 100%;
-    animation: marquee 25s linear infinite; /* Kecepatan jalan (25 detik) */
+    animation: marquee 25s linear infinite;
+    /* Kecepatan jalan (25 detik) */
 }
 
 /* Berhenti berjalan saat kursor diarahkan ke strip (Opsional) */
@@ -444,14 +465,16 @@ html {
     gap: 6px;
     font-size: 14px;
     font-weight: 600;
-    white-space: nowrap; /* Memastikan teks tidak turun ke bawah */
+    white-space: nowrap;
+    /* Memastikan teks tidak turun ke bawah */
 }
 
 .mm-strip-item svg {
     width: 20px;
     height: 20px;
     color: var(--gold-300);
-    flex-shrink: 0; /* Mencegah SVG gepeng */
+    flex-shrink: 0;
+    /* Mencegah SVG gepeng */
 }
 
 /* Animasi Marquee */
@@ -459,6 +482,7 @@ html {
     0% {
         transform: translateX(0%);
     }
+
     100% {
         transform: translateX(-100%);
     }
@@ -609,7 +633,7 @@ html {
 
 .mm-time-note {
     text-align: center;
-    margin-top: 22px;
+    margin-top: 22px !important;
     font-size: 13.5px;
     font-weight: 600;
     color: var(--ruby-700);
@@ -1004,13 +1028,6 @@ html {
     color: var(--ruby-800);
 }
 
-.mm-testi-note {
-    text-align: center;
-    font-size: 12.5px;
-    color: var(--ink-600);
-    margin-top: 22px;
-}
-
 /* ---- promo pricing card ---- */
 .mm-promo-wrap {
     background: var(--ruby-gradient);
@@ -1044,27 +1061,22 @@ html {
 }
 
 .mm-promo-form-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
     align-items: center;
-    text-align: left;
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
-@media (max-width: 900px) {
-    .mm-promo-form-grid {
-        grid-template-columns: 1fr;
-        gap: 40px;
-        text-align: center;
-    }
-    .mm-countdown {
-        justify-content: center;
-    }
+.mm-promo-form-grid>div {
+    width: 100%;
 }
 
 .mm-countdown {
     display: flex;
-    justify-content: flex-start;
+    justify-content: center;
     gap: 14px;
     margin: 30px 0;
     position: relative;
@@ -1295,6 +1307,7 @@ html {
     font-size: 14px;
     color: var(--ruby-900);
     text-transform: capitalize;
+    text-align: left;
 }
 
 .mm-form-input,
@@ -1382,12 +1395,14 @@ select.mm-form-input:disabled option {
     font-size: 12.5px;
     color: #e85d5d;
     font-weight: 600;
+    text-align: left;
 }
 
 .mm-form-hint {
     font-size: 12px;
     color: #9a8f78;
     font-weight: 500;
+    text-align: left;
 }
 
 /* --- quantity control --- */
@@ -1503,6 +1518,7 @@ select.mm-form-input:disabled option {
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
