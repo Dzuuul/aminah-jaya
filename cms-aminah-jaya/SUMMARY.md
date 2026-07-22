@@ -1,6 +1,6 @@
 # CMS Aminah Jaya — Project Summary
 
-> Content Management System (CMS) untuk toko retail Aminah Jaya, dibangun menggunakan SolidStart dengan Tailwind CSS v4.
+> Content Management System (CMS) untuk toko retail Aminah Jaya, dibangun dengan SolidStart yang dijalankan sebagai **SPA** (`ssr: false`) dan CSS custom (tanpa framework utility).
 
 ---
 
@@ -8,14 +8,23 @@
 
 | Layer | Teknologi |
 |---|---|
-| Framework | [SolidStart](https://start.solidjs.com) v1.0 (SSR + file-based routing) |
+| Framework | [SolidStart](https://start.solidjs.com) v1.0 — file-based routing, mode SPA (`ssr: false` di `app.config.ts`) |
 | Runtime / Bundler | [Vinxi](https://vinxi.dev) + Vite 6 |
 | UI Library | [Solid.js](https://solidjs.com) v1.9 |
-| Styling | Tailwind CSS v4 (`@tailwindcss/vite`) |
-| Icons | [lucide-solid](https://lucide.dev) v0.475 |
+| Styling | CSS murni + CSS custom properties di `src/app.css` (**tidak memakai Tailwind**) |
+| Ikon | [lucide-solid](https://lucide.dev) v0.475 |
+| Animasi | GSAP v3 |
 | Router | `@solidjs/router` v0.15 |
 | Package Manager | Bun |
 | Node Requirement | ≥ 20 |
+
+```bash
+bun install
+bun run dev      # http://localhost:3001
+bun run build && bun run start
+```
+
+Backend: `api-cms-aminah-jaya` lewat `VITE_API_BASE` (default `http://localhost:8001/api`).
 
 ---
 
@@ -23,196 +32,213 @@
 
 ```
 cms-aminah-jaya/
+├── app.config.ts                # defineConfig({ ssr: false, ... })
 ├── src/
-│   ├── app.css                  # Design system (tokens, global utilities)
+│   ├── app.css                  # Design system + seluruh style aplikasi (~2.5k baris)
 │   ├── app.tsx                  # Root app entry
-│   ├── entry-client.tsx         # Client-side hydration entry
-│   ├── entry-server.tsx         # SSR entry
-│   ├── components/              # Reusable UI components
-│   │   ├── Layout.tsx           # Shell: Sidebar + Navbar + page wrapper
-│   │   ├── Sidebar.tsx          # Navigasi sidebar (active-aware)
-│   │   ├── Navbar.tsx           # Top bar: search, notif, avatar
-│   │   ├── DataTable.tsx        # Generic data table + filter toolbar
-│   │   ├── StatCard.tsx         # Metric card dengan icon, value, perubahan (%)
-│   │   └── ProfileComponents.tsx # PageCard, InfoRow, ActivityItem
-│   └── routes/                  # File-based pages (SolidStart)
+│   ├── entry-client.tsx         # Entry client
+│   ├── entry-server.tsx         # Entry server (shell HTML)
+│   ├── lib/
+│   │   ├── api.ts               # fetchApi, token reaktif, formatCurrency
+│   │   ├── toast.ts             # Store toast global
+│   │   ├── searchStore.ts       # State spotlight search
+│   │   └── sidebarStore.ts      # State sidebar terlipat (persist ke localStorage)
+│   ├── components/
+│   │   ├── Layout.tsx           # Shell: Sidebar + Navbar + wrapper halaman
+│   │   ├── Sidebar.tsx          # Navigasi (active-aware, dapat dilipat)
+│   │   ├── Navbar.tsx           # Top bar: search, notifikasi, avatar
+│   │   ├── DataTable.tsx        # Tabel generic + filter + pagination
+│   │   ├── SpotlightSearch.tsx  # Command palette (+ SpotlightSearch.css)
+│   │   ├── ProductForm.tsx      # Form produk (create & edit)
+│   │   ├── Modal.tsx / ConfirmModal.tsx
+│   │   ├── ToastContainer.tsx
+│   │   ├── StatCard.tsx
+│   │   ├── ProfileComponents.tsx # PageCard, InfoRow, ActivityItem
+│   │   └── ui/                  # Button, Input, Toggle, SettingsLayout
+│   └── routes/
 │       ├── index.tsx            # Dashboard (/)
-│       ├── login.tsx            # Halaman login (/login)
-│       ├── products.tsx         # Produk (/products)
-│       ├── flash-sales.tsx      # Promo Terbatas (/flash-sales)
-│       ├── blogs.tsx            # Artikel & Edukasi (/blogs)
-│       ├── orders.tsx           # Pesanan (/orders)
-│       ├── customers.tsx        # Pelanggan (/customers)
-│       ├── profile.tsx          # Profil admin (/profile)
-│       └── settings.tsx         # Pengaturan (/settings)
+│       ├── login.tsx            # Login (/login)
+│       ├── notifications.tsx    # Notifikasi
+│       ├── products/            # index.tsx, create.tsx, [id].tsx
+│       ├── categories.tsx
+│       ├── collections.tsx
+│       ├── flash-sales.tsx
+│       ├── blogs/               # index.tsx, create.tsx
+│       ├── banners.tsx
+│       ├── coupons.tsx
+│       ├── orders.tsx
+│       ├── customers.tsx
+│       ├── legal.tsx
+│       ├── profile.tsx
+│       └── settings.tsx
 └── SUMMARY.md                   # Dokumen ini
 ```
+
+---
+
+## Navigasi (Sidebar)
+
+Dashboard · Notifikasi · Produk · Kategori · Koleksi · Flash Sale · Blog · Banner · Kupon · Pesanan · Pelanggan · Dokumen Legal · Pengaturan.
+
+Sidebar membaca `useLocation()` untuk menandai link aktif (`startsWith` agar sub-route seperti `/products/create` tetap aktif) dan dapat dilipat — status lipatan disimpan di `localStorage` lewat `sidebarStore`.
 
 ---
 
 ## Halaman & Fitur
 
 ### 🏠 Dashboard (`/`)
-- **4 StatCard** metrik utama: Total Revenue, Orders, New Customers, Stock Items (dengan badge perubahan % merah/hijau)
-- **Tabel Pesanan Terbaru** — 5 kolom, badge status warna
-- **Performance Card** — highlight produk terlaris & conversion rate
+- **StatCard** metrik utama dari `/api/dashboard/stats` (revenue, pesanan, pelanggan baru, stok) dengan badge perubahan %
+- **Pesanan terbaru** dari `/api/dashboard/recent-orders`
+- **Performance card** dari `/api/dashboard/performance`
 
-### 📦 Products (`/products`)
-- Tabel produk dengan kolom: ID, Nama, Kategori, Harga, Stok, Status, Aksi
-- Filter checklist **Kategori** (Clothing, Health, Food) dan **Status** (In Stock, Low Stock, Out of Stock)
-- Search bar global yang memfilter semua kolom
-- Tombol aksi Edit dan Delete per baris
+### 🔐 Login (`/login`)
+- `POST /api/auth/login` → token disimpan lewat `updateToken()` ke `localStorage` (`token`) dan signal `authToken`
+- Respons `401` dari endpoint mana pun otomatis menghapus token (logout paksa)
 
-### ⚡ Flash Sales (`/flash-sales`)
-- Manajemen event promo terbatas dengan pengaturan waktu mulai & berakhir.
-- Penambahan produk ke event dengan harga khusus (*sale price*) dan kuota stok.
-- Status otomatis: *Ongoing*, *Upcoming*, atau *Ended*.
+### 📦 Produk (`/products`, `/products/create`, `/products/:id`)
+- List memakai pagination bawaan `DataTable` di sisi klien; mode server-side saat ini hanya dipakai halaman Pesanan
+- Form produk (`ProductForm`) mencakup harga, harga coret, stok, SKU, berat (`weight_gram`), kategori, gambar multi (upload ke R2 via `/api/upload`), serta detail panjang (ingredients, how to use, story, benefits, dosage, dsb.)
 
-### 📝 Blogs (`/blogs`)
-- Pengelolaan konten edukasi dan tips gaya hidup.
-- Fitur **CTA Product** — menautkan artikel ke produk spesifik untuk meningkatkan konversi.
-- Status publikasi (Published/Draft) dan preview gambar artikel.
+### 🗂️ Kategori & Koleksi
+- CRUD kategori (`/api/categories`) dan koleksi produk (`/api/collections`)
 
-### 📋 Orders (`/orders`)
-- Tabel pesanan: Order ID, Tanggal, Pelanggan, Produk, Jumlah, Status, Aksi
-- Filter checklist **Status** (Paid, Pending, Shipped, Cancelled)
-- **Date Range picker** untuk filter berdasarkan tanggal pesanan
-- Search bar global
+### ⚡ Flash Sale (`/flash-sales`)
+- Event promo dengan waktu mulai/berakhir, harga khusus, dan kuota stok per item
+- Status otomatis: *Ongoing*, *Upcoming*, *Ended*
 
-### 👥 Customers (`/customers`)
-- **3 StatCard** ringkasan: Total Customers, Active, Total Revenue
-- Tabel pelanggan dengan avatar inisial, info kontak (email + telepon) dalam satu kolom
-- Filter checklist **Status** (Active, Inactive)
+### 📝 Blog (`/blogs`, `/blogs/create`)
+- Konten edukasi dengan gambar, status publikasi, dan CTA produk
 
-### 👤 Profile (`/profile`)
-- **Hero banner** dengan gradient hijau, avatar yang overlap cover (absolute positioning), nama, role, badge aktif, bio
-- **Stat chips** inline: Products, Orders, Rating
-- Mode **Edit / View** yang dapat di-toggle tanpa navigasi — semua field berubah jadi input saat mode edit aktif
-- Bagian kiri: Contact Details (icon-per-row) + About Me
-- Bagian kanan: Personal Information form + Recent Activity timeline
+### 🖼️ Banner (`/banners`)
+- Banner storefront dengan gambar, urutan, dan status aktif
 
-### ⚙️ Settings (`/settings`)
-- **Store Profile**: nama toko, email, nomor telepon, deskripsi
-- **Localization**: pilihan mata uang (IDR, USD, EUR) dan bahasa
-- **Notifications**: toggle on/off — Email Notif, New Orders, Low Stock Alerts
-- **Appearance**: pilihan tema Light / Dark / System
-- **Security**: link ke ganti password, 2FA, sesi aktif
-- **Danger Zone**: tombol hapus data toko
+### 🎟️ Kupon (`/coupons`)
+- Kupon persentase/nominal, minimum belanja, batas pemakaian, masa berlaku
+
+### 📋 Pesanan (`/orders`)
+- Tabel pesanan dengan **pagination server-side** (`serverSide` + `meta.total_items`) serta filter status dan rentang tanggal
+- Update status via `PATCH /api/orders/:id/status`; menampilkan status pembayaran (termasuk hasil webhook Duitku) dan info kurir/tracking Biteship
+
+### 👥 Pelanggan (`/customers`)
+- StatCard ringkasan (`/api/customers/stats`) + tabel pelanggan dengan avatar inisial dan kontak
+
+### 🔔 Notifikasi (`/notifications`)
+- List notifikasi, jumlah belum dibaca, dan tandai dibaca
+
+### 📜 Dokumen Legal (`/legal`)
+- Editor halaman legal by key (syarat & ketentuan, privasi, pengembalian) — dikonsumsi storefront
+
+### 👤 Profil (`/profile`)
+- Hero banner + avatar, stat chips, mode View/Edit tanpa navigasi
+
+### ⚙️ Pengaturan (`/settings`)
+- Profil toko, lokalisasi, notifikasi (Toggle), tampilan, dan keamanan — disimpan via `PATCH /api/settings`
 
 ---
 
 ## Komponen Reusable
 
 ### `Layout`
-Shell utama untuk semua halaman. Mengelola state sidebar mobile (buka/tutup), menggunakan `<Sidebar>` dan `<Navbar>` secara internal.
+Shell utama semua halaman: mengelola state sidebar mobile dan menyisipkan `<Sidebar>` + `<Navbar>`. `<SpotlightSearch>` dan `<ToastContainer>` dipasang sekali di `src/app.tsx`, bukan di Layout.
 
 ```tsx
-<Layout title="Products">
+<Layout title="Produk">
   {/* konten halaman */}
 </Layout>
 ```
 
 ### `DataTable<T>`
-Generic table component yang menerima konfigurasi kolom, data, dan filter.
+Tabel generic dengan search, filter checklist, filter tanggal, dan pagination (lokal **atau** server-side).
 
 | Prop | Tipe | Keterangan |
 |---|---|---|
-| `columns` | `Column<T>[]` | Definisi header + render function per kolom |
-| `data` | `T[]` | Array data |
-| `searchPlaceholder` | `string?` | Teks placeholder search bar |
-| `searchable` | `boolean?` | Nonaktifkan search (default: `true`) |
+| `columns` | `Column<T>[]` | Definisi header + render per kolom |
+| `data` | `T[]` | Data baris (halaman aktif saja bila server-side) |
+| `searchPlaceholder` | `string?` | Placeholder search bar |
+| `searchable` | `boolean?` | Nonaktifkan search (default `true`) |
 | `filters` | `FilterDef[]?` | Checklist filter inline |
-| `dateFilter` | `{ key, label }?` | Date range picker untuk kolom tanggal |
+| `dateFilter` | `{ key, label }?` | Date range picker |
+| `pagination` | `boolean?` | Matikan pagination dengan `false` |
+| `serverSide` | `boolean?` | Pakai `totalItems` + `onPageChange` alih-alih memotong data di klien |
+| `totalItems` | `number?` | Total entri dari `meta.total_items` |
+| `currentPage` / `onPageChange` | `number?` / `(page) => void` | Kontrol halaman dari luar |
 
-**Fitur bawaan:** live search (semua kolom), checklist multi-filter, date range filter, empty state, dan clear-all filters.
+Footer pagination menampilkan “Menampilkan X hingga Y dari Z entri” dengan nomor halaman ringkas (`1 … 4 5 6 … 12`) dan responsif untuk layar kecil.
 
 ### `StatCard`
-Kartu metrik dengan icon berwarna, nilai, dan badge perubahan (%).
+Kartu metrik dengan ikon berwarna, nilai, dan badge perubahan (%).
 
-```tsx
-<StatCard
-  label="Total Revenue"
-  value="Rp 12.450.000"
-  change="+12.5%"
-  icon={TrendingUp}
-  color="text-green-500"
-  bg="bg-green-50"
-/>
-```
-
-### `Sidebar`
-Navigasi sidebar yang membaca `useLocation()` dari router untuk menentukan link mana yang aktif secara otomatis.
-
-### `Navbar`
-Top bar dengan 3 fitur:
-1. **Global Search** — menampilkan dropdown hasil pencarian dari semua data (produk, pesanan, pelanggan)
-2. **Notification Dropdown** — daftar notifikasi dengan indikator unread (titik merah + highlight)
-3. **Avatar** — link ke halaman `/profile`
+### `SpotlightSearch`
+Command palette global (dibuka dari Navbar / shortcut) yang menelusuri produk, pesanan, dan pelanggan.
 
 ### `ProfileComponents`
-- **`PageCard`** — Card wrapper dengan header title, subtitle, dan slot action opsional
-- **`InfoRow`** — Baris info berlabel yang otomatis jadi `<input>` saat `editing={true}`
-- **`ActivityItem`** — Item timeline aktivitas (dot, action, detail, timestamp)
+`PageCard` (card + header + slot aksi), `InfoRow` (berubah jadi input saat `editing`), `ActivityItem` (timeline).
+
+### `ui/`
+`Button`, `Input`, `Toggle`, dan `SettingsLayout` — primitif kecil untuk form dan halaman pengaturan.
 
 ---
 
-## Design System (`app.css`)
+## Design System (`src/app.css`)
+
+Semua style aplikasi berada di satu file (`app.css`) plus dua CSS pendamping (`SpotlightSearch.css`). Token didefinisikan sebagai CSS custom properties di `:root`.
 
 ### Color Palette
 | Token | Hex | Penggunaan |
 |---|---|---|
-| `green-900` | `#0f3d2e` | Background gelap, hero cover |
-| `green-700` | `#1a5c42` | Hover button |
-| `green-500` | `#2a8a60` | Primary brand color, active states |
-| `green-400` | `#3aac78` | Accent, activity dots |
-| `green-100` | `#e6f5ee` | Avatar background, badge |
-| `green-50`  | `#f3fbf7` | Subtle highlight |
-| `sand`      | `#f7f4ef` | Input background, secondary surface |
-| `cream`     | `#fdfcfa` | Page background |
-| `ink`       | `#1a1a1a` | Teks utama |
-| `ink-light` | `#4a4a4a` | Teks sekunder |
-| `muted`     | `#8a8a8a` | Label, placeholder |
-| `border`    | `#e5e0d8` | Border elemen |
+| `--color-green-900` | `#0f3d2e` | Background gelap, hero cover |
+| `--color-green-700` | `#1a5c42` | Hover button |
+| `--color-green-500` | `#2a8a60` | Primary brand color, active state |
+| `--color-green-400` | `#3aac78` | Aksen, activity dot |
+| `--color-green-100` | `#e6f5ee` | Background avatar, badge |
+| `--color-green-50`  | `#f3fbf7` | Highlight halus |
+| `--color-sand`      | `#f7f4ef` | Background input, surface sekunder |
+| `--color-cream`     | `#fdfcfa` | Background halaman |
+| `--color-ink`       | `#1a1a1a` | Teks utama |
+| `--color-ink-light` | `#4a4a4a` | Teks sekunder |
+| `--color-muted`     | `#8a8a8a` | Label, placeholder |
+| `--color-border`    | `#e5e0d8` | Border elemen |
 
 ### Typography
 - **Sans**: `Plus Jakarta Sans` — body, label, angka
 - **Serif**: `Lora` — heading (h1–h6)
 
-### Global Component Classes
+### Class Global
 | Class | Kegunaan |
 |---|---|
 | `.filter-input` | Input teks standar (search, form) |
-| `.filter-control` | Container filter toolbar (border, bg, rounded) |
-| `.filter-date-input` | Input tanggal inline tanpa border sendiri |
+| `.filter-control` | Container filter toolbar |
+| `.filter-date-input` | Input tanggal inline |
 | `.filter-label` | Label kecil uppercase di dalam filter-control |
-| `.filter-checkbox-box` | Kotak checkbox kustom |
-| `.filter-checkbox-box.active` | State terpilih (hijau) |
-| `.filter-checkbox-text` | Teks label checkbox |
-| `.filter-checkbox-text.active` | Bold saat terpilih |
-| `.btn-primary` | Tombol CTA utama (hijau, rounded-xl, shadow) |
-| `.glass` | Glassmorphism (bg putih transparan + backdrop blur) |
+| `.filter-checkbox-box` (+ `.active`) | Checkbox kustom |
+| `.filter-checkbox-text` (+ `.active`) | Teks label checkbox |
+| `.data-table-*` | Bagian tabel: header, baris, pagination |
+| `.btn-primary` | Tombol CTA utama |
+| `.glass` | Glassmorphism (transparan + backdrop blur) |
 
 ---
 
 ## Design Pattern
 
 ### 1. File-Based Routing
-SolidStart membaca file di `src/routes/` secara otomatis sebagai halaman. Tidak ada konfigurasi router manual.
+Halaman ditentukan oleh struktur `src/routes/`. Sub-direktori (`products/`, `blogs/`) memakai `index.tsx`, `create.tsx`, dan `[id].tsx`.
 
-### 2. Layout Shell Pattern
-Semua halaman dibungkus `<Layout>`. Layout mengelola sidebar state secara terpusat sehingga tidak perlu diulang per halaman.
+### 2. SPA, bukan SSR
+`ssr: false` — seluruh render terjadi di browser. Akses `localStorage`/`window` aman, tetapi jangan mengandalkan data yang harus tersedia saat SSR.
 
-### 3. Generic Data Table
-`DataTable<T>` didesain generic dengan TypeScript sehingga bisa dipakai di halaman mana pun hanya dengan mendefinisikan `columns` dan `data`. Filter dan search sudah built-in.
+### 3. Layout Shell Pattern
+Semua halaman dibungkus `<Layout>` yang memusatkan state sidebar, search, dan toast.
 
-### 4. Component Composition
-Komponen besar dipecah menjadi sub-komponen kecil yang focused (contoh: `ProfileComponents.tsx` berisi `PageCard`, `InfoRow`, `ActivityItem`).
+### 4. Generic Data Table
+`DataTable<T>` cukup diberi `columns` + `data`. Untuk dataset besar, aktifkan `serverSide` dan sambungkan ke pagination `ApiResponse.meta`.
 
-### 5. Inline Style untuk Dynamic Values
-Warna dinamis (gradient cover, stat chips) menggunakan `style=""` inline untuk memastikan tidak di-purge oleh Tailwind CSS v4.
+### 5. Signal Store Sederhana
+State global (`toast`, `searchStore`, `sidebarStore`, `authToken`) hanya berupa modul yang mengekspor signal — tanpa library state management.
 
-### 6. Controlled Edit Mode
-Halaman yang memiliki form edit (Profile, Settings) menggunakan `createSignal<boolean>` untuk mengontrol mode view/edit secara reaktif tanpa navigasi ke halaman terpisah.
+### 6. Satu Sumber Style
+Karena tidak ada utility framework, kelas baru ditulis langsung di `app.css` mengikuti penamaan blok yang sudah ada (`data-table-*`, `filter-*`, `sidebar-*`). Nilai dinamis (gradient, warna stat) tetap memakai `style=""` inline.
 
-### 7. Design Token via `@theme`
-Semua warna, font, dan radius didefinisikan di satu tempat (`@theme {}` di `app.css`) dan dipakai sebagai Tailwind utility class (`text-ink`, `bg-sand`, `border-border`, dll.).
+> **Catatan:** beberapa komponen (mis. `Layout.tsx`) masih memakai nama kelas bergaya Tailwind seperti `fixed inset-0 z-40 lg:hidden`. Kelas itu **tidak terdefinisi di mana pun** dan tidak menghasilkan style apa pun — sisa dari masa sebelum Tailwind dilepas. Jangan menambah kelas serupa; tulis CSS-nya di `app.css`.
+
+### 7. Controlled Edit Mode
+Halaman dengan form (Profil, Pengaturan) memakai `createSignal<boolean>` untuk beralih mode view/edit tanpa pindah halaman.

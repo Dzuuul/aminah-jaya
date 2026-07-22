@@ -48,6 +48,10 @@ cp .env .env.backup   # opsional
 | `BITESHIP_ORIGIN_CONTACT_NAME`, `BITESHIP_ORIGIN_CONTACT_PHONE` | Disarankan | Kontak pengirim |
 | `BITESHIP_ORIGIN_AREA_ID` | Opsional | Area ID Biteship untuk asal (mode Rates by Area Id) |
 | `BITESHIP_DEFAULT_COURIERS` | Disarankan | Daftar kurir untuk Rates API (koma), mis. `jne,sicepat,grab` |
+| **api-cms & email** | | |
+| `CMS_API_URL` | Disarankan | Base URL api-cms untuk meneruskan callback pembayaran (default `http://api-cms-aminah-jaya:8001`) |
+| `WEBHOOK_SECRET` | Ya | Bearer token saat memanggil `POST {CMS_API_URL}/api/webhook/duitku`. Harus sama dengan `WEBHOOK_SECRET` di api-cms |
+| `RESEND_API_KEY` | Tidak | API key [Resend](https://resend.com) untuk email instruksi pembayaran. Kosong = email dilewati |
 
 ### 2. Run Application
 
@@ -88,7 +92,8 @@ Jika gagal, `success: false` dan `message` berisi penjelasan error.
 
 | Endpoint | Format respons |
 | -------- | -------------- |
-| `POST /payments/duitku` | JSON langsung objek Duitku (`statusCode`, `vaNumber`, `qrString`, dll.) — **bukan** wrapper `success/data` |
+| `GET /payments/duitku/methods` | Wrapper `ApiResponse` — `data` berisi array metode pembayaran |
+| `POST /payments/duitku` | JSON langsung objek Duitku (`statusCode`, `vaNumber`, `qrString`, dll.) — **bukan** wrapper `success/data`. Saat ditolak gateway: HTTP `400` + `{ "error", "detail" }` |
 | `POST /payments/duitku/callback` | Plain text `OK` + HTTP `200` (wajib untuk Duitku agar tidak retry) |
 
 ---
@@ -234,8 +239,13 @@ Integrasi [Duitku API v2](https://docs.duitku.com/). Inquiry path: `{DUITKU_BASE
 
 | Method | Endpoint | Description |
 | ------ | -------- | ----------- |
+| GET | `/payments/duitku/methods?amount=` | Daftar metode pembayaran aktif + biaya, langsung dari Duitku |
 | POST | `/payments/duitku` | Buat tagihan (VA / QRIS / dll) |
 | POST | `/payments/duitku/callback` | Webhook status pembayaran dari Duitku |
+
+#### `GET /payments/duitku/methods`
+
+Query `amount` (rupiah, integer) wajib — Duitku menghitung fee per metode berdasarkan nominal. Respons memakai wrapper `ApiResponse` dan berisi array `paymentFee` dari Duitku (kode metode, nama, logo, fee). Signature memakai **SHA-256** dari `merchantCode + amount + datetime + apiKey` (berbeda dari inquiry/callback yang memakai HMAC-SHA256).
 
 #### `POST /payments/duitku`
 
@@ -280,12 +290,24 @@ Integrasi [Duitku API v2](https://docs.duitku.com/). Inquiry path: `{DUITKU_BASE
 
 **Response sukses:** `statusCode: "00"`, plus `vaNumber`, `qrString`, `paymentUrl`, `reference`, dll. (format Duitku langsung, bukan wrapper `ApiResponse`).
 
+Setelah inquiry sukses, service mengirim email instruksi pembayaran secara asinkron (`tokio::spawn` → `services::email_service::send_payment_instruction` via Resend) ke alamat pada field `email`. Jika `RESEND_API_KEY` kosong, langkah ini dilewati tanpa memengaruhi respons.
+
 #### `POST /payments/duitku/callback`
 
 - **Content-Type:** `application/x-www-form-urlencoded`  
 - **Signature verifikasi:** `HMAC-SHA256(merchantCode + amount + merchantOrderId, apiKey)` — 64 karakter hex lowercase  
 - Jika signature tidak cocok → HTTP `401 Unauthorized`  
-- Jika signature valid dan `resultCode == "00"` → log pembayaran sukses & placeholder notifikasi WhatsApp  
+- Jika signature valid dan `resultCode == "00"` → service meneruskan status ke api-cms:
+
+  ```
+  POST {CMS_API_URL}/api/webhook/duitku
+  Authorization: Bearer {WEBHOOK_SECRET}
+
+  { "order_number": "<merchantOrderId>", "amount": "<amount>" }
+  ```
+
+  api-cms lalu menandai order `payment_status = 'paid'` dan `status = 'processing'`. Kegagalan panggilan ini hanya dicatat sebagai log — callback tetap dibalas `OK`.
+- Jika `resultCode` bukan `"00"` → hanya dicatat sebagai log, tidak ada update status
 - **Respons wajib:** HTTP `200` + body plain text **`OK`** (wajib agar Duitku tidak retry)
 
 ---
@@ -319,15 +341,18 @@ Server mem-parse payload Meta, mengekstrak pesan teks, memanggil `chatbot_servic
 | Pencarian area peta | Storefront | `GET /api/shipping/maps/areas` |
 | Buat shipment setelah order | api-cms | `POST /api/shipping/orders` atau `POST /api/shipping/draft-orders/:id/confirm` |
 | Lacak paket | api-cms | `GET /api/shipping/tracking/:id` |
+| Daftar metode bayar | Storefront | `GET /payments/duitku/methods?amount=` |
 | Pembayaran online | Storefront / chatbot | `POST /payments/duitku` |
+| Update status bayar | api-integrasi → api-cms | `POST {CMS_API_URL}/api/webhook/duitku` |
 
 **api-cms** membutuhkan:
 
 ```env
 INTEGRASI_API_URL=http://127.0.0.1:8002
+WEBHOOK_SECRET=<sama dengan WEBHOOK_SECRET di api-integrasi>
 ```
 
-Tanpa URL ini, order tetap tersimpan di PostgreSQL tetapi shipment Biteship tidak dibuat.
+Tanpa `INTEGRASI_API_URL`, order tetap tersimpan di PostgreSQL tetapi shipment Biteship tidak dibuat. Tanpa `WEBHOOK_SECRET` yang cocok, api-cms menolak callback pembayaran dengan `401`.
 
 ---
 
@@ -350,8 +375,9 @@ src/
 │   ├── response.rs      # ApiResponse<T>
 │   └── webhook.rs       # Payload Meta
 └── services/
-    ├── chatbot_service.rs
-    └── whatsapp_service.rs
+    ├── chatbot_service.rs   # Auto-reply sederhana
+    ├── whatsapp_service.rs  # Kirim pesan via Meta Cloud API
+    └── email_service.rs     # Email instruksi pembayaran via Resend
 ```
 
 ---
@@ -367,8 +393,10 @@ src/
 
 ### Duitku
 
-- Inquiry v2 (VA, QRIS, dan metode lain)  
-- Signature HMAC-SHA256 untuk inquiry dan verifikasi callback  
+- Inquiry v2 (VA, QRIS, dan metode lain) + daftar metode pembayaran dinamis  
+- Signature HMAC-SHA256 untuk inquiry & verifikasi callback; SHA-256 untuk get payment method  
+- Callback terverifikasi diteruskan ke webhook api-cms (Bearer `WEBHOOK_SECRET`)  
+- Email instruksi pembayaran via Resend (async, opsional)  
 - Respons callback `OK` sesuai spesifikasi Duitku  
 
 ### WhatsApp
@@ -388,7 +416,8 @@ src/
 | Tokio | Async runtime |
 | Reqwest | HTTP client (Biteship, Duitku) |
 | Serde / JSON | Serialisasi API |
-| HMAC-SHA256 (hmac + sha2) | Signature Duitku v2 |
+| HMAC-SHA256 / SHA-256 (hmac + sha2) | Signature Duitku v2 |
+| Resend | Email instruksi pembayaran |
 | Tower HTTP | CORS, tracing |
 | dotenvy | Environment variables |
 | tracing | Structured logging |

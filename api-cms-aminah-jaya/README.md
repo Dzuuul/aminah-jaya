@@ -2,7 +2,9 @@
 
 Backend API untuk **CMS admin** dan **storefront** Aminah Jaya, dibangun dengan **Rust**, **Axum**, dan **SQLx**.
 
-Menyediakan autentikasi, katalog produk, keranjang, checkout, kupon, pengiriman (Biteship), media upload (Cloudflare R2), dan manajemen order.
+Menyediakan autentikasi, katalog produk, keranjang, checkout, kupon, media upload (Cloudflare R2), dan manajemen order.
+
+> **Catatan integrasi:** semua panggilan ke pihak ketiga (Biteship, Duitku, WhatsApp) sekarang berada di [`api-integrasi-aminah-jaya`](../api-integrasi-aminah-jaya). Service ini hanya memanggilnya server-to-server lewat `INTEGRASI_API_URL` (modul `src/integrasi.rs`) dan menerima webhook status pembayaran.
 
 ---
 
@@ -16,11 +18,9 @@ Menyediakan autentikasi, katalog produk, keranjang, checkout, kupon, pengiriman 
 
 ## Setup
 
-### 1. Start Database
+### 1. Siapkan PostgreSQL
 
-```bash
-docker-compose up -d
-```
+Service ini tidak menyertakan container database — `docker-compose.yml` hanya mendefinisikan container aplikasi untuk deployment. Gunakan PostgreSQL lokal, atau DB di VPS lewat SSH tunnel (lihat `USE_SSH_TUNNEL` di bawah).
 
 ### 2. Configuration
 
@@ -47,14 +47,10 @@ Isi semua environment variable yang dibutuhkan.
 | `DB_REMOTE_HOST`, `DB_REMOTE_PORT`, `DB_LOCAL_PORT` | Jika tunnel | Target DB remote & port lokal |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY`, `R2_SECRET_KEY` | Ya | Cloudflare R2 |
 | `R2_BUCKET`, `R2_PUBLIC_URL` | Ya | Bucket & URL publik CDN |
-| `BITESHIP_API_KEY` | Untuk ongkir | API key Biteship |
-| `BITESHIP_ORIGIN_LAT`, `BITESHIP_ORIGIN_LNG` | Untuk ongkir | Koordinat gudang/asal kirim |
-| `BITESHIP_ORIGIN_ADDRESS` | Untuk ongkir | Alamat lengkap asal |
-| `BITESHIP_ORIGIN_POSTAL_CODE` | Disarankan | Kode pos asal |
-| `BITESHIP_ORIGIN_CONTACT_NAME`, `BITESHIP_ORIGIN_CONTACT_PHONE` | Disarankan | Kontak pengirim |
-| `BITESHIP_ORIGIN_AREA_ID` | Opsional | Area ID Biteship untuk asal |
-| `BITESHIP_DEFAULT_COURIERS` | Disarankan | Daftar kurir untuk Rates API (koma), mis. `jne,sicepat,grab` |
-| `SHIPPING_RATE_CACHE_TTL_HOURS` | Tidak | TTL cache ongkir di PostgreSQL (default `6`) |
+| `INTEGRASI_API_URL` | Untuk ongkir | Base URL api-integrasi, mis. `http://127.0.0.1:8002` atau `http://api-integrasi-aminah-jaya:8002`. Tanpa ini, order tetap tersimpan tetapi shipment Biteship & tracking tidak jalan |
+| `WEBHOOK_SECRET` | Disarankan | Bearer token yang wajib dikirim api-integrasi saat memanggil `POST /api/webhook/duitku`. Harus sama dengan nilai di api-integrasi. Jika kosong, validasi webhook dilewati |
+
+Variabel `BITESHIP_*` **tidak lagi dibaca** oleh service ini — pindah ke api-integrasi.
 
 Jika database berada di private network/VPS:
 
@@ -124,18 +120,29 @@ DATABASE_URL="postgres://user:pass@localhost:5433/db" sqlx migrate run
 
 ## Response format
 
-Semua endpoint mengembalikan JSON dengan bentuk umum:
+Semua endpoint mengembalikan JSON dengan bentuk umum (`ApiResponse<T>` di `src/models/mod.rs`):
 
 ```json
 {
   "success": true,
+  "message": "OK",
   "data": { },
-  "message": null,
-  "meta": null
+  "meta": {},
+  "errors": null
 }
 ```
 
-Endpoint yang membutuhkan autentikasi customer/admin: header `Authorization: Bearer <token>`.
+Saat gagal: `success: false`, `message` berisi penjelasan, `data` bernilai `null`, dan `errors` opsional.
+
+Endpoint berpaginasi mengisi `meta`:
+
+```json
+"meta": { "current_page": 1, "total_pages": 12, "total_items": 118, "items_per_page": 10 }
+```
+
+Query pagination: `?page=1&limit=10` (default `page=1`, `limit=10`).
+
+Endpoint yang membutuhkan autentikasi customer/admin: header `Authorization: Bearer <token>`. Tidak ada middleware auth global — setiap handler memvalidasi token sendiri (`src/auth.rs`, JWT HS256, masa berlaku 24 jam).
 
 ---
 
@@ -158,8 +165,9 @@ Endpoint yang membutuhkan autentikasi customer/admin: header `Authorization: Bea
 | GET    | `/api/customer/me`               | Profil customer                |
 | PATCH  | `/api/customer/profile`          | Update profil                  |
 | GET    | `/api/customer/orders`           | Riwayat order customer         |
-| POST   | `/api/customer/orders`           | Buat order dari cart (+ Biteship) |
-| GET    | `/api/customer/orders/:id/tracking` | Lacak pengiriman (Biteship) |
+| POST   | `/api/customer/orders`           | Buat order dari cart (+ shipment Biteship) |
+| GET    | `/api/customer/orders/number/:order_number` | Detail order by nomor order |
+| GET    | `/api/customer/orders/:id/tracking` | Lacak pengiriman (proxy ke api-integrasi) |
 
 **Contoh `POST /api/customer/orders`:**
 
@@ -177,14 +185,16 @@ Endpoint yang membutuhkan autentikasi customer/admin: header `Authorization: Bea
   "destination_lat": -6.914744,
   "destination_lng": 107.609810,
   "destination_postal_code": "40132",
+  "destination_area_id": null,
   "destination_contact_name": "Fikri",
-  "destination_contact_phone": "08123456789"
+  "destination_contact_phone": "08123456789",
+  "biteship_draft_order_id": null
 }
 ```
 
 `payment_method`: `cod`, `transfer`, `qris`, `other`.
 
-Jika `BITESHIP_API_KEY` aktif, `courier_company` dan `courier_type` wajib (dari hasil `/api/shipping/rates`). Order lokal dan shipment Biteship dibuat dalam satu transaksi.
+Jika `INTEGRASI_API_URL` diset, `courier_company` dan `courier_type` **wajib** (nilainya dari `POST /api/shipping/rates` di api-integrasi). Order lokal dibuat dalam satu transaksi database; setelahnya shipment Biteship dibuat lewat api-integrasi — jika `biteship_draft_order_id` dikirim, draft tersebut dikonfirmasi, kalau tidak dibuat order baru. Hasilnya disimpan di kolom `biteship_order_id`, `biteship_tracking_id`, dan `tracking_number`.
 
 ### Customer addresses
 
@@ -227,107 +237,26 @@ Voucher yang bisa dipakai customer di checkout (belum pernah dipakai, masih akti
 
 Query opsional untuk keduanya: `subtotal`, `shipping_cost`.
 
-### Shipping / Biteship
+### Shipping & payment (pindah ke api-integrasi)
 
-Proxy ke [Biteship API](https://biteship.com/id/docs). API key hanya di server; storefront memanggil endpoint ini (bukan langsung ke Biteship).
+Endpoint `/api/shipping/*` (couriers, maps/areas, rates, draft order) dan `/payments/duitku*` **tidak ada di service ini** — semuanya dilayani oleh [`api-integrasi-aminah-jaya`](../api-integrasi-aminah-jaya) dan dipanggil langsung oleh storefront lewat `VITE_INTEGRASI_API_BASE`.
 
-| Method | Endpoint                                   | Auth     | Description                    |
-| ------ | ------------------------------------------ | -------- | ------------------------------ |
-| GET    | `/api/shipping/couriers`                   | Tidak    | Daftar kurir Biteship          |
-| GET    | `/api/shipping/maps/areas?input=`          | Tidak    | Pencarian area (maps)          |
-| POST   | `/api/shipping/rates`                      | Customer | Hitung ongkir dari cart (cache)|
-| POST   | `/api/shipping/draft-orders`               | Customer | Buat draft order Biteship      |
-| GET    | `/api/shipping/draft-orders/:id/rates`     | Customer | Tarif untuk draft order        |
-| POST   | `/api/shipping/draft-orders/:id/confirm`   | Customer | Konfirmasi draft → order       |
+Yang tersisa di api-cms:
 
-#### `POST /api/shipping/rates`
+| Method | Endpoint | Auth | Description |
+| ------ | -------- | ---- | ----------- |
+| GET | `/api/customer/orders/:id/tracking` | Customer | Ambil `biteship_tracking_id`/`biteship_order_id` order lalu proxy ke api-integrasi (`GET /api/shipping/tracking/:id`, fallback `GET /api/shipping/orders/:id`). Jika belum ada data tracking, mengembalikan status `pending` |
+| POST | `/api/webhook/duitku` | Bearer `WEBHOOK_SECRET` | Dipanggil api-integrasi setelah callback Duitku terverifikasi; set `payment_status = 'paid'` dan `status = 'processing'` untuk `order_number` terkait |
 
-**Request** — lokasi tujuan (salah satu mode cukup; backend memilih mode Biteship yang valid):
+**Body `POST /api/webhook/duitku`:**
 
 ```json
-{
-  "destination_lat": -6.914744,
-  "destination_lng": 107.609810,
-  "destination_postal_code": "40132",
-  "destination_city": "Bandung",
-  "destination_province": "Jawa Barat",
-  "destination_area_id": null,
-  "couriers": "jne,sicepat,grab"
-}
+{ "order_number": "ORD-20260525-001", "amount": "150000" }
 ```
 
-| Field | Wajib | Keterangan |
-| ----- | ----- | ---------- |
-| `destination_lat` / `destination_lng` | Salah satu kombinasi | Mode koordinat (atau mix dengan kode pos asal) |
-| `destination_postal_code` | | Mode kode pos / mix |
-| `destination_area_id` | | Mode area ID (jika `BITESHIP_ORIGIN_AREA_ID` juga diset) |
-| `destination_city`, `destination_province` | Disarankan | Memperjelas kunci cache untuk rute yang sama |
-| `couriers` | Tidak | Override daftar kurir; default dari `BITESHIP_DEFAULT_COURIERS` |
+Header wajib: `Authorization: Bearer ${WEBHOOK_SECRET}` (dilewati jika `WEBHOOK_SECRET` kosong). Balasan `404` jika `order_number` tidak ditemukan.
 
-**Berat** tidak dikirim di body. Server membaca **keranjang customer yang login**:
-
-1. Total gram = Σ (`products.weight_gram` × qty); jika berat produk kosong → **500 g**/unit  
-2. Dibulatkan ke **bucket kg** (ceil, min. 1 kg), mis. 1.200 g → **2 kg**  
-3. Request ke Biteship memakai **satu item sintetis** dengan berat bucket tersebut (agar cache bisa dipakai ulang lintas customer)
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "rates": [
-      {
-        "id": "jne_reg",
-        "courier_company": "jne",
-        "courier_type": "reg",
-        "name": "JNE Reguler",
-        "description": "",
-        "price": 18000,
-        "duration": "2 - 3 days",
-        "shipment_duration_range": "2 - 3",
-        "shipment_duration_unit": "days",
-        "speed_group": "reguler",
-        "courier_logo": "https://assets.biteship.com/icons/courier-jne.png",
-        "available_for_cash_on_delivery": false
-      }
-    ],
-    "cached": false,
-    "cache_key": "postal:64182|postal:40132|bandung|jawa barat|2kg|jne,sicepat,...",
-    "weight_kg": 2
-  }
-}
-```
-
-| Field respons | Keterangan |
-| ------------- | ---------- |
-| `rates` | Daftar layanan kurir + harga (dinormalisasi dari `pricing` Biteship) |
-| `cached` | `true` = dari PostgreSQL, **tanpa** hit Biteship |
-| `weight_kg` | Bucket berat yang dipakai untuk perhitungan |
-| `cache_key` | Kunci cache (debug/opsional) |
-| `speed_group` | `next_day` (estimasi ≤ 1 hari / ≤ 24 jam) atau `reguler` — untuk UI checkout |
-| `courier_logo` | URL logo dari Biteship atau fallback CDN |
-
-#### Cache ongkir (PostgreSQL)
-
-Tabel `shipping_rate_cache` (migration `20260524000000_add_shipping_rate_cache.sql`):
-
-- **Kunci:** `{asal}|{tujuan}|{weight_kg}kg|{couriers}`  
-- **TTL:** `SHIPPING_RATE_CACHE_TTL_HOURS` (default 6 jam)  
-- **Cache hit** → respons sama untuk customer lain dengan rute + berat bucket sama → biaya API Biteship Rp0  
-
-Storefront menambah debounce alamat dan cache `sessionStorage` per kunci serupa; backend cache tetap sumber utama lintas user.
-
-#### Mode Rates API (otomatis di `biteship.rs`)
-
-Backend memilih **satu** mode per request (tidak mencampur field asal/tujuan):
-
-1. **Area ID** — `origin_area_id` + `destination_area_id`  
-2. **Koordinat** — lat/lng asal & tujuan  
-3. **Kode pos** — `origin_postal_code` + `destination_postal_code`  
-4. **Mix** — koordinat asal + `destination_postal_code`  
-
-Field `couriers` **wajib** ada di body ke Biteship (dari env atau payload).
+> Tabel `shipping_rate_cache` (migration `20260524000000`) adalah sisa dari implementasi cache ongkir lama di api-cms dan saat ini **tidak dibaca kode manapun**.
 
 ### Cart (customer)
 
@@ -489,19 +418,18 @@ Kupon dipakai saat checkout lewat `coupon_code` di `POST /api/customer/orders`.
 
 - Order dari cart dalam transaksi database
 - Kupon diskon (persentase/fixed, min. belanja, batas pemakaian)
-- Integrasi Biteship: rates → pilih kurir → buat shipment
+- Ongkir & shipment Biteship lewat api-integrasi (rates di storefront → pilih kurir → shipment saat checkout)
 - Pelacakan via `GET /api/customer/orders/:id/tracking`
+- Status pembayaran diperbarui via `POST /api/webhook/duitku`
 
-### Biteship integration
+### Klien api-integrasi
 
-Modul: `src/biteship.rs`, routes: `src/routes/shipping.rs`.
+Modul: `src/integrasi.rs` (`IntegrasiClient`), dipakai oleh `src/routes/customer_auth.rs` dan `src/routes/shipping.rs`.
 
-- Rates (`POST /v1/rates/couriers`), couriers, maps/areas, draft order, confirm, tracking
-- Origin dari env (`BITESHIP_ORIGIN_*`); daftar kurir default `BITESHIP_DEFAULT_COURIERS`
-- Normalisasi `pricing` → `rates` dengan `speed_group`, `courier_logo`, durasi pengiriman
-- Cache ongkir di PostgreSQL (`shipping_rate_cache`) + bucket berat per kg
-- `POST /api/customer/orders` membuat order Biteship setelah order lokal (jika API key aktif)
-- API key tidak diekspos ke browser storefront
+- `IntegrasiClient::from_env()` membaca `INTEGRASI_API_URL`; `is_configured()` dipakai untuk mengecek apakah alur Biteship aktif
+- Memanggil `POST /api/shipping/orders`, `POST /api/shipping/draft-orders/:id/confirm`, `GET /api/shipping/orders/:id`, `GET /api/shipping/tracking/:id`
+- Kegagalan panggilan tidak membatalkan order lokal — hanya dicatat sebagai warning
+- API key Biteship/Duitku tidak pernah ada di service ini maupun di browser
 
 ### Flash sale
 
@@ -517,7 +445,7 @@ Event terbatas waktu dengan item, harga promo, `stock_limit`, dan `sold_count`.
 | Axum             | HTTP router & handlers        |
 | SQLx             | Async PostgreSQL              |
 | PostgreSQL       | Database relasional           |
-| Reqwest          | HTTP client (Biteship)        |
+| Reqwest          | HTTP client ke api-integrasi  |
 | Cloudflare R2    | Object storage (S3-compatible)|
 | AWS SDK for Rust | Upload ke R2                  |
 | Serde / JSON     | Serialisasi API               |
@@ -525,7 +453,7 @@ Event terbatas waktu dengan item, harga promo, `stock_limit`, dan `sold_count`.
 | Tower HTTP       | CORS, tracing, middleware     |
 | Bcrypt           | Hash password                 |
 | JWT              | Auth admin & customer         |
-| Biteship         | Ongkir & fulfillment        |
+| Rust Decimal     | Kolom NUMERIC (harga)         |
 
 ---
 
@@ -535,11 +463,12 @@ Event terbatas waktu dengan item, harga promo, `stock_limit`, dan `sold_count`.
 - SQLx migrations otomatis saat startup
 - SSH tunnel opsional untuk DB remote
 - Multi-alamat customer (`customer_addresses`)
-- Order creation transaction-safe (cart → order → items → clear cart → Biteship)
+- Order creation transaction-safe (cart → order → items → clear cart), shipment Biteship dibuat setelah commit lewat api-integrasi
 - Kolom order untuk kupon (`coupon_id`, `coupon_code`, `discount_amount`)
 - Kolom order untuk Biteship (`biteship_order_id`, `biteship_tracking_id`, `courier_company`, `courier_service`, dll.)
-- Tabel `shipping_rate_cache` untuk cache tarif ongkir Biteship
-- Perhitungan ongkir berdasarkan `weight_gram` produk di cart (default 500 g)
+- Tabel `shipping_rate_cache` tersisa dari implementasi lama dan tidak lagi digunakan
+- Berat produk (`weight_gram`) dikirim ke api-integrasi untuk perhitungan ongkir (default 500 g/unit)
+- Query SQLx runtime-checked (`query_as`, `query_scalar`) — tidak butuh `DATABASE_URL` saat kompilasi dan tidak perlu `cargo sqlx prepare`
 - Media upload multipart ke R2 dengan URL publik
 - JWT terpisah untuk admin CMS dan customer storefront
 
@@ -551,5 +480,6 @@ Event terbatas waktu dengan item, harga promo, `stock_limit`, dan `sold_count`.
 | -------------------------- | ------------------------------ |
 | `cms-aminah-jaya`          | Admin dashboard (CMS UI)       |
 | `storefront-aminah-jaya`   | Toko online customer-facing    |
+| `api-integrasi-aminah-jaya`| Gateway Duitku, Biteship, WhatsApp |
 
-Storefront memanggil API ini via `VITE_API_BASE` (mis. `http://localhost:8001/api`).
+Storefront memanggil API ini via `VITE_API_BASE` (mis. `http://localhost:8001/api`) dan `VITE_API_URL` (base tanpa `/api`, dipakai beberapa komponen lama).

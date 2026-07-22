@@ -1,342 +1,136 @@
-# Backend Implementation: Shipping Coordinates Support
+# Backend: Koordinat Alamat & Pengiriman
 
-## Summary
-Backend API telah diupdate untuk support penyimpanan koordinat GPS (latitude & longitude) untuk setiap alamat pengiriman pelanggan. Ini memungkinkan tracking yang lebih presisi dan integrasi dengan sistem delivery.
+Dokumen ini menjelaskan bagaimana koordinat GPS disimpan dan dipakai di `api-cms-aminah-jaya`.
 
-## Changes Made
+---
 
-### 1. Database Migration
-**File**: `migrations/20260520000000_add_shipping_coordinates.sql`
+## Riwayat Singkat
+
+Implementasi pertama menyimpan satu alamat + koordinat langsung di tabel `storefront_customers`. Skema itu **sudah tidak berlaku**: sejak migration `20260522000001_adjust_customer_address_to_multiple.sql`, kolom `shipping_address`, `shipping_lat`, `shipping_lng` di `storefront_customers` **dihapus** dan digantikan tabel multi-alamat `customer_addresses`.
+
+| Migration | Perubahan |
+| --- | --- |
+| `20260520000000_add_shipping_coordinates` | Menambah `shipping_lat`/`shipping_lng` `NUMERIC(10,6)` di `storefront_customers` (historis) |
+| `20260521000000_change_shipping_coordinates_to_double_precision` | Mengubah tipe ke `DOUBLE PRECISION` agar cocok dengan `f64` di Rust (historis) |
+| `20260522000001_adjust_customer_address_to_multiple` | Menghapus kolom lama, membuat tabel `customer_addresses` |
+| `20260523000000_add_biteship_order_fields` | Menambah koordinat & metadata kurir di tabel `orders` |
+
+---
+
+## Skema Aktif
+
+### `customer_addresses`
 
 ```sql
-ALTER TABLE storefront_customers 
-ADD COLUMN shipping_lat NUMERIC(10, 6),
-ADD COLUMN shipping_lng NUMERIC(10, 6);
-
-CREATE INDEX idx_storefront_customers_shipping_coords 
-ON storefront_customers(shipping_lat, shipping_lng);
+CREATE TABLE customer_addresses (
+  id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  customer_id     UUID NOT NULL REFERENCES storefront_customers(id) ON DELETE CASCADE,
+  label           VARCHAR(50),
+  recipient_name  VARCHAR(255) NOT NULL,
+  recipient_phone VARCHAR(20)  NOT NULL,
+  address         TEXT         NOT NULL,
+  province        VARCHAR(100),
+  city            VARCHAR(100),
+  district        VARCHAR(100),
+  postal_code     VARCHAR(20),
+  lat             DOUBLE PRECISION,
+  lng             DOUBLE PRECISION,
+  is_default      BOOLEAN NOT NULL DEFAULT false,
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 ```
 
-**Precision**: 6 desimal = ±1.1 meter
+Index: `idx_customer_addresses_customer_id` dan `idx_customer_addresses_coords (lat, lng)`.
+
+Satu customer boleh punya banyak alamat; hanya satu yang `is_default = true` (dikelola handler `set_default_address`).
+
+### `orders`
+
+Kolom yang berkaitan dengan koordinat & pengiriman:
+
+| Kolom | Tipe | Isi |
+| --- | --- | --- |
+| `shipping_lat`, `shipping_lng` | `DOUBLE PRECISION` | Koordinat tujuan saat order dibuat |
+| `shipping_postal_code` | `VARCHAR(20)` | Kode pos tujuan |
+| `shipping_area_id` | `VARCHAR(100)` | Area ID Biteship (jika dipakai) |
+| `courier_company`, `courier_service` | `VARCHAR(50)` | Kurir & layanan terpilih |
+| `biteship_order_id`, `biteship_tracking_id`, `biteship_draft_order_id` | `VARCHAR(100)` | Referensi Biteship, diisi setelah shipment dibuat |
+
+Index: `idx_orders_biteship_order_id`, `idx_orders_biteship_tracking_id`.
 
 ---
 
-### 2. Model Updates
-**File**: `src/models/mod.rs`
+## Endpoint Terkait
 
-#### a. `StorefrontCustomer` struct
-```rust
-#[derive(Debug, Serialize, Deserialize, FromRow)]
-pub struct StorefrontCustomer {
-    pub id: Uuid,
-    pub email: String,
-    pub name: String,
-    pub phone: Option<String>,
-    pub shipping_address: Option<String>,
-    pub shipping_lat: Option<f64>,      // ✨ NEW
-    pub shipping_lng: Option<f64>,      // ✨ NEW
-    pub created_at: DateTime<Utc>,
-}
-```
+### Alamat customer
 
-#### b. `UpdateCustomerProfilePayload` struct
-```rust
-#[derive(Debug, Deserialize)]
-pub struct UpdateCustomerProfilePayload {
-    pub name: String,
-    pub phone: Option<String>,
-    pub email: String,
-    pub shipping_address: Option<String>,
-    pub shipping_lat: Option<f64>,      // ✨ NEW
-    pub shipping_lng: Option<f64>,      // ✨ NEW
-    pub password: Option<String>,
-}
-```
-
----
-
-### 3. Route Handler Updates
-**File**: `src/routes/customer_auth.rs`
-
-#### a. `register()` - Updated SELECT clause
-```rust
-RETURNING id, email, name, phone, created_at
-```
-
-#### b. `get_me()` - Updated SELECT clause
-```rust
-"SELECT id, email, name, phone, created_at 
- FROM storefront_customers WHERE id = $1 LIMIT 1"
-```
-
-#### c. `update_profile()` - Updated UPDATE dan RETURNING
-```rust
-UPDATE storefront_customers 
-SET name = $1, phone = $2, email = $3, shipping_address = $4, 
-    shipping_lat = $5, shipping_lng = $6
-WHERE id = $7
-RETURNING id, email, name, phone, created_at
-```
-
-**Parameter mapping:**
-- $1: name
-- $2: phone
-- $3: email
-- $4: shipping_address
-- $5: **shipping_lat** ✨ NEW
-- $6: **shipping_lng** ✨ NEW
-- $7: customer_id
-
-#### d. `create_order()` - Updated SELECT clause
-```rust
-"SELECT id, email, name, phone, created_at 
- FROM storefront_customers WHERE id = $1 LIMIT 1"
-```
-
----
-
-## API Endpoints
-
-### Update Customer Profile
-```
-PATCH /api/customer/profile
-Authorization: Bearer {token}
-Content-Type: application/json
-```
-
-**Request Body:**
-```json
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "phone": "08123456789",
-  "shipping_address": "Jl. Sudirman No. 1, Jakarta Pusat",
-  "shipping_lat": -6.2088,
-  "shipping_lng": 106.8456,
-  "password": null
-}
-```
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "OK",
-  "data": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "email": "john@example.com",
-    "name": "John Doe",
-    "phone": "08123456789",
-    "shipping_address": "Jl. Sudirman No. 1, Jakarta Pusat",
-    "shipping_lat": -6.2088,
-    "shipping_lng": 106.8456,
-    "created_at": "2024-01-15T10:30:00Z"
-  },
-  "meta": {},
-  "errors": null
-}
-```
-
----
-
-### Get Current Customer Profile
-```
-GET /api/customer/me
-Authorization: Bearer {token}
-```
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "message": "OK",
-  "data": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "email": "john@example.com",
-    "name": "John Doe",
-    "phone": "08123456789",
-    "shipping_address": "Jl. Sudirman No. 1, Jakarta Pusat",
-    "shipping_lat": -6.2088,
-    "shipping_lng": 106.8456,
-    "created_at": "2024-01-15T10:30:00Z"
-  },
-  "meta": {},
-  "errors": null
-}
-```
-
----
-
-### Register Customer
-```
-POST /api/customer/register
-Content-Type: application/json
-```
-
-**Response (201 Created):**
-```json
-{
-  "success": true,
-  "message": "OK",
-  "data": {
-    "id": "550e8400-e29b-41d4-a716-446655440000",
-    "email": "newcustomer@example.com",
-    "name": "New Customer",
-    "phone": "08123456789",
-    "shipping_address": null,
-    "shipping_lat": null,
-    "shipping_lng": null,
-    "created_at": "2024-01-15T10:30:00Z"
-  },
-  "meta": {},
-  "errors": null
-}
-```
-
----
-
-## Postman Collection Updates
-
-**File**: `Aminah_Jaya_CMS.postman_collection.json`
-
-Updated endpoint "Auth (Customer) > Update Profile" dengan sample data:
+| Method | Endpoint | Keterangan |
+| --- | --- | --- |
+| GET | `/api/customer/addresses` | List alamat milik customer |
+| POST | `/api/customer/addresses` | Tambah alamat (termasuk `lat`, `lng`) |
+| PATCH | `/api/customer/addresses/:id` | Ubah alamat |
+| DELETE | `/api/customer/addresses/:id` | Hapus alamat |
+| PATCH | `/api/customer/addresses/:id/default` | Jadikan alamat default |
 
 ```json
+POST /api/customer/addresses
+
 {
-  "name": "John Doe Updated",
-  "email": "customer@example.com",
-  "phone": "08123456789",
-  "shipping_address": "Jl. Sudirman No. 1, Jakarta",
-  "shipping_lat": -6.2088,
-  "shipping_lng": 106.8456,
-  "password": "newpassword123"
+  "label": "Rumah",
+  "recipient_name": "Fikri",
+  "recipient_phone": "08123456789",
+  "address": "Jl. Sudirman No. 1",
+  "province": "Jawa Barat",
+  "city": "Bandung",
+  "district": "Coblong",
+  "postal_code": "40132",
+  "lat": -6.914744,
+  "lng": 107.609810,
+  "is_default": true
 }
 ```
 
----
+> `PATCH /api/customer/profile` **tidak lagi** menerima `shipping_address`/`shipping_lat`/`shipping_lng` — profil hanya menyimpan nama, telepon, email, dan password.
 
-## Frontend Integration
+### Order
 
-### Props untuk MapPicker Component
-```tsx
-<MapPicker 
-  isOpen={isMapPickerOpen()}
-  onClose={() => setIsMapPickerOpen(false)}
-  onLocationSelect={(location: Location) => {
-    // location = { lat: number, lng: number, address: string }
-    setEditShippingLat(location.lat);
-    setEditShippingLng(location.lng);
-    setEditShippingAddress(location.address);
-  }}
-  initialLat={editShippingLat()}
-  initialLng={editShippingLng()}
-  initialAddress={editShippingAddress()}
-/>
-```
-
-### API Call dari Frontend
-```tsx
-const payload = {
-  name: editName(),
-  email: editEmail(),
-  phone: editPhone(),
-  shipping_address: editShippingAddress(),
-  shipping_lat: editShippingLat(),
-  shipping_lng: editShippingLng(),
-  password: editPassword() || null,
-};
-
-const updated = await updateCustomerProfile(payload);
-```
+`POST /api/customer/orders` menerima koordinat tujuan lewat `destination_lat`, `destination_lng`, `destination_postal_code`, dan `destination_area_id`, lalu menyimpannya ke kolom `shipping_*` di tabel `orders` serta meneruskannya ke api-integrasi untuk membuat shipment Biteship.
 
 ---
 
-## Data Validation
+## Format & Validasi Koordinat
 
-### Koordinat Format
-- **Latitude**: -90 to 90
-- **Longitude**: -180 to 180
-- **Precision**: 6 desimal (±1.1 meter)
-- **Type**: NUMERIC(10,6)
+- Tipe kolom `DOUBLE PRECISION`, dipetakan ke `Option<f64>` di Rust.
+- Rentang wajar untuk Indonesia: latitude `-11.0` … `6.0`, longitude `95.0` … `141.0`.
+- Presisi 6 desimal ≈ ±0,11 m — cukup untuk pinpoint alamat.
+- Koordinat bersifat opsional: alamat tanpa `lat`/`lng` tetap valid, tetapi perhitungan ongkir akan jatuh ke mode kode pos di api-integrasi.
 
-### Example Koordinat Indonesia
-```
-Jakarta Pusat: -6.2088, 106.8456
-Bandung: -6.9147, 107.6098
-Surabaya: -7.2575, 112.7521
-Medan: 3.5952, 98.6722
-Bali (Denpasar): -8.6705, 115.2126
-```
+Contoh koordinat: Jakarta `-6.2088, 106.8456` · Bandung `-6.9175, 107.6191` · Surabaya `-7.2575, 112.7521` · Kediri `-7.8480, 112.0178`.
 
 ---
 
-## Testing Checklist
+## Frontend Terkait
 
-- [x] Database migration applied
-- [x] StorefrontCustomer model updated
-- [x] UpdateCustomerProfilePayload updated
-- [x] register() returns coordinates
-- [x] get_me() returns coordinates
-- [x] update_profile() saves & returns coordinates
-- [x] create_order() fetches coordinates
-- [x] Postman collection updated
-- [ ] Frontend MapPicker integrated
-- [ ] E2E testing dengan koordinat real
-- [ ] Performance testing dengan index
+Pemilihan titik di storefront memakai `MapPicker` (MapLibre GL + OpenStreetMap). Lihat [`../storefront-aminah-jaya/MAPS_IMPLEMENTATION.md`](../storefront-aminah-jaya/MAPS_IMPLEMENTATION.md).
 
 ---
 
-## Migration Steps untuk Production
+## Menjalankan Migrasi
+
+Migrasi berjalan otomatis saat `cargo run` (`sqlx::migrate!("./migrations")`). Untuk produksi, backup dulu lalu deploy seperti biasa:
 
 ```bash
-# 1. Backup database
-pg_dump -U user -d aminah_db > backup_$(date +%Y%m%d).sql
-
-# 2. Run migrations (otomatis saat startup)
-cargo run
-
-# 3. Verify columns ditambahkan
-psql -U user -d aminah_db -c "
-  SELECT column_name, data_type 
-  FROM information_schema.columns 
-  WHERE table_name = 'storefront_customers' 
-  ORDER BY ordinal_position;
-"
-
-# 4. Verify index dibuat
-psql -U user -d aminah_db -c "
-  SELECT indexname FROM pg_indexes 
-  WHERE tablename = 'storefront_customers';
-"
+pg_dump -h <host> -U <user> <db> > backup.sql
+./deploy.sh --tag latest --port 8001
 ```
 
----
-
-## Rollback (Jika diperlukan)
+Verifikasi setelah deploy:
 
 ```sql
--- Drop index
-DROP INDEX IF EXISTS idx_storefront_customers_shipping_coords;
-
--- Remove columns
-ALTER TABLE storefront_customers 
-DROP COLUMN shipping_lat,
-DROP COLUMN shipping_lng;
+\d customer_addresses
+\d orders
+SELECT COUNT(*) FROM customer_addresses WHERE lat IS NOT NULL;
 ```
 
----
-
-## Performance Considerations
-
-- ✅ Index created untuk faster geospatial queries
-- ✅ NUMERIC(10,6) optimal untuk precision + storage
-- ✅ NULL fields dibuat optional untuk backward compatibility
-- ⚠️ Untuk future: pertimbangkan PostGIS extension untuk advanced geospatial queries
-
----
-
-## References
-
-- [PostgreSQL NUMERIC Type](https://www.postgresql.org/docs/current/datatype-numeric.html)
-- [Latitude/Longitude Precision](https://en.wikipedia.org/wiki/Decimal_degrees)
-- [SQLx Documentation](https://github.com/launchbadge/sqlx)
+`deploy.sh` otomatis menjalankan `cargo clean` bila mendeteksi perubahan di direktori `migrations/`.

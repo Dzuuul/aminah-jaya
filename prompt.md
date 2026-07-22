@@ -1,3 +1,10 @@
+> **Status: dokumen historis.** Ini adalah prompt/spesifikasi awal untuk membangun modul Duitku. Implementasi final di `api-integrasi-aminah-jaya` berbeda pada beberapa titik:
+> - Signature memakai **HMAC-SHA256** (`hmac` + `sha2`), bukan MD5. Get payment method memakai SHA-256 dari `merchantCode + amount + datetime + apiKey`.
+> - Inquiry memakai path `{DUITKU_BASE_URL}/api/merchant/v2/inquiry`.
+> - Callback yang terverifikasi diteruskan ke `POST {CMS_API_URL}/api/webhook/duitku` (Bearer `WEBHOOK_SECRET`) untuk mengubah status order, dan mengirim email instruksi pembayaran via Resend.
+>
+> Rujukan terkini: [`api-integrasi-aminah-jaya/README.md`](./api-integrasi-aminah-jaya/README.md).
+
 # Context & Role
 Anda adalah seorang Software Architect dan Senior Backend Engineer yang ahli dalam ekosistem Rust (terutama `axum`, `tokio`, `reqwest`, dan `serde`). 
 Tugas Anda adalah menulis kode dan merancang modul integrasi untuk Payment Gateway **Duitku** ke dalam sistem e-commerce berbasis arsitektur modular (monorepo/microservices).

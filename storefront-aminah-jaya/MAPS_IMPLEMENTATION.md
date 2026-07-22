@@ -1,120 +1,92 @@
-# Maps Integration Guide - Shipping Address with Biteship Maps Widget
+# Maps Implementation — Pemilih Lokasi Alamat Pengiriman
 
-## Overview
-Pelanggan dapat memilih lokasi pengiriman mereka secara presisi menggunakan Biteship Maps Widget langsung dari dashboard Biteship.
+## Ringkasan
 
-## Technology Stack
-- **Biteship Maps Widget** - Embedded map picker untuk pinpoint alamat
-- **SolidJS** - Frontend framework
-- **api-cms-aminah-jaya** - Backend customer profile and address persistence
-- **PostgreSQL / SQLx** - Store coordinate fields
+Customer memilih titik pengiriman lewat komponen `MapPicker` di halaman profil (`/profile`), saat menambah atau mengubah alamat. Koordinat yang dipilih disimpan bersama alamat sehingga dapat dipakai untuk perhitungan ongkir Biteship di checkout.
 
-## Setup
-1. Tambahkan `VITE_BITESHIP_MAPS_API_KEY` ke file `.env` di `storefront-aminah-jaya`.
-2. Pastikan frontend dapat memuat script widget Biteship secara dinamis.
-3. Simpan `shipping_lat` dan `shipping_lng` bersama `shipping_address` di backend.
+> **Riwayat:** implementasi awal memakai Biteship Maps Widget dan `VITE_BITESHIP_MAPS_API_KEY`. Widget itu sudah diganti — versi sekarang memakai **MapLibre GL + OpenStreetMap** dan **tidak membutuhkan API key peta**.
 
-## MapPicker Component
-File: `src/components/MapPicker.tsx`
+## Teknologi
 
-`MapPicker` sekarang memuat widget Biteship secara dinamis dan menerima lokasi terpilih dari event widget.
+| Bagian | Teknologi |
+| --- | --- |
+| Rendering peta | `maplibre-gl` (di-`import()` dinamis saat modal dibuka) |
+| Tile | OpenStreetMap (`a/b/c.tile.openstreetmap.org`) |
+| Geocoding & reverse geocoding | Nominatim OpenStreetMap |
+| Pencarian area kurir | `GET /shipping/maps/areas` di `api-integrasi` (via `searchShippingAreas` di `src/lib/api.ts`) |
+| Penyimpanan | `api-cms-aminah-jaya` — tabel `customer_addresses` |
+
+## Komponen `MapPicker`
+
+File: `src/components/MapPicker.tsx` (+ `MapPicker.css`).
 
 ```tsx
 <MapPicker
   isOpen={isMapPickerOpen()}
   onClose={() => setIsMapPickerOpen(false)}
   onLocationSelect={(location) => handleMapLocationSelect(location)}
-  initialLat={editShippingLat() || undefined}
-  initialLng={editShippingLng() || undefined}
-  initialAddress={editShippingAddress() || undefined}
+  initialLat={editLat() || undefined}
+  initialLng={editLng() || undefined}
+  initialAddress={editAddress() || undefined}
 />
 ```
 
-## Usage in Profile Page
-```tsx
-const handleMapLocationSelect = (location) => {
-  setEditShippingAddress(location.address);
-  setEditShippingLat(location.lat);
-  setEditShippingLng(location.lng);
-};
+| Prop | Tipe | Keterangan |
+| --- | --- | --- |
+| `isOpen` | `boolean` | Modal terbuka; peta baru diinisialisasi saat bernilai `true` |
+| `onClose` | `() => void` | Dipanggil saat modal ditutup |
+| `onLocationSelect` | `(location: { lat, lng, address }) => void` | Hasil akhir pemilihan |
+| `initialLat` / `initialLng` | `number?` | Default `-6.2088`, `106.8456` (Jakarta) |
+| `initialAddress` | `string?` | Alamat awal untuk field teks |
 
-const payload = {
-  name: profile()?.name || "",
-  phone: profile()?.phone || null,
-  email: profile()?.email || "",
-  shipping_address: editShippingAddress().trim() || null,
-  shipping_lat: editShippingLat(),
-  shipping_lng: editShippingLng(),
-  password: null,
-};
-await updateCustomerProfile(payload);
+### Alur 3 langkah
+
+1. **Pilih titik** — geser peta/marker, cari nama area (hasil dari `/shipping/maps/areas`, dilengkapi geocoding Nominatim bila koordinatnya kosong), atau tekan tombol “gunakan lokasi saya” (Geolocation API browser).
+2. **Lengkapi alamat** — teks alamat hasil reverse geocoding dapat diedit manual.
+3. **Catatan kurir** — opsional; digabung ke alamat akhir sebagai baris `Catatan untuk kurir: ...`.
+
+`onLocationSelect` menerima `{ lat, lng, address }` dengan `address` berupa gabungan alamat lengkap + catatan kurir (dipisah baris baru).
+
+## Penyimpanan di Backend
+
+Koordinat disimpan di tabel `customer_addresses` (multi-alamat per customer):
+
+```
+POST /api/customer/addresses
+PATCH /api/customer/addresses/:id
 ```
 
-## Environment Variable
-Tambahkan ke `storefront-aminah-jaya/.env`:
-
-```env
-VITE_BITESHIP_MAPS_API_KEY=your_biteship_maps_api_key_here
-```
-
-## Database Schema
-
-```sql
-ALTER TABLE storefront_customers 
-ADD COLUMN shipping_lat NUMERIC(10, 6),
-ADD COLUMN shipping_lng NUMERIC(10, 6);
-```
-
-- **shipping_lat**: Latitude, 6 desimal
-- **shipping_lng**: Longitude, 6 desimal
-- Presisi yang digunakan = ±1.1 meter (6 desimal)
-
-## API Endpoint
-
-### Update Customer Profile
-```
-PATCH /api/customer/profile
-```
-
-**Request Body:**
 ```json
 {
-  "name": "John Doe",
-  "email": "john@example.com",
-  "phone": "08123456789",
-  "shipping_address": "Jl. Sudirman No. 1, Jakarta",
-  "shipping_lat": -6.2088,
-  "shipping_lng": 106.8456,
-  "password": null
+  "label": "Rumah",
+  "recipient_name": "Fikri",
+  "recipient_phone": "08123456789",
+  "address": "Jl. Sudirman No. 1\nCatatan untuk kurir: titip satpam",
+  "province": "Jawa Barat",
+  "city": "Bandung",
+  "district": "Coblong",
+  "postal_code": "40132",
+  "lat": -6.914744,
+  "lng": 107.609810,
+  "is_default": true
 }
 ```
 
-## Default Coordinates
-Jika tidak ada lokasi terpilih, default coordinate untuk widget adalah:
-- Latitude: -6.2088
-- Longitude: 106.8456
+Kolom lama `storefront_customers.shipping_address/shipping_lat/shipping_lng` sudah **dihapus** oleh migration `20260522000001` yang memperkenalkan tabel multi-alamat. Detail backend: [`../api-cms-aminah-jaya/BACKEND_COORDINATES_IMPLEMENTATION.md`](../api-cms-aminah-jaya/BACKEND_COORDINATES_IMPLEMENTATION.md).
 
-## Implementation Checklist
+## Pemakaian di Checkout
 
-- [x] Convert MapPicker component to Biteship Maps Widget
-- [x] Integrate MapPicker into profile shipping address flow
-- [x] Persist `shipping_lat` and `shipping_lng` on backend
-- [x] Add `VITE_BITESHIP_MAPS_API_KEY` support
-- [ ] Verify actual Biteship widget script URL and constructor if required
-- [ ] Test widget load and selection on staging
+Koordinat alamat terpilih dikirim sebagai `destination_lat` / `destination_lng` ke:
+
+- `POST /shipping/rates` (api-integrasi) untuk menghitung ongkir, dan
+- `POST /api/customer/orders` (api-cms) saat order dibuat.
 
 ## Troubleshooting
 
-### Widget tidak muncul
-- Pastikan `VITE_BITESHIP_MAPS_API_KEY` sudah diset
-- Pastikan widget script dari Biteship dapat dimuat di browser
-- Periksa console browser untuk error script atau CORS
+**Peta tidak muncul** — pastikan modal benar-benar `isOpen` (peta hanya diinisialisasi setelah kontainer ter-render), lalu cek konsol untuk kegagalan memuat `maplibre-gl` atau tile OSM (jaringan/ad-blocker).
 
-### Lokasi tidak terpilih
-- Pastikan widget mengirim event `location:selected`
-- Pastikan komponen MapPicker memanggil `onLocationSelect`
+**Pencarian area kosong** — endpoint `/shipping/maps/areas` berasal dari api-integrasi; pastikan `VITE_INTEGRASI_API_BASE` benar dan `BITESHIP_API_KEY` terpasang di sisi server.
 
-## Notes
+**Alamat hasil reverse geocoding kurang tepat** — Nominatim punya rate limit dan cakupan yang bervariasi; alamat selalu bisa diedit manual di langkah 2.
 
-- Backend `api-cms-aminah-jaya` tetap menjadi tempat terbaik untuk menyimpan alamat pengiriman dan koordinat pelanggan.
-- `api-integrasi-aminah-jaya` lebih cocok jika nantinya ingin menambahkan integrasi logistik pihak ketiga seperti perhitungan ongkir atau Biteship shipping API.
+**Tombol lokasi saya gagal** — Geolocation API hanya berjalan di konteks aman (HTTPS atau `localhost`) dan butuh izin browser.
